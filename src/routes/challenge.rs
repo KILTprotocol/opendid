@@ -1,13 +1,12 @@
 use actix_session::Session;
-use actix_web::{web, Responder, HttpResponse, get, post};
-use base58::FromBase58;
+use actix_web::{get, post, web, HttpResponse, Responder};
+
 use rand::Rng;
-use serde::{Serialize, Deserialize};
-use serde_with::{serde_as, Bytes};
+use serde::{Deserialize, Serialize};
+
 use sodiumoxide::crypto::box_;
 
 use crate::AppState;
-
 
 // Data that the user receives when starting a session
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -53,26 +52,36 @@ async fn challenge_handler(session: Session, app_state: web::Data<AppState>) -> 
 
 // POST /api/v1/challenge -> check the challenge response and start a session
 #[post("/api/v1/challenge")]
-async fn challenge_response_handler(session: Session, app_state: web::Data<AppState>, challenge_response: web::Json<ChallengeResponse>) -> impl Responder {
+async fn challenge_response_handler(
+    session: Session,
+    app_state: web::Data<AppState>,
+    challenge_response: web::Json<ChallengeResponse>,
+) -> impl Responder {
     log::info!("POST challenge handler");
     let session_challenge = match session.get::<ChallengeData>("challenge") {
         Ok(Some(data)) => data.challenge,
         Ok(None) => return HttpResponse::Unauthorized().body("No session"),
-        Err(err) => return HttpResponse::Unauthorized().body(format!("Error: {}", err)),
+        Err(err) => return HttpResponse::Unauthorized().body(format!("Error: {err}")),
     };
     let session_challenge_bytes = match hex::decode(session_challenge.trim_start_matches("0x")) {
         Ok(bytes) => bytes,
         _ => return HttpResponse::Unauthorized().body("Invalid challenge"),
     };
-    let nonce = match hex::decode(&challenge_response.nonce.trim_start_matches("0x")) {
+    let nonce = match hex::decode(challenge_response.nonce.trim_start_matches("0x")) {
         Ok(nonce) => nonce,
         _ => return HttpResponse::Unauthorized().body("Invalid nonce"),
     };
-    let encrypted_challenge = match hex::decode(&challenge_response.encrypted_challenge.trim_start_matches("0x")) {
+    let encrypted_challenge = match hex::decode(
+        challenge_response
+            .encrypted_challenge
+            .trim_start_matches("0x"),
+    ) {
         Ok(encrypted_challenge) => encrypted_challenge,
         _ => return HttpResponse::Unauthorized().body("Invalid encrypted challenge"),
     };
-    let others_pubkey = match crate::util::parse_encryption_key_from_lightdid(challenge_response.encryption_key_uri.as_str()) {
+    let others_pubkey = match crate::util::parse_encryption_key_from_lightdid(
+        challenge_response.encryption_key_uri.as_str(),
+    ) {
         Ok(key) => key,
         _ => return HttpResponse::Unauthorized().body("Invalid encryption key"),
     };
@@ -86,7 +95,9 @@ async fn challenge_response_handler(session: Session, app_state: web::Data<AppSt
     };
 
     if session_challenge_bytes == decrypted_challenge {
-        session.insert("key_uri", challenge_response.encryption_key_uri.clone()).unwrap();
+        session
+            .insert("key_uri", challenge_response.encryption_key_uri.clone())
+            .unwrap();
         HttpResponse::Ok().body("Challenge accepted")
     } else {
         HttpResponse::Unauthorized().body("Wrong challenge")

@@ -1,4 +1,5 @@
-use serde::{Serialize, Deserialize};
+use jwt::VerifyWithKey;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Token {
@@ -26,7 +27,13 @@ pub struct TokenBuilder {
 }
 
 impl TokenBuilder {
-    pub fn new(issuer: &str, access_token_lifetime: i64, access_token_audience: &str, refresh_token_lifetime: i64, refresh_token_audience: &str) -> Self {
+    pub fn new(
+        issuer: &str,
+        access_token_lifetime: i64,
+        access_token_audience: &str,
+        refresh_token_lifetime: i64,
+        refresh_token_audience: &str,
+    ) -> Self {
         Self {
             issuer: issuer.to_string(),
             access_token_lifetime,
@@ -36,33 +43,72 @@ impl TokenBuilder {
         }
     }
 
-    pub fn new_access_token(&self, subject: &str, properties: serde_json::Map<String, serde_json::Value>) -> Token {
+    pub fn new_access_token(
+        &self,
+        subject: &str,
+        properties: &serde_json::Map<String, serde_json::Value>,
+    ) -> Token {
         let now = chrono::Utc::now();
         let expiry = now.timestamp() + self.access_token_lifetime;
         Token {
             subject: subject.to_string(),
-            expiry: expiry,
+            expiry,
             issued_at: now.timestamp(),
             issuer: self.issuer.clone(),
             audience: self.access_token_audience.clone(),
-            properties,
+            properties: properties.clone(),
         }
     }
 
-    pub fn new_refresh_token(&self, subject: &str, properties: serde_json::Map<String, serde_json::Value>) -> Token {
+    pub fn new_refresh_token(
+        &self,
+        subject: &str,
+        properties: &serde_json::Map<String, serde_json::Value>,
+    ) -> Token {
         let now = chrono::Utc::now();
         let expiry = now.timestamp() + self.refresh_token_lifetime;
         Token {
             subject: subject.to_string(),
-            expiry: expiry,
+            expiry,
             issued_at: now.timestamp(),
             issuer: self.issuer.clone(),
             audience: self.refresh_token_audience.clone(),
-            properties,
+            properties: properties.clone(),
         }
     }
-}
 
+    pub fn parse_token(&self, token: &str, key: &str) -> Result<Token, Box<dyn std::error::Error>> {
+        let key: Hmac<Sha256> = Hmac::new_from_slice(key.as_bytes())?;
+        let token = token.verify_with_key(&key)?;
+        Ok(token)
+    }
+
+    pub fn parse_refresh_token(
+        &self,
+        token: &str,
+        key: &str,
+    ) -> Result<Token, Box<dyn std::error::Error>> {
+        let token = self.parse_token(token, key)?;
+        // check audience
+        if token.audience != self.refresh_token_audience {
+            return Err("invalid audience".into());
+        }
+        // check expiry
+        let now = chrono::Utc::now();
+        if token.expiry < now.timestamp() {
+            return Err("token expired".into());
+        }
+        // check issued at
+        if token.issued_at > now.timestamp() {
+            return Err("token issued in the future".into());
+        }
+        // check issuer
+        if token.issuer != self.issuer {
+            return Err("invalid issuer".into());
+        }
+        Ok(token)
+    }
+}
 
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
@@ -93,7 +139,7 @@ mod tests {
         };
         let secret = "secret";
         let jwt = token.to_jwt(secret).unwrap();
-        println!("{}", jwt);
+        println!("{jwt}");
     }
 
     #[test]
@@ -101,16 +147,17 @@ mod tests {
         let token_builder = TokenBuilder::new(
             "did:kilt:verifier",
             30,
-            "application", 
-            60*60*24,
+            "application",
+            60 * 60 * 24,
             "authentication",
         );
         let secret = "secret";
-        let access_token = token_builder.new_access_token("did:kilt:user", serde_json::Map::new());
+        let access_token = token_builder.new_access_token("did:kilt:user", &serde_json::Map::new());
         let jwt = access_token.to_jwt(secret).unwrap();
-        println!("access_token {}", jwt);
-        let refresh_token = token_builder.new_refresh_token("did:kilt:user", serde_json::Map::new());
+        println!("access_token {jwt}");
+        let refresh_token =
+            token_builder.new_refresh_token("did:kilt:user", &serde_json::Map::new());
         let jwt = refresh_token.to_jwt(secret).unwrap();
-        println!("refresh_token {}", jwt);
+        println!("refresh_token {jwt}");
     }
 }

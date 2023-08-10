@@ -1,15 +1,28 @@
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap};
 
 use actix_session::Session;
-use actix_web::{web, get, Responder, HttpResponse, post};
-use serde::{Serialize, Deserialize};
+use actix_web::{get, post, web, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sodiumoxide::crypto::box_;
-use sp_core::{Decode, crypto::Ss58Codec, H256};
-use sp_runtime::{codec::IoReader, traits::Verify, AccountId32};
+use sp_core::{crypto::Ss58Codec, H256};
+
 use subxt::OnlineClient;
 
-use crate::{config::CredentialRequirement, AppState, messages::{Message, MessageBody, EncryptedMessage}, util::parse_encryption_key_from_lightdid, kilt::{self, KiltConfig, runtime_types::{did::did_details::{DidPublicKey, DidEncryptionKey, DidVerificationKey}, attestation::attestations::AttestationDetails}}};
+use crate::{
+    config::CredentialRequirement,
+    kilt::{
+        self,
+        runtime_types::{
+            did::did_details::{DidEncryptionKey, DidPublicKey},
+        },
+        KiltConfig,
+    },
+    messages::{EncryptedMessage, Message, MessageBody},
+    util::{get_did_doc, parse_encryption_key_from_lightdid},
+    verify::verify_credential_message,
+    AppState,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct RequestCredentialMessageBodyContent {
@@ -18,51 +31,53 @@ struct RequestCredentialMessageBodyContent {
     challenge: String,
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct SubmitCredentialMessageBodyContent {
-    claim: Claim,
+pub struct SubmitCredentialMessageBodyContent {
+    pub claim: Claim,
     #[serde(rename = "claimNonceMap")]
-    claim_nonce_map: HashMap<String, String>,
+    pub claim_nonce_map: HashMap<String, String>,
     #[serde(rename = "claimHashes")]
-    claim_hashes: Vec<String>,
+    pub claim_hashes: Vec<String>,
     #[serde(rename = "delegationId")]
-    delegation_id: Option<String>,
-    legitimations: Vec<serde_json::Value>,
+    pub delegation_id: Option<String>,
+    pub legitimations: Vec<serde_json::Value>,
     #[serde(rename = "claimerSignature")]
-    claimer_signature: DidSignature,
+    pub claimer_signature: DidSignature,
     #[serde(rename = "rootHash")]
-    root_hash: String,
+    pub root_hash: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct Claim {
+pub struct Claim {
     #[serde(rename = "cTypeHash")]
-    ctype_id: String,
-    contents: serde_json::Value,
-    owner: String,
+    pub ctype_id: String,
+    pub contents: serde_json::Value,
+    pub owner: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct DidSignature {
-    #[serde(rename = "keyId")]
-    key_id: String,
-    signature: String,
+pub struct DidSignature {
+    #[serde(rename = "keyUri")]
+    pub key_uri: String,
+    pub signature: String,
 }
-
 
 #[get("/api/v1/credentials")]
-async fn get_credential_requirements_handler(app_state: web::Data<AppState>, session: Session) -> impl Responder {
+async fn get_credential_requirements_handler(
+    app_state: web::Data<AppState>,
+    session: Session,
+) -> impl Responder {
     log::info!("GET credential requirements handler");
     let key_uri = match session.get::<String>("key_uri") {
         Ok(Some(data)) => data,
         _ => return HttpResponse::Unauthorized().body("No session"),
     };
     let challenge = format!("0x{}", hex::encode(box_::gen_nonce()));
-    match session.insert("credential-challenge", &challenge){
+    match session.insert("credential-challenge", &challenge) {
         Ok(_) => (),
         _ => return HttpResponse::Unauthorized().body("Could not store challenge"),
     };
+    let sender = app_state.encryption_key_uri.split('#').collect::<Vec<&str>>()[0];
     let msg = Message {
         body: MessageBody {
             type_: "request-credential".to_string(),
@@ -72,11 +87,11 @@ async fn get_credential_requirements_handler(app_state: web::Data<AppState>, ses
             },
         },
         created_at: 0,
-        sender: app_state.encryption_key_uri.clone(),
+        sender: sender.to_string(),
         receiver: key_uri.clone(),
         message_id: uuid::Uuid::new_v4().to_string(),
-        in_reply_to: "".to_string(),
-        references: vec![],
+        in_reply_to: None,
+        references: None,
     };
     let msg_json = serde_json::to_string(&msg).unwrap();
     let msg_bytes = msg_json.as_bytes();
@@ -95,13 +110,17 @@ async fn get_credential_requirements_handler(app_state: web::Data<AppState>, ses
         cipher_text: encrypted_msg_hex,
         nonce: nonce_hex,
         sender_key_uri: app_state.encryption_key_uri.clone(),
-        receiver_key_uri: key_uri.clone(),
+        receiver_key_uri: key_uri,
     };
     HttpResponse::Ok().json(response)
 }
 
 #[post("/api/v1/credentials")]
-async fn post_credential_handler(app_state: web::Data<AppState>, session: Session, body: web::Json<EncryptedMessage>) -> impl Responder {
+async fn post_credential_handler(
+    app_state: web::Data<AppState>,
+    session: Session,
+    body: web::Json<EncryptedMessage>,
+) -> impl Responder {
     log::info!("POST credential handler");
     log::info!("body: {:?}", body);
 
@@ -115,12 +134,12 @@ async fn post_credential_handler(app_state: web::Data<AppState>, session: Sessio
         _ => return HttpResponse::BadRequest().body("Could not get encryption key"),
     };
 
-    let nonce = match hex::decode(&body.nonce.trim_start_matches("0x")) {
+    let nonce = match hex::decode(body.nonce.trim_start_matches("0x")) {
         Ok(nonce) => box_::Nonce::from_slice(&nonce).unwrap(),
         _ => return HttpResponse::BadRequest().body("Could not decode nonce"),
     };
 
-    let cipher_text = match hex::decode(&body.cipher_text.trim_start_matches("0x")) {
+    let cipher_text = match hex::decode(body.cipher_text.trim_start_matches("0x")) {
         Ok(cipher_text) => cipher_text,
         _ => return HttpResponse::BadRequest().body("Could not decode cipher text"),
     };
@@ -131,117 +150,138 @@ async fn post_credential_handler(app_state: web::Data<AppState>, session: Sessio
         Ok(decrypted_msg) => decrypted_msg,
         _ => return HttpResponse::BadRequest().body("Could not decrypt message"),
     };
-    
-    let content: Message<SubmitCredentialMessageBodyContent> = match serde_json::from_slice(&decrypted_msg) {
-        Ok(content) => content,
-        Err(err) => return HttpResponse::BadRequest().body(format!("Could not parse message {:?}", err)),
-    };
-    
+
+    { // Logging stuff
+        let data: serde_json::Value = serde_json::from_slice(&decrypted_msg).unwrap();
+        log::info!("Decrypted message: {:?}", data);
+
+    }
+    let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
+        match serde_json::from_slice(&decrypted_msg) {
+            Ok(content) => content,
+            Err(err) => {
+                return HttpResponse::BadRequest().body(format!("Could not parse message {err:?}"))
+            }
+        };
+
     let challenge = match session.get::<String>("credential-challenge") {
-        Ok(Some(data)) => match hex::decode(data.trim_start_matches("0x")){
+        Ok(Some(data)) => match hex::decode(data.trim_start_matches("0x")) {
             Ok(data) => data,
             _ => return HttpResponse::Unauthorized().body("Could not decode challenge"),
         },
         _ => return HttpResponse::Unauthorized().body("No session"),
     };
 
-    let root_hash = match hex::decode(&content.body.content.root_hash.trim_start_matches("0x")){
-        Ok(data) => data,
-        _ => return HttpResponse::BadRequest().body("Could not decode root hash"),
+    // check internal integrity of the credential and look it up on chain
+    let attestations = match verify_credential_message(&content, challenge, &cli).await {
+        Ok(a) => a,
+        Err(err) => {
+            return HttpResponse::BadRequest().body(format!("Could not verify message {err:?}"))
+        }
     };
-
-    // verify claimer signature
-    let signature_data = [root_hash, challenge].concat();
-    let signature = match hex::decode(content.body.content.claimer_signature.signature.trim_start_matches("0x")){
-        Ok(data) => match sp_runtime::MultiSignature::decode(&mut IoReader(data.as_slice())) {
-            Ok(data) => data,
-            _ => return HttpResponse::BadRequest().body("Could not decode signature"),
-        },
-        _ => return HttpResponse::BadRequest().body("Could not decode signature"),
-    };
-    let signer = match get_auth_pubkey(&content.sender, &cli).await {
-        Ok(data) => data,
-        _ => return HttpResponse::BadRequest().body("Could not get auth pubkey"),
-    };
-    if !signature.verify(signature_data.as_slice(), &signer) {
-        return HttpResponse::BadRequest().body("Could not verify signature");
-    }
-    log::info!("Claimer signature verified");
-
-    // lookup credential root hash
-    let attestation = match get_attestation(&content.body.content.root_hash, &cli).await {
-        Ok(data) => data,
-        _ => return HttpResponse::BadRequest().body("Could not get attestation"),
-    };
-    log::info!("Attestation found on chain: {:?}", attestation);
-
-    // check if it is  not revoked
-    if attestation.revoked {
-        return HttpResponse::BadRequest().body("Attestation is revoked");
-    }
-    log::info!("Attestation not revoked");
 
     // go through all credential requirements and check that at least one is fulfilled with the given cred
     let mut fulfilled = false;
-    let credential_attester_did = format!("did:kilt:{}",
-        sp_runtime::AccountId32::from(attestation.attester.0)
-        .to_ss58check_with_version(38u16.into())
-    );
-    for requirement in &app_state.credential_requirements {
-        if requirement.ctype_hash != content.body.content.claim.ctype_id {
-            log::info!("Requirement ctype hash does not match");
-            continue;
-        }
-        if ! requirement.trusted_attesters.contains(&credential_attester_did) {
-            log::info!("Requirement attester DID does not match");
-            continue;
-        }
-        // go through all required properties and check they are in the attestation
-        let mut properties_fulfilled = true;
-        let content_object = match content.body.content.claim.contents.as_object() {
-            Some(data) => data,
-            _ => return HttpResponse::BadRequest().body("Could not get claim contents"),
-        };
-        for property in &requirement.required_properties {
-            if ! content_object.contains_key(property) {
-                log::info!("Requirement property '{}' not found", property);
-                properties_fulfilled = false;
-                break;
+    let mut props = serde_json::Map::new();
+    
+    for i in 0..attestations.len() {
+        let attestation = &attestations[i];
+        let content = &content.body.content[i];
+        let credential_attester_did = format!(
+            "did:kilt:{}",
+            sp_runtime::AccountId32::from(attestation.attester.0)
+                .to_ss58check_with_version(38u16.into())
+        );
+        
+        for requirement in &app_state.credential_requirements {
+            if requirement.ctype_hash != content.claim.ctype_id {
+                log::info!("Requirement ctype hash does not match");
+                continue;
             }
+            if !requirement
+                .trusted_attesters
+                .contains(&credential_attester_did)
+            {
+                log::info!("Requirement attester DID does not match");
+                continue;
+            }
+            // go through all required properties and check they are in the attestation
+            let mut properties_fulfilled = true;
+            let content_object = match content.claim.contents.as_object() {
+                Some(data) => data,
+                _ => return HttpResponse::BadRequest().body("Could not get claim contents"),
+            };
+            for property in &requirement.required_properties {
+                if !content_object.contains_key(property) {
+                    log::info!("Requirement property '{}' not found", property);
+                    properties_fulfilled = false;
+                    break;
+                }
+            }
+            if !properties_fulfilled {
+                log::info!("Requirement properties not fulfilled");
+                continue;
+            }
+            log::info!("Requirement fulfilled");
+            fulfilled = true;
+            break;
         }
-        if ! properties_fulfilled {
-            log::info!("Requirement properties not fulfilled");
-            continue;
-        }
-        log::info!("Requirement fulfilled");
-        fulfilled = true;
-        break;
-    }
 
+        if fulfilled {
+            for (key, value) in content.claim.contents.as_object().unwrap() {
+                props.insert(key.clone(), value.clone());
+            }
+            break;
+        }
+    
+    }
+    
     if !fulfilled {
         log::info!("No credential requirement fulfilled");
         return HttpResponse::BadRequest().body("No credential requirement fulfilled");
     }
 
     log::info!("Credential checked, all good to go");
+    let access_token = match app_state
+        .token_builder
+        .new_access_token(&content.sender, &props)
+        .to_jwt(&app_state.token_secret)
+    {
+        Ok(data) => data,
+        _ => return HttpResponse::InternalServerError().body("Could not create access token"),
+    };
+
+    let refresh_token = match app_state
+        .token_builder
+        .new_refresh_token(&content.sender, &props)
+        .to_jwt(&app_state.token_secret)
+    {
+        Ok(data) => data,
+        _ => return HttpResponse::InternalServerError().body("Could not create refresh token"),
+    };
 
     HttpResponse::Ok().json(json!({
-        "status": "ok",
+        "accessToken": access_token,
+        "refreshToken": refresh_token,
     }))
 }
 
-
-async fn get_encryption_key_from_fulldid_key_uri(key_uri: &str, cli: &OnlineClient<KiltConfig>) -> Result<box_::PublicKey, Box<dyn std::error::Error>> {
-    let key_uri_parts: Vec<&str> = key_uri.split("#").collect();
+async fn get_encryption_key_from_fulldid_key_uri(
+    key_uri: &str,
+    cli: &OnlineClient<KiltConfig>,
+) -> Result<box_::PublicKey, Box<dyn std::error::Error>> {
+    let key_uri_parts: Vec<&str> = key_uri.split('#').collect();
     if key_uri_parts.len() != 2 {
         return Err("Invalid sender key URI".into());
     }
     let did = key_uri_parts[0].to_string();
     let key_id = key_uri_parts[1].to_string();
-    let kid_bs: [u8; 32] = hex::decode(&key_id.trim_start_matches("0x"))?.try_into().map_err(|_| "malformed key id")?;
+    let kid_bs: [u8; 32] = hex::decode(key_id.trim_start_matches("0x"))?
+        .try_into()
+        .map_err(|_| "malformed key id")?;
     let kid = H256::from(kid_bs);
     let doc = get_did_doc(&did, cli).await?;
-    match doc.public_keys.0.iter().find(|&(k,v)| *k == kid) {
+    match doc.public_keys.0.iter().find(|&(k, _v)| *k == kid) {
         Some((_, details)) => {
             let pk = match details.key {
                 DidPublicKey::PublicEncryptionKey(DidEncryptionKey::X25519(pk)) => pk,
@@ -249,52 +289,6 @@ async fn get_encryption_key_from_fulldid_key_uri(key_uri: &str, cli: &OnlineClie
             };
             box_::PublicKey::from_slice(&pk).ok_or("Invalid sender public key".into())
         }
-        _ => return Err("Could not get sender public key".into()),
+        _ => Err("Could not get sender public key".into()),
     }
-}
-
-async fn get_auth_pubkey(did: &str, cli: &OnlineClient<KiltConfig>) -> Result<sp_runtime::AccountId32, Box<dyn std::error::Error>> {
-    let doc = get_did_doc(did, cli).await?;
-    let auth_key_id = doc.authentication_key;
-    let pubkey_details = &doc.public_keys.0.iter()
-        .find(|&(k,v)| *k == auth_key_id)
-        .ok_or("Could not get auth key")?.1;
-    match &pubkey_details.key {
-        DidPublicKey::PublicVerificationKey(DidVerificationKey::Sr25519(pk)) => Ok(sp_runtime::AccountId32::from(pk.0)),
-        DidPublicKey::PublicVerificationKey(DidVerificationKey::Ed25519(pk)) => Ok(sp_runtime::AccountId32::from(pk.0)),
-        _ => return Err("Invalid auth key".into()),
-    }
-}
-
-async fn get_did_doc(did: &str, cli: &OnlineClient<KiltConfig>) -> Result<kilt::runtime_types::did::did_details::DidDetails, Box<dyn std::error::Error>> {
-    let did = match subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:")) {
-        Ok(did) => did,
-        _ => return Err("Invalid DID".into()),
-    };
-    let did_doc_key = kilt::storage().did().did(&did);
-    let details = cli
-        .storage()
-        .at_latest()
-        .await?
-        .fetch(&did_doc_key)
-        .await?
-        .ok_or("DID not found")?;    
-    log::info!("{:#?}", details);
-    Ok(details)
-}
-
-async fn get_attestation(hash: &str, cli: &OnlineClient<KiltConfig>) -> Result<AttestationDetails, Box<dyn std::error::Error>> {
-    let hash = match H256::from_str(hash.trim_start_matches("0x")) {
-        Ok(hash) => hash,
-        _ => return Err("Invalid hash".into()),
-    };
-    let addr = kilt::storage().attestation().attestations(hash);
-    let attestation = cli
-        .storage()
-        .at_latest()
-        .await?
-        .fetch(&addr)
-        .await?
-        .ok_or("Attestation not found")?;
-    Ok(attestation)
 }

@@ -1,5 +1,3 @@
-use std::future::Future;
-
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use subxt::{config::polkadot::PolkadotExtrinsicParams, config::Config, OnlineClient};
@@ -17,7 +15,6 @@ pub type RuntimeEvent = kilt::runtime_types::spiritnet_runtime::RuntimeEvent;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct KiltConfig;
 impl Config for KiltConfig {
-    type Index = u64;
     type Hash = sp_core::H256;
     type Hasher = <subxt::config::SubstrateConfig as Config>::Hasher;
     type AccountId = <<Self::Signature as Verify>::Signer as IdentifyAccount>::AccountId;

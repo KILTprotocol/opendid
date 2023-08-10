@@ -1,0 +1,10 @@
+node_modules
+config.yaml
+did-secrets.json
+example-frontend/node_modules
+example-frontend/dist
+.dauth-frontend-image
+.dauth-image
+.dauth-setup-image
+target
+example-frontend/.parcel-cache

@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EncryptedMessage {
@@ -28,6 +28,6 @@ pub struct Message<T> {
     #[serde(rename = "messageId")]
     pub message_id: String,
     #[serde(rename = "inReplyTo")]
-    pub in_reply_to: String,
-    pub references: Vec<String>,
+    pub in_reply_to: Option<String>,
+    pub references: Option<Vec<String>>,
 }
