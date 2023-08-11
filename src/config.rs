@@ -8,6 +8,8 @@ use crate::jwt::TokenBuilder;
 pub struct Config {
     pub host: String,
     pub port: u16,
+    #[serde(rename = "basePath")]
+    pub base_path: String,
     #[serde(rename = "credentialRequirements")]
     pub credential_requirements: Vec<CredentialRequirement>,
     #[serde(rename = "session")]

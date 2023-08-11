@@ -82,8 +82,9 @@ cat > /data/config.yaml <<EOF
 # kiltlogin config file
 
 # server config
-host: 127.0.0.1
-port: 3002
+host: 0.0.0.0
+port: 3001
+basePath: /srv
 
 # session config
 # contains the keyUri, naclSecretKey, naclPublicKey and sessionKey used to communicate with the identity extension

@@ -122,7 +122,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 key_uri: "".to_string(),
                 origin: "".to_string(),
                 seed: "".to_string(),
-            }
+            },
+            base_path: "/srv".to_string(),
         },
     };
 
@@ -150,6 +151,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let host = config.host.clone();
     let port = config.port;
 
+    log::info!("Starting server at {}:{}", host, port);
+
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(state.clone()))
@@ -172,6 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(post_credential_handler)
             .service(refresh_handler)
             .service(well_known_did_config_handler)
+            .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })
     .bind((host.as_str(), port))?
     .run()

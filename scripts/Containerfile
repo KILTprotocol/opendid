@@ -2,7 +2,7 @@ FROM docker.io/library/debian:stable-slim
 
 RUN apt update && apt install -y openssl ca-certificates
 COPY ./target/release/kilt-login /app/kilt-login
-
+COPY ./example-frontend/dist /srv
 VOLUME /app/config.yaml
 
 CMD [ "/app/kilt-login", "--config", "/app/config.yaml"]

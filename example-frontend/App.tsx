@@ -55,6 +55,16 @@ export function App() {
     const [loginResponse, setLoginResponse] = React.useState({accessToken: '', refreshToken: ''});
     const [error, setError] = React.useState('');
 
+    React.useEffect(() => {
+        // check for query parameters access_token and refresh_token
+        const urlParams = new URLSearchParams(window.location.search)
+        const accessToken = urlParams.get('access_token')
+        const refreshToken = urlParams.get('refresh_token')
+        if (accessToken && refreshToken) {
+            setLoginResponse({accessToken, refreshToken})
+        }
+    })
+
     async function startSession() {
         try {
             const challenge = await (await fetch('/api/v1/challenge')).json();
@@ -92,7 +102,13 @@ export function App() {
             });
             
             console.log('posting credential to server', credentialResponse)
-            const credentialResponseResponse = await fetch('/api/v1/credentials', {
+            let url = '/api/v1/credentials'
+            // get redirect uri from input field
+            const redirectUri = document.getElementById('redirect-uri') as HTMLInputElement
+            if (redirectUri.value) {
+                url = `${url}?redirect=${redirectUri.value}`
+            }
+            const credentialResponseResponse = await fetch(url, {
                 method: 'POST',
                 body: JSON.stringify(credentialResponse),
                 headers: {
@@ -100,6 +116,10 @@ export function App() {
                 },
                 credentials: 'include'
             });
+            if (credentialResponseResponse.redirected) {
+                window.location.href = credentialResponseResponse.url
+                return
+            }
             const credentialResponseData = await credentialResponseResponse.json();
             console.log('response to posted credential', credentialResponseData);
             setLoginResponse(credentialResponseData);            
@@ -134,6 +154,7 @@ export function App() {
                 console.log('selected extension', e);
                 setExtension(e)
             }} />
+            <input id="redirect-uri" type="text" value={window.location.origin}/>
             <button onClick={startSession}>Login</button>
             <button onClick={refresh}>Refresh</button>
             <p>Access Token: {loginResponse.accessToken}</p>

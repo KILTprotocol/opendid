@@ -32,3 +32,4 @@ chrono = { version = "0.4.26", features = ["serde"] }
 hmac = "0.12.1"
 sha2 = "0.10.7"
 blake2 = "0.10.6"
+actix-files = "0.6.2"

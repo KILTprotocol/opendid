@@ -62,6 +62,11 @@ pub struct DidSignature {
     pub signature: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct PostCredentialQueryParameter {
+    pub redirect: Option<String>,
+}
+
 #[get("/api/v1/credentials")]
 async fn get_credential_requirements_handler(
     app_state: web::Data<AppState>,
@@ -120,6 +125,7 @@ async fn post_credential_handler(
     app_state: web::Data<AppState>,
     session: Session,
     body: web::Json<EncryptedMessage>,
+    query: web::Query<PostCredentialQueryParameter>,
 ) -> impl Responder {
     log::info!("POST credential handler");
     log::info!("body: {:?}", body);
@@ -259,6 +265,14 @@ async fn post_credential_handler(
         Ok(data) => data,
         _ => return HttpResponse::InternalServerError().body("Could not create refresh token"),
     };
+
+    if let Some(redirect_url) = &query.redirect {
+        return HttpResponse::Found()
+            .append_header((
+                "Location", 
+                format!("{}?access_token={}&refresh_token={}",redirect_url, access_token, refresh_token)
+            )).finish();
+    }
 
     HttpResponse::Ok().json(json!({
         "accessToken": access_token,
