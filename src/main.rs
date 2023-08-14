@@ -38,6 +38,7 @@ struct AppState {
     token_builder: TokenBuilder,
     token_secret: String,
     well_known_did_config: well_known_did_config::WellKnownDidConfig,
+    oauth_config: Option<config::OauthConfig>,
 }
 
 #[actix_web::main]
@@ -124,6 +125,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 seed: "".to_string(),
             },
             base_path: "/srv".to_string(),
+            oauth_config: None,
         },
     };
 
@@ -146,6 +148,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         token_builder: config.get_token_builder(),
         token_secret: config.jwt_config.token_secret.clone(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
+        oauth_config: config.oauth_config.clone(),
     };
 
     let host = config.host.clone();
@@ -175,6 +178,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(post_credential_handler)
             .service(refresh_handler)
             .service(well_known_did_config_handler)
+            .service(authorize_handler)
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })
     .bind((host.as_str(), port))?

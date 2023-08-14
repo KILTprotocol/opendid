@@ -21,7 +21,7 @@ use crate::{
     messages::{EncryptedMessage, Message, MessageBody},
     util::{get_did_doc, parse_encryption_key_from_lightdid},
     verify::verify_credential_message,
-    AppState,
+    AppState, routes::AuthorizeQueryParameters,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -247,10 +247,16 @@ async fn post_credential_handler(
         return HttpResponse::BadRequest().body("No credential requirement fulfilled");
     }
 
+    let oauth_context = match session.get::<AuthorizeQueryParameters>("oauth-context") {
+        Ok(data) => data,
+        _ => None,
+    };
+    let nonce = oauth_context.clone().map(|data| data.nonce);
+
     log::info!("Credential checked, all good to go");
     let access_token = match app_state
         .token_builder
-        .new_access_token(&content.sender, &props)
+        .new_access_token(&content.sender, &props, &nonce)
         .to_jwt(&app_state.token_secret)
     {
         Ok(data) => data,
@@ -259,13 +265,15 @@ async fn post_credential_handler(
 
     let refresh_token = match app_state
         .token_builder
-        .new_refresh_token(&content.sender, &props)
+        .new_refresh_token(&content.sender, &props, &nonce)
         .to_jwt(&app_state.token_secret)
     {
         Ok(data) => data,
         _ => return HttpResponse::InternalServerError().body("Could not create refresh token"),
     };
 
+    // in case we have a redirect url, redirect to it with the tokens as query parameters
+    // thats the simple custom flow
     if let Some(redirect_url) = &query.redirect {
         return HttpResponse::Found()
             .append_header((
@@ -274,10 +282,26 @@ async fn post_credential_handler(
             )).finish();
     }
 
-    HttpResponse::Ok().json(json!({
-        "accessToken": access_token,
-        "refreshToken": refresh_token,
-    }))
+    match &oauth_context {
+        Some(context) => {
+            log::info!("Got oauth context from session");
+            HttpResponse::Found()
+            .append_header((
+                "Location", 
+                format!("{}?access_token={}&refresh_token={}&state={}",
+                    context.redirect_uri.clone(), 
+                    access_token, 
+                    refresh_token,
+                    context.state.clone(),
+                )
+            )).finish()
+        },
+        _ =>  HttpResponse::Ok().json(json!({
+            "accessToken": access_token,
+            "refreshToken": refresh_token,
+        }))
+    }
+
 }
 
 async fn get_encryption_key_from_fulldid_key_uri(

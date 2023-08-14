@@ -15,6 +15,8 @@ pub struct Token {
     pub audience: String,
     #[serde(rename = "pro")]
     pub properties: serde_json::Map<String, serde_json::Value>,
+    #[serde(rename = "nonce")]
+    pub nonce: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,6 +49,7 @@ impl TokenBuilder {
         &self,
         subject: &str,
         properties: &serde_json::Map<String, serde_json::Value>,
+        nonce: &Option<String>,
     ) -> Token {
         let now = chrono::Utc::now();
         let expiry = now.timestamp() + self.access_token_lifetime;
@@ -57,6 +60,7 @@ impl TokenBuilder {
             issuer: self.issuer.clone(),
             audience: self.access_token_audience.clone(),
             properties: properties.clone(),
+            nonce: nonce.to_owned(),
         }
     }
 
@@ -64,6 +68,7 @@ impl TokenBuilder {
         &self,
         subject: &str,
         properties: &serde_json::Map<String, serde_json::Value>,
+        nonce: &Option<String>,
     ) -> Token {
         let now = chrono::Utc::now();
         let expiry = now.timestamp() + self.refresh_token_lifetime;
@@ -74,6 +79,7 @@ impl TokenBuilder {
             issuer: self.issuer.clone(),
             audience: self.refresh_token_audience.clone(),
             properties: properties.clone(),
+            nonce: nonce.to_owned(),
         }
     }
 
@@ -114,6 +120,8 @@ use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
 use sha2::Sha256;
 
+use crate::routes::AuthorizeQueryParameters;
+
 impl Token {
     pub fn to_jwt(&self, secret: &str) -> Result<String, Box<dyn std::error::Error>> {
         let key: Hmac<Sha256> = Hmac::new_from_slice(secret.as_bytes())?;
@@ -136,6 +144,7 @@ mod tests {
             issuer: "test".to_string(),
             audience: "test".to_string(),
             properties: serde_json::Map::new(),
+            nonce: None,
         };
         let secret = "secret";
         let jwt = token.to_jwt(secret).unwrap();
@@ -152,11 +161,11 @@ mod tests {
             "authentication",
         );
         let secret = "secret";
-        let access_token = token_builder.new_access_token("did:kilt:user", &serde_json::Map::new());
+        let access_token = token_builder.new_access_token("did:kilt:user", &serde_json::Map::new(), &None);
         let jwt = access_token.to_jwt(secret).unwrap();
         println!("access_token {jwt}");
         let refresh_token =
-            token_builder.new_refresh_token("did:kilt:user", &serde_json::Map::new());
+            token_builder.new_refresh_token("did:kilt:user", &serde_json::Map::new(), &None);
         let jwt = refresh_token.to_jwt(secret).unwrap();
         println!("refresh_token {jwt}");
     }

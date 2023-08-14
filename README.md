@@ -38,12 +38,13 @@ Now you can visit http://localhost:3001/ and see the login page. You can use the
 
 ### Cleanup and delete the DID
 
-If you want to delete the DID you generated earlier, you can use the `dauth-setup` image again.
+If you want to delete the DID you generated earlier, you can use the `dauth-setup` image again. It will use the authentication key from the `did-secrets.json` file to delete the DID from the blockchain. 
 
 ```bash
+SEED="dont try this seed its completely made up for this nice example"
 podman run --rm -it \
     -v $(pwd):/data -w /data \
     --entrypoint /bin/bash \
     quay.io/kilt/dauth-setup:latest \
-        /app/scripts/delete-did.sh "${PAYMENT_SEED}"
+        /app/scripts/delete-did.sh "${SEED}"
 ```

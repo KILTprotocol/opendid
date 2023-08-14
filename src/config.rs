@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use actix_web::cookie::Key;
 use hex::FromHexError;
 use serde::{Deserialize, Serialize};
@@ -18,6 +20,8 @@ pub struct Config {
     pub jwt_config: JWTConfig,
     #[serde(rename = "wellKnownDid")]
     pub well_known_did_config: WellKnownDidConfig,
+    #[serde(rename = "oauth")]
+    pub oauth_config: Option<OauthConfig>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -65,6 +69,12 @@ pub struct WellKnownDidConfig {
     pub key_uri: String,
     pub origin: String,
     pub seed: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OauthConfig {
+    #[serde(rename = "redirectUrls")]
+    pub redirect_urls: HashMap<String, Vec<String>>,
 }
 
 impl Config {
