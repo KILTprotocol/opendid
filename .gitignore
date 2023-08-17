@@ -3,9 +3,6 @@ config.yaml
 did-secrets.json
 login-frontend/node_modules
 login-frontend/dist
-.dauth-frontend-image
-.dauth-image
-.dauth-setup-image
 target
 login-frontend/.parcel-cache
 demo-project/node_modules

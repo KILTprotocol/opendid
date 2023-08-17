@@ -41,10 +41,26 @@ Now you can visit http://localhost:3001/ and see the login page. You can use the
 
 ### Integrate the service into your application
 
-The service implements the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), therefore it is very simple to integrate.
+The service implements the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), therefore it is very simple to integrate. All you have to do is to redirect the user to the login page and then handle the redirect back to your application. The redirect will contain a JWT token in the URL. You can use this token to authenticate the user in your application. The token will contain the DID of the user and the claims from the Verifiable Credential that was used to authenticate the user. You can use this information to check if the user is allowed to access your application.
 
+#### Example
 
+The example code at [demo-project](./demo-project/) contains a minimal application which uses login via the simple-auth-relay-app. It is a simple [express](https://expressjs.com) application which exposes three things:
 
+* a login page which handles the dispatching of the user to the simple-auth-relay-app
+* a callback page for the openid connect flow to accept the token
+* a protected resource which can only be accessed by authenticated users
+
+If you wish to run this preconfigured demo application you can do it like this:
+
+```bash
+podman run -it -d --rm \
+    --name demo-frontend \
+    -p 1606:1606 \
+    quay.io/kilt/simple-auth-relay-app-demo
+```
+
+You can now go to [http://localhost:1606/login.html](http://localhost:1606/login.html) to see a login page from the demo application. When you click on login, you will be redirected to the simple-auth-relay-app login screen where you authenticate using your wallet. After success you will be redirected back to the application and the token will be used to access a protected resource.
 
 ### Cleanup and delete the DID
 
