@@ -1,9 +1,9 @@
-FROM node
+FROM node:alpine
 
 WORKDIR /srv
 COPY ./demo-project/package.json ./package.json
-COPY ./demo-project/main.ts ./main.ts
+COPY ./demo-project/node_modules ./node_modules
+COPY ./demo-project/index.js ./index.js
 COPY ./demo-project/demo-frontend ./demo-frontend
-RUN yarn && yarn build
 
 ENTRYPOINT [ "/usr/local/bin/node", "/srv/index.js" ]

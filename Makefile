@@ -1,51 +1,49 @@
+APP_NAME=simple-auth-relay-app
 PAYMENT_SEED="eye angry flavor pumpkin require oppose cigar fringe eight breeze valley digital"
+
+MAIN_IMAGE="quay.io/kilt/$(APP_NAME)"
+SETUP_IMAGE="quay.io/kilt/$(APP_NAME)-setup"
+DEMO_IMAGE="quay.io/kilt/$(APP_NAME)-demo"
 
 all: images
 
-images: dauth-image dauth-setup-image demo-project-image
-
-run: images setup 
-	podman run -d --name dauth \
-		-v ./config.yaml:/app/config.yaml \
-		quay.io/kilt/dauth:latest
-
-kill:
-	podman rm -f dauth
+images: main-image setup-image demo-image
 
 push: images
-	podman push quay.io/kilt/dauth:latest
-	podman push quay.io/kilt/dauth-setup:latest
-	podman push quay.io/kilt/dauth-demo-project:latest
+	podman push $(MAIN_IMAGE)
+	podman push $(SETUP_IMAGE)
+	podman push $(DEMO_IMAGE)
 
 setup: config.yaml
-config.yaml: dauth-setup-image
-	podman run --rm -it -v $(shell pwd):/data quay.io/kilt/dauth-setup:latest $(PAYMENT_SEED)
+config.yaml: setup-image
+	podman run --rm -it -v $(shell pwd):/data $(SETUP_IMAGE) $(PAYMENT_SEED)
 
-delete-did: dauth-setup-image
-	podman run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash quay.io/kilt/dauth-setup:latest /app/scripts/delete-did.sh $(PAYMENT_SEED)
+delete-did: simple-auth-relay-app-setup-image
+	podman run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash $(SETUP_IMAGE) /app/scripts/delete-did.sh $(PAYMENT_SEED)
 
 binary: target/release/kilt-login
 target/release/kilt-login: $(shell find ./src -type f -name '*.rs')
 	cargo build --release
 
-frontend: login-frontend/dist/index.html
+
+main-image: .main-image
+.main-image: scripts/Containerfile target/release/kilt-login login-frontend/dist/index.html
+	podman build -t $(MAIN_IMAGE):latest -f scripts/Containerfile .
+	touch .main-image
+
 login-frontend/dist/index.html: $(shell find ./login-frontend/src -type f)
 	cd login-frontend && yarn && yarn build
 
-dauth-image: .dauth-image
-.dauth-image: scripts/Containerfile target/release/kilt-login frontend
-	podman build -t quay.io/kilt/dauth:latest -f scripts/Containerfile .
-	touch .dauth-image
+setup-image: .setup-image
+.setup-image: scripts/setup.Containerfile scripts/setup.sh
+	podman build -t $(SETUP_IMAGE) -f scripts/setup.Containerfile .
+	touch .setup-image
 
-dauth-setup-image: .dauth-setup-image
-.dauth-setup-image: scripts/setup.Containerfile
-	podman build -t quay.io/kilt/dauth-setup:latest -f scripts/setup.Containerfile .
-	touch .dauth-setup-image
+
+demo-image: .demo-image
+.demo-image: scripts/demo.Containerfile demo-project/index.js $(shell find ./demo-project/demo-frontend)
+	podman build -t $(DEMO_IMAGE):latest -f scripts/demo.Containerfile .
+	touch .demo-image
 
 demo-project/index.js: demo-project/main.ts 
 	cd demo-project && yarn && yarn build
-
-demo-project-image: .demo-project-image
-.demo-project-image: scripts/demo.Containerfile demo-project/index.js $(shell find ./demo-project/demo-frontend)
-	podman build -t quay.io/kilt/dauth-demo-project:latest -f scripts/demo.Containerfile .
-	touch .demo-project-image

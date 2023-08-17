@@ -11,4 +11,8 @@ login-frontend/.parcel-cache
 demo-project/node_modules
 demo-project/index.js
 demo-project/index.js.map
+demo-project/.parcel-cache
 .demo-project-image
+.demo-image
+.main-image
+.setup-image

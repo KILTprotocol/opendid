@@ -1,4 +1,4 @@
-use std::{collections::HashMap};
+use std::{collections::HashMap, str::FromStr};
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse, Responder};
@@ -7,7 +7,7 @@ use serde_json::json;
 use sodiumoxide::crypto::box_;
 use sp_core::{crypto::Ss58Codec, H256};
 
-use subxt::OnlineClient;
+use subxt::{OnlineClient, utils::AccountId32};
 
 use crate::{
     config::CredentialRequirement,
@@ -254,9 +254,12 @@ async fn post_credential_handler(
     let nonce = oauth_context.clone().map(|data| data.nonce);
 
     log::info!("Credential checked, all good to go");
+
+    let w3n = get_w3n(&content.sender, &cli).await.unwrap_or("".into());
+
     let access_token = match app_state
         .token_builder
-        .new_access_token(&content.sender, &props, &nonce)
+        .new_access_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.token_secret)
     {
         Ok(data) => data,
@@ -265,7 +268,7 @@ async fn post_credential_handler(
 
     let refresh_token = match app_state
         .token_builder
-        .new_refresh_token(&content.sender, &props, &nonce)
+        .new_refresh_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.token_secret)
     {
         Ok(data) => data,
@@ -328,5 +331,24 @@ async fn get_encryption_key_from_fulldid_key_uri(
             box_::PublicKey::from_slice(&pk).ok_or("Invalid sender public key".into())
         }
         _ => Err("Could not get sender public key".into()),
+    }
+}
+
+async fn get_w3n(did: &str, cli: &OnlineClient<KiltConfig>) -> Result<String, Box<dyn std::error::Error>> {
+    let account_id = match subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:")) {
+        Ok(id) => id,
+        _ => return Err("Invalid DID".into()),
+    };
+    let storage_key = kilt::storage().web3_names().names(account_id);
+    let name = cli
+        .storage()
+        .at_latest()
+        .await?
+        .fetch(&storage_key)
+        .await?;
+    if let Some(name) = name {
+        Ok(String::from_utf8(name.0.0)?)
+    } else {
+        Ok("".into())
     }
 }
