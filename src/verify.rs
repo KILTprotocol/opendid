@@ -3,7 +3,6 @@ use std::str::FromStr;
 use hmac::digest::typenum::U32;
 use serde_json::json;
 use sp_core::{Decode, H256};
-use sp_runtime::app_crypto::RuntimePublic;
 use sp_runtime::codec::IoReader;
 use sp_runtime::traits::Verify;
 use subxt::OnlineClient;

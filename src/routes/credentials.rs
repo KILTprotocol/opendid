@@ -6,16 +6,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sodiumoxide::crypto::box_;
 use sp_core::{crypto::Ss58Codec, H256};
-
-use subxt::{OnlineClient, utils::AccountId32};
+use subxt::OnlineClient;
 
 use crate::{
     config::CredentialRequirement,
     kilt::{
         self,
-        runtime_types::{
-            did::did_details::{DidEncryptionKey, DidPublicKey},
-        },
+        runtime_types::did::did_details::{DidEncryptionKey, DidPublicKey},
         KiltConfig,
     },
     messages::{EncryptedMessage, Message, MessageBody},
@@ -157,11 +154,6 @@ async fn post_credential_handler(
         _ => return HttpResponse::BadRequest().body("Could not decrypt message"),
     };
 
-    { // Logging stuff
-        let data: serde_json::Value = serde_json::from_slice(&decrypted_msg).unwrap();
-        log::info!("Decrypted message: {:?}", data);
-
-    }
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         match serde_json::from_slice(&decrypted_msg) {
             Ok(content) => content,
@@ -227,6 +219,29 @@ async fn post_credential_handler(
             if !properties_fulfilled {
                 log::info!("Requirement properties not fulfilled");
                 continue;
+            }
+            if let Some(regex_check) = &requirement.regex_check {
+                let selector = match jsonpath::Selector::new(&regex_check.selector) {
+                    Ok(data) => data,
+                    _ => return HttpResponse::InternalServerError().body("regex check selector invalid"),
+                };
+                let value: Option<&str> = match selector.find(&content.claim.contents).next() {
+                    Some(data) => data.as_str(),
+                    _ => return HttpResponse::BadRequest().body("Could not get claim contents"),
+                };
+                let regex = match regex::Regex::new(&regex_check.regex) {
+                    Ok(data) => data,
+                    _ => return HttpResponse::BadRequest().body("Could not get claim contents"),
+                };
+                match value {
+                    Some(value) => {
+                        if !regex.is_match(value) {
+                            log::info!("Requirement regex check failed");
+                            continue;
+                        }        
+                    },
+                    _ => return HttpResponse::BadRequest().body("Could not get claim contents"),
+                }
             }
             log::info!("Requirement fulfilled");
             fulfilled = true;

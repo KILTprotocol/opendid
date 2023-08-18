@@ -62,6 +62,24 @@ podman run -it -d --rm \
 
 You can now go to [http://localhost:1606/login.html](http://localhost:1606/login.html) to see a login page from the demo application. When you click on login, you will be redirected to the simple-auth-relay-app login screen where you authenticate using your wallet. After success you will be redirected back to the application and the token will be used to access a protected resource.
 
+### Additional features
+
+#### Check the claims contents using a regular expression
+
+If you want to restrict access to your application based on the contents of the claims, you can use a regular expression to check the contents of the claims. For this you can add the `regexCheck` property within a credential requirement specification in the config file.
+    
+```yaml
+# ...
+credentialRequirements:
+  - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
+    trustedAttesters: ["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
+    requiredProperties: ["Email"]
+    regexCheck:
+      selector: "$.Email"
+      regex: "@kilt.io$"
+# ...
+```
+
 ### Cleanup and delete the DID
 
 If you want to delete the DID you generated earlier, you can use the `simple-auth-relay-app-setup` image again. It will use the authentication key from the `did-secrets.json` file to delete the DID from the blockchain. 

@@ -105,7 +105,7 @@ impl WellKnownDidConfig {
                 hex_encode(hasher.finalize())
             })
             .collect::<Vec<String>>();
-        let (nonce_map, salted_hashes) = {
+        let (_nonce_map, salted_hashes) = {
             let mut nonces = HashMap::new();
             let mut salted_hashes = Vec::new();
             hashes.iter().for_each(|hash| {

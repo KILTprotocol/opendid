@@ -60,6 +60,14 @@ pub struct CredentialRequirement {
     pub trusted_attesters: Vec<String>,
     #[serde(rename = "requiredProperties")]
     pub required_properties: Vec<String>,
+    #[serde(rename = "regexCheck")]
+    pub regex_check: Option<RegexCheck>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RegexCheck {
+    pub selector: String,
+    pub regex: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -114,9 +114,16 @@ export function App() {
                 window.location.href = credentialResponseResponse.url
                 return
             }
-            const credentialResponseData = await credentialResponseResponse.json();
-            console.log('response to posted credential', credentialResponseData);
-            setLoginResponse(credentialResponseData);            
+            const contentType = credentialResponseResponse.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const credentialResponseData = await credentialResponseResponse.json();
+                console.log('response to posted credential', credentialResponseData);
+                setLoginResponse(credentialResponseData);
+            } else {
+                const errorMessage = await credentialResponseResponse.text();
+                console.error('error response to posted credential', errorMessage);
+                setError(errorMessage);
+            }
         } catch (e) {
             console.error(e);
             setError(e.message);
