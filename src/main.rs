@@ -12,6 +12,7 @@ use clap::Parser;
 use serde::{Deserialize, Serialize};
 use well_known_did_config::create_well_known_did_config;
 
+mod cli;
 mod config;
 mod jwt;
 mod kilt;
@@ -20,7 +21,6 @@ mod routes;
 mod util;
 mod verify;
 mod well_known_did_config;
-mod cli;
 
 use crate::{
     config::{Config, CredentialRequirement},

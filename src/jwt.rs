@@ -1,7 +1,7 @@
-use jwt::VerifyWithKey;
-use serde::{Deserialize, Serialize};
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
+use jwt::VerifyWithKey;
+use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -132,7 +132,6 @@ impl TokenFactory {
         Ok(token)
     }
 }
-
 
 // tests
 #[cfg(test)]
