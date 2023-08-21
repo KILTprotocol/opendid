@@ -8,7 +8,7 @@ use actix_web::{
     middleware::Logger,
     web, App, HttpServer,
 };
-use config::{SessionConfig, JWTConfig, WellKnownDidConfig};
+use config::{JWTConfig, SessionConfig, WellKnownDidConfig};
 use serde::{Deserialize, Serialize};
 use well_known_did_config::create_well_known_did_config;
 
@@ -91,23 +91,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => Config {
             host: "127.0.0.1".to_string(),
             port: 3002,
-            session_config: SessionConfig{
+            session_config: SessionConfig {
                 session_key: matches
-                .get_one::<String>("session-key")
-                .ok_or("missing session key")?
-                .clone(),
-            key_uri: matches
-                .get_one::<String>("key-uri")
-                .ok_or("missing key uri")?
-                .clone(),
-            nacl_public_key: matches
-                .get_one::<String>("nacl-public-key")
-                .ok_or("missing nacl public key")?
-                .clone(),
-            nacl_secret_key: matches
-                .get_one::<String>("nacl-secret-key")
-                .ok_or("missing nacl secret key")?
-                .clone(),
+                    .get_one::<String>("session-key")
+                    .ok_or("missing session key")?
+                    .clone(),
+                key_uri: matches
+                    .get_one::<String>("key-uri")
+                    .ok_or("missing key uri")?
+                    .clone(),
+                nacl_public_key: matches
+                    .get_one::<String>("nacl-public-key")
+                    .ok_or("missing nacl public key")?
+                    .clone(),
+                nacl_secret_key: matches
+                    .get_one::<String>("nacl-secret-key")
+                    .ok_or("missing nacl secret key")?
+                    .clone(),
             },
             jwt_config: JWTConfig {
                 token_issuer: "dev-auth".to_string(),
@@ -118,7 +118,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 token_secret: "secret".to_string(),
             },
             credential_requirements: vec![],
-            well_known_did_config: WellKnownDidConfig{
+            well_known_did_config: WellKnownDidConfig {
                 did: "".to_string(),
                 key_uri: "".to_string(),
                 origin: "".to_string(),

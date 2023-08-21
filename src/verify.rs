@@ -54,39 +54,42 @@ fn normalize_claim(claim: &Claim) -> Result<Vec<String>, Box<dyn std::error::Err
 pub fn check_claim_contents(
     msg: &Message<Vec<SubmitCredentialMessageBodyContent>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    msg.body.content.iter().try_for_each(|content| -> Result<(), Box<dyn std::error::Error>> {
-        let normalized_parts = normalize_claim(&content.claim)?;
-        // At this point we can calculate the hashes of the normalized statements using blake2b256
-        let hashes = normalized_parts
-            .iter()
-            .map(|part| -> String {
-                let mut hasher = Blake2b256::new();
-                hasher.update(part.as_str());
-                hex_encode(hasher.finalize())
-            })
-            .collect::<Vec<String>>();
+    msg.body
+        .content
+        .iter()
+        .try_for_each(|content| -> Result<(), Box<dyn std::error::Error>> {
+            let normalized_parts = normalize_claim(&content.claim)?;
+            // At this point we can calculate the hashes of the normalized statements using blake2b256
+            let hashes = normalized_parts
+                .iter()
+                .map(|part| -> String {
+                    let mut hasher = Blake2b256::new();
+                    hasher.update(part.as_str());
+                    hex_encode(hasher.finalize())
+                })
+                .collect::<Vec<String>>();
 
-        // Each of these hashes should have a corresponding nonce in the nonce map
-        // The nonce hashed together with the hash should be listed in the claim_hashes of the credential
-        hashes
-            .iter()
-            .try_for_each(|hash| -> Result<(), Box<dyn std::error::Error>> {
-                let nonce = content
-                    .claim_nonce_map
-                    .get(hash)
-                    .ok_or("InvalidClaimContents")?;
-                let mut hasher = Blake2b256::new();
-                hasher.update(nonce);
-                hasher.update(hash);
-                let salted_hash = hex_encode(hasher.finalize());
-                if !content.claim_hashes.contains(&salted_hash) {
-                    Err("InvalidClaimContents".into())
-                } else {
-                    Ok(())
-                }
-            })?;
-        Ok(())
-    })?;
+            // Each of these hashes should have a corresponding nonce in the nonce map
+            // The nonce hashed together with the hash should be listed in the claim_hashes of the credential
+            hashes
+                .iter()
+                .try_for_each(|hash| -> Result<(), Box<dyn std::error::Error>> {
+                    let nonce = content
+                        .claim_nonce_map
+                        .get(hash)
+                        .ok_or("InvalidClaimContents")?;
+                    let mut hasher = Blake2b256::new();
+                    hasher.update(nonce);
+                    hasher.update(hash);
+                    let salted_hash = hex_encode(hasher.finalize());
+                    if !content.claim_hashes.contains(&salted_hash) {
+                        Err("InvalidClaimContents".into())
+                    } else {
+                        Ok(())
+                    }
+                })?;
+            Ok(())
+        })?;
 
     // Claims are valid if we get here!
     Ok(())
@@ -96,19 +99,22 @@ pub fn check_claim_contents(
 pub fn check_root_hash(
     msg: &Message<Vec<SubmitCredentialMessageBodyContent>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    msg.body.content.iter().try_for_each(|content| -> Result<(), Box<dyn std::error::Error>> {
-        let mut hasher = Blake2b256::new();
-        for hash in content.claim_hashes.iter() {
-            let data = hex_decode(hash)?;
-            hasher.update(&data);
-        }
-        let root_hash = hex_encode(hasher.finalize());
-        if root_hash != content.root_hash {
-            Err("InvalidRootHash".into())
-        }else{
-            Ok(())
-        }
-    })
+    msg.body
+        .content
+        .iter()
+        .try_for_each(|content| -> Result<(), Box<dyn std::error::Error>> {
+            let mut hasher = Blake2b256::new();
+            for hash in content.claim_hashes.iter() {
+                let data = hex_decode(hash)?;
+                hasher.update(&data);
+            }
+            let root_hash = hex_encode(hasher.finalize());
+            if root_hash != content.root_hash {
+                Err("InvalidRootHash".into())
+            } else {
+                Ok(())
+            }
+        })
 }
 
 pub async fn check_signature(
@@ -123,11 +129,7 @@ pub async fn check_signature(
         let did = content.claim.owner.clone();
         let public_key = get_auth_pubkey(&did, cli).await?;
         // get the signature from the message
-        let signature = hex_decode(content
-                .claimer_signature
-                .signature
-                .trim_start_matches("0x"),
-        )?;
+        let signature = hex_decode(content.claimer_signature.signature.trim_start_matches("0x"))?;
         // get the root hash from the message
         let root_hash = hex_decode(content.root_hash.trim_start_matches("0x"))?;
 
@@ -138,11 +140,19 @@ pub async fn check_signature(
                 Ok(signature) => signature.verify(signature_data.as_slice(), &public_key.into()),
                 Err(_) => {
                     match sp_core::sr25519::Signature::decode(&mut IoReader(signature.as_slice())) {
-                        Ok(signature) => signature.verify(signature_data.as_slice(), &sp_core::sr25519::Public(public_key.into())),
+                        Ok(signature) => signature.verify(
+                            signature_data.as_slice(),
+                            &sp_core::sr25519::Public(public_key.into()),
+                        ),
                         Err(_) => {
-                            match sp_core::ed25519::Signature::decode(&mut IoReader(signature.as_slice())) {
-                                Ok(signature) => signature.verify(signature_data.as_slice(), &sp_core::ed25519::Public(public_key.into())),
-                                Err(_) => false
+                            match sp_core::ed25519::Signature::decode(&mut IoReader(
+                                signature.as_slice(),
+                            )) {
+                                Ok(signature) => signature.verify(
+                                    signature_data.as_slice(),
+                                    &sp_core::ed25519::Public(public_key.into()),
+                                ),
+                                Err(_) => false,
                             }
                         }
                     }
@@ -172,7 +182,7 @@ async fn check_attestation(
         log::info!("Attestation not revoked");
         attestations.push(attestation);
     }
-    Ok(attestations)    
+    Ok(attestations)
 }
 
 pub async fn verify_credential_message(

@@ -166,11 +166,16 @@ mod tests {
             "authentication",
         );
         let secret = "secret";
-        let access_token = token_builder.new_access_token("did:kilt:user", "user", &serde_json::Map::new(), &None);
+        let access_token =
+            token_builder.new_access_token("did:kilt:user", "user", &serde_json::Map::new(), &None);
         let jwt = access_token.to_jwt(secret).unwrap();
         println!("access_token {jwt}");
-        let refresh_token =
-            token_builder.new_refresh_token("did:kilt:user", "user", &serde_json::Map::new(), &None);
+        let refresh_token = token_builder.new_refresh_token(
+            "did:kilt:user",
+            "user",
+            &serde_json::Map::new(),
+            &None,
+        );
         let jwt = refresh_token.to_jwt(secret).unwrap();
         println!("refresh_token {jwt}");
     }

@@ -7,21 +7,20 @@ use serde_json::json;
 use sodiumoxide::crypto::box_;
 use sp_core::{crypto::Ss58Codec, H256};
 
-use subxt::{OnlineClient, utils::AccountId32};
+use subxt::{utils::AccountId32, OnlineClient};
 
 use crate::{
     config::CredentialRequirement,
     kilt::{
         self,
-        runtime_types::{
-            did::did_details::{DidEncryptionKey, DidPublicKey},
-        },
+        runtime_types::did::did_details::{DidEncryptionKey, DidPublicKey},
         KiltConfig,
     },
     messages::{EncryptedMessage, Message, MessageBody},
+    routes::AuthorizeQueryParameters,
     util::{get_did_doc, parse_encryption_key_from_lightdid},
     verify::verify_credential_message,
-    AppState, routes::AuthorizeQueryParameters,
+    AppState,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -82,7 +81,10 @@ async fn get_credential_requirements_handler(
         Ok(_) => (),
         _ => return HttpResponse::Unauthorized().body("Could not store challenge"),
     };
-    let sender = app_state.encryption_key_uri.split('#').collect::<Vec<&str>>()[0];
+    let sender = app_state
+        .encryption_key_uri
+        .split('#')
+        .collect::<Vec<&str>>()[0];
     let msg = Message {
         body: MessageBody {
             type_: "request-credential".to_string(),
@@ -157,10 +159,10 @@ async fn post_credential_handler(
         _ => return HttpResponse::BadRequest().body("Could not decrypt message"),
     };
 
-    { // Logging stuff
+    {
+        // Logging stuff
         let data: serde_json::Value = serde_json::from_slice(&decrypted_msg).unwrap();
         log::info!("Decrypted message: {:?}", data);
-
     }
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         match serde_json::from_slice(&decrypted_msg) {
@@ -189,7 +191,7 @@ async fn post_credential_handler(
     // go through all credential requirements and check that at least one is fulfilled with the given cred
     let mut fulfilled = false;
     let mut props = serde_json::Map::new();
-    
+
     for i in 0..attestations.len() {
         let attestation = &attestations[i];
         let content = &content.body.content[i];
@@ -198,7 +200,7 @@ async fn post_credential_handler(
             sp_runtime::AccountId32::from(attestation.attester.0)
                 .to_ss58check_with_version(38u16.into())
         );
-        
+
         for requirement in &app_state.credential_requirements {
             if requirement.ctype_hash != content.claim.ctype_id {
                 log::info!("Requirement ctype hash does not match");
@@ -239,9 +241,8 @@ async fn post_credential_handler(
             }
             break;
         }
-    
     }
-    
+
     if !fulfilled {
         log::info!("No credential requirement fulfilled");
         return HttpResponse::BadRequest().body("No credential requirement fulfilled");
@@ -280,31 +281,36 @@ async fn post_credential_handler(
     if let Some(redirect_url) = &query.redirect {
         return HttpResponse::Found()
             .append_header((
-                "Location", 
-                format!("{}?access_token={}&refresh_token={}",redirect_url, access_token, refresh_token)
-            )).finish();
+                "Location",
+                format!(
+                    "{}?access_token={}&refresh_token={}",
+                    redirect_url, access_token, refresh_token
+                ),
+            ))
+            .finish();
     }
 
     match &oauth_context {
         Some(context) => {
             log::info!("Got oauth context from session");
             HttpResponse::Found()
-            .append_header((
-                "Location", 
-                format!("{}?access_token={}&refresh_token={}&state={}",
-                    context.redirect_uri.clone(), 
-                    access_token, 
-                    refresh_token,
-                    context.state.clone(),
-                )
-            )).finish()
-        },
-        _ =>  HttpResponse::Ok().json(json!({
+                .append_header((
+                    "Location",
+                    format!(
+                        "{}?access_token={}&refresh_token={}&state={}",
+                        context.redirect_uri.clone(),
+                        access_token,
+                        refresh_token,
+                        context.state.clone(),
+                    ),
+                ))
+                .finish()
+        }
+        _ => HttpResponse::Ok().json(json!({
             "accessToken": access_token,
             "refreshToken": refresh_token,
-        }))
+        })),
     }
-
 }
 
 async fn get_encryption_key_from_fulldid_key_uri(
@@ -334,20 +340,19 @@ async fn get_encryption_key_from_fulldid_key_uri(
     }
 }
 
-async fn get_w3n(did: &str, cli: &OnlineClient<KiltConfig>) -> Result<String, Box<dyn std::error::Error>> {
-    let account_id = match subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:")) {
+async fn get_w3n(
+    did: &str,
+    cli: &OnlineClient<KiltConfig>,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let account_id = match subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:"))
+    {
         Ok(id) => id,
         _ => return Err("Invalid DID".into()),
     };
     let storage_key = kilt::storage().web3_names().names(account_id);
-    let name = cli
-        .storage()
-        .at_latest()
-        .await?
-        .fetch(&storage_key)
-        .await?;
+    let name = cli.storage().at_latest().await?.fetch(&storage_key).await?;
     if let Some(name) = name {
-        Ok(String::from_utf8(name.0.0)?)
+        Ok(String::from_utf8(name.0 .0)?)
     } else {
         Ok("".into())
     }

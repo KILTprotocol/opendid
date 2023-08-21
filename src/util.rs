@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, Bytes};
 use subxt::OnlineClient;
 
-use crate::kilt::{KiltConfig, self};
+use crate::kilt::{self, KiltConfig};
 
 #[serde_as]
 #[derive(Clone, Debug, Serialize, Deserialize)]

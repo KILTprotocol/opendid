@@ -37,7 +37,8 @@ podman run -d --rm \
     quay.io/kilt/simple-auth-relay-app:latest
 ```
 
-Now you can visit http://localhost:3001/ and see the login page. You can use the DID from your wallet to login.
+Now you can visit http://localhost:3001/ and see the login page.
+You can use the DID from your wallet to login.
 If you don't have a DID yet, you can create one with [Sporran](https://www.sporran.org/).
 
 ### Integrate the service into your application

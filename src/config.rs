@@ -80,7 +80,11 @@ pub struct OauthConfig {
 impl Config {
     pub fn get_session_key(&self) -> Key {
         if self.session_config.session_key.len() >= 32 {
-            Key::from(hex::decode(self.session_config.session_key.trim_start_matches("0x")).unwrap().as_slice())
+            Key::from(
+                hex::decode(self.session_config.session_key.trim_start_matches("0x"))
+                    .unwrap()
+                    .as_slice(),
+            )
         } else {
             Key::generate()
         }

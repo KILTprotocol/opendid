@@ -1,6 +1,6 @@
 use actix_session::Session;
 use actix_web::{get, web, HttpResponse, Responder};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::AppState;
 
@@ -18,7 +18,11 @@ pub struct AuthorizeQueryParameters {
 // after that it stores the query parameters in the session and redirects the user to the login page.
 
 #[get("/api/v1/authorize")]
-async fn authorize_handler(session: Session, app_state: web::Data<AppState>, query: web::Query<AuthorizeQueryParameters>) -> impl Responder {
+async fn authorize_handler(
+    session: Session,
+    app_state: web::Data<AppState>,
+    query: web::Query<AuthorizeQueryParameters>,
+) -> impl Responder {
     log::info!("GET authorize handler");
     log::info!("GET authorize handler");
     let redirect_urls = if let Some(oauth_config) = &app_state.oauth_config {
