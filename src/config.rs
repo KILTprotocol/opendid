@@ -10,6 +10,7 @@ use crate::jwt::TokenFactory;
 pub struct Config {
     pub host: String,
     pub port: u16,
+    pub production: bool,
     #[serde(rename = "basePath")]
     pub base_path: String,
     #[serde(rename = "credentialRequirements")]

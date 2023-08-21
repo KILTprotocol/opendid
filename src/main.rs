@@ -9,7 +9,6 @@ use actix_web::{
     web, App, HttpServer,
 };
 use clap::Parser;
-use config::{JWTConfig, SessionConfig, WellKnownDidConfig};
 use serde::{Deserialize, Serialize};
 use well_known_did_config::create_well_known_did_config;
 
@@ -78,7 +77,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .cookie_content_security(CookieContentSecurity::Private)
                     .cookie_http_only(true)
                     .cookie_same_site(SameSite::Lax)
-                    .cookie_secure(false) // TODO: set to true when using HTTPS!
+                    .cookie_secure(config.production)
                     .cookie_name("sara".to_string())
                     .session_lifecycle(
                         PersistentSession::default().session_ttl(Duration::seconds(60)),

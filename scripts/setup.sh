@@ -78,12 +78,13 @@ JWT_SECRET='super-secret-jwt-secret'
 echo "Writing login config file to config.yaml..."
 
 cat > /data/config.yaml <<EOF
-# kiltlogin config file
+# Simple-Auth-Relay-App config file
 
 # server config
 host: 0.0.0.0
 port: 3001
 basePath: /srv
+production: false
 
 # session config
 # contains the keyUri, naclSecretKey, naclPublicKey and sessionKey used to communicate with the identity extension
