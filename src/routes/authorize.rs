@@ -20,18 +20,27 @@ pub struct AuthorizeQueryParameters {
 #[get("/api/v1/authorize")]
 async fn authorize_handler(session: Session, app_state: web::Data<AppState>, query: web::Query<AuthorizeQueryParameters>) -> impl Responder {
     log::info!("GET authorize handler");
-    if let Some(oauth_config) =&app_state.oauth_config {
-        let redirect_urls = oauth_config.redirect_urls.get(&query.client_id);
-        if let Some(redirect_urls) = redirect_urls {
-            if redirect_urls.contains(&query.redirect_uri) {
-                session.insert("oauth-context", query.clone().into_inner()).unwrap();
-                return HttpResponse::Found().append_header(("Location", "/")).finish();
-            } else {
-                return HttpResponse::BadRequest().body("Invalid redirect_uri");
-            }
-        } else {
-            return HttpResponse::BadRequest().body("Invalid client_id");
-        }
+    log::info!("GET authorize handler");
+    let redirect_urls = if let Some(oauth_config) = &app_state.oauth_config {
+        oauth_config.redirect_urls.get(&query.client_id)
+    } else {
+        return HttpResponse::BadRequest().body("OAuth is not configured");
+    };
+
+    let redirect_urls = if let Some(redirect_urls) = redirect_urls {
+        redirect_urls
+    } else {
+        return HttpResponse::BadRequest().body("Invalid client_id");
+    };
+
+    if redirect_urls.contains(&query.redirect_uri) {
+        session
+            .insert("oauth-context", query.clone().into_inner())
+            .unwrap();
+        return HttpResponse::Found()
+            .append_header(("Location", "/"))
+            .finish();
+    } else {
+        return HttpResponse::BadRequest().body("Invalid redirect_uri");
     }
-    return HttpResponse::BadRequest().body("OAuth is not configured");
 }
