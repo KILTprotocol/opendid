@@ -14,9 +14,8 @@ pub struct AuthorizeQueryParameters {
     pub nonce: String,
 }
 
-// This handler is the oauth entrypoint. It parses the query parameters and checks of the client_id and redirect_uri are valid.
-// after that it stores the query parameters in the session and redirects the user to the login page.
-
+/// This handler is the oauth entrypoint. It parses the query parameters and checks of the client_id and redirect_uri are valid.
+/// after that it stores the query parameters in the session and redirects the user to the login page.
 #[get("/api/v1/authorize")]
 async fn authorize_handler(
     session: Session,
