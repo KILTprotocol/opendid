@@ -1,5 +1,8 @@
 use jwt::VerifyWithKey;
 use serde::{Deserialize, Serialize};
+use hmac::{Hmac, Mac};
+use jwt::SignWithKey;
+use sha2::Sha256;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Token {
@@ -19,6 +22,14 @@ pub struct Token {
     pub properties: serde_json::Map<String, serde_json::Value>,
     #[serde(rename = "nonce")]
     pub nonce: Option<String>,
+}
+
+impl Token {
+    pub fn to_jwt(&self, secret: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let key: Hmac<Sha256> = Hmac::new_from_slice(secret.as_bytes())?;
+        let jwt = self.sign_with_key(&key)?;
+        Ok(jwt)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,17 +133,6 @@ impl TokenFactory {
     }
 }
 
-use hmac::{Hmac, Mac};
-use jwt::SignWithKey;
-use sha2::Sha256;
-
-impl Token {
-    pub fn to_jwt(&self, secret: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let key: Hmac<Sha256> = Hmac::new_from_slice(secret.as_bytes())?;
-        let jwt = self.sign_with_key(&key)?;
-        Ok(jwt)
-    }
-}
 
 // tests
 #[cfg(test)]
