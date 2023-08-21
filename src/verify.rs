@@ -3,7 +3,6 @@ use std::str::FromStr;
 use hmac::digest::typenum::U32;
 use serde_json::json;
 use sp_core::{Decode, H256};
-use sp_runtime::app_crypto::RuntimePublic;
 use sp_runtime::codec::IoReader;
 use sp_runtime::traits::Verify;
 use subxt::OnlineClient;
@@ -137,7 +136,7 @@ pub async fn check_signature(
         let signature_data = [root_hash, challenge.to_owned()].concat();
         let valid = {
             match sp_runtime::MultiSignature::decode(&mut IoReader(signature.as_slice())) {
-                Ok(signature) => signature.verify(signature_data.as_slice(), &public_key.into()),
+                Ok(signature) => signature.verify(signature_data.as_slice(), &public_key),
                 Err(_) => {
                     match sp_core::sr25519::Signature::decode(&mut IoReader(signature.as_slice())) {
                         Ok(signature) => signature.verify(

@@ -7,7 +7,7 @@ use serde_json::json;
 use sodiumoxide::crypto::box_;
 use sp_core::{crypto::Ss58Codec, H256};
 
-use subxt::{utils::AccountId32, OnlineClient};
+use subxt::OnlineClient;
 
 use crate::{
     config::CredentialRequirement,
@@ -192,8 +192,7 @@ async fn post_credential_handler(
     let mut fulfilled = false;
     let mut props = serde_json::Map::new();
 
-    for i in 0..attestations.len() {
-        let attestation = &attestations[i];
+    for (i, attestation) in attestations.iter().enumerate() {
         let content = &content.body.content[i];
         let credential_attester_did = format!(
             "did:kilt:{}",

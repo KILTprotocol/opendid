@@ -45,6 +45,6 @@ async fn authorize_handler(
             .append_header(("Location", "/"))
             .finish();
     } else {
-        return HttpResponse::BadRequest().body("Invalid redirect_uri");
+        HttpResponse::BadRequest().body("Invalid redirect_uri")
     }
 }
