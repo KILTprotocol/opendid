@@ -37,11 +37,16 @@ podman run -d --rm \
     quay.io/kilt/simple-auth-relay-app:latest
 ```
 
-Now you can visit http://localhost:3001/ and see the login page. You can use the DID from your wallet to login. If you don't have a DID yet, you can create one with [Sporran](https://www.sporran.org/).
+Now you can visit http://localhost:3001/ and see the login page. You can use the DID from your wallet to login.
+If you don't have a DID yet, you can create one with [Sporran](https://www.sporran.org/).
 
 ### Integrate the service into your application
 
-The service implements the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), therefore it is very simple to integrate. All you have to do is to redirect the user to the login page and then handle the redirect back to your application. The redirect will contain a JWT token in the URL. You can use this token to authenticate the user in your application. The token will contain the DID of the user and the claims from the Verifiable Credential that was used to authenticate the user. You can use this information to check if the user is allowed to access your application.
+The service implements the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), therefore it is very simple to integrate.
+All you have to do is to redirect the user to the login page and then handle the redirect back to your application.
+The redirect will contain a JWT token in the URL. You can use this token to authenticate the user in your application.
+The token will contain the DID of the user and the claims from the Verifiable Credential that was used to authenticate the user.
+You can use this information to check if the user is allowed to access your application.
 
 #### Example
 
