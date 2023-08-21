@@ -2268,39 +2268,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kilt-login"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-files",
- "actix-session",
- "actix-web",
- "base58",
- "blake2",
- "chrono",
- "clap",
- "env_logger",
- "hex",
- "hmac 0.12.1",
- "jwt",
- "lazy_static",
- "log",
- "rand 0.8.5",
- "schnorrkel 0.10.2",
- "serde",
- "serde_cbor",
- "serde_json",
- "serde_with",
- "serde_yaml",
- "sha2 0.10.7",
- "sodiumoxide",
- "sp-core",
- "sp-runtime",
- "subxt",
- "uuid",
-]
-
-[[package]]
 name = "language-tags"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3684,6 +3651,39 @@ name = "signature"
 version = "1.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74233d3b3b2f6d4b006dc19dee745e73e2a6bfb6f93607cd3b02bd5b00797d7c"
+
+[[package]]
+name = "simple-auth-relay-app"
+version = "0.1.0"
+dependencies = [
+ "actix-cors",
+ "actix-files",
+ "actix-session",
+ "actix-web",
+ "base58",
+ "blake2",
+ "chrono",
+ "clap",
+ "env_logger",
+ "hex",
+ "hmac 0.12.1",
+ "jwt",
+ "lazy_static",
+ "log",
+ "rand 0.8.5",
+ "schnorrkel 0.10.2",
+ "serde",
+ "serde_cbor",
+ "serde_json",
+ "serde_with",
+ "serde_yaml",
+ "sha2 0.10.7",
+ "sodiumoxide",
+ "sp-core",
+ "sp-runtime",
+ "subxt",
+ "uuid",
+]
 
 [[package]]
 name = "siphasher"

@@ -1,6 +1,4 @@
 APP_NAME=simple-auth-relay-app
-PAYMENT_SEED="eye angry flavor pumpkin require oppose cigar fringe eight breeze valley digital"
-
 MAIN_IMAGE="quay.io/kilt/$(APP_NAME)"
 SETUP_IMAGE="quay.io/kilt/$(APP_NAME)-setup"
 DEMO_IMAGE="quay.io/kilt/$(APP_NAME)-demo"
@@ -21,13 +19,13 @@ config.yaml: setup-image
 delete-did: simple-auth-relay-app-setup-image
 	podman run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash $(SETUP_IMAGE) /app/scripts/delete-did.sh $(PAYMENT_SEED)
 
-binary: target/release/kilt-login
-target/release/kilt-login: $(shell find ./src -type f -name '*.rs')
+binary: target/release/simple-auth-relay-app
+target/release/simple-auth-relay-app: $(shell find ./src -type f -name '*.rs')
 	cargo build --release
 
 
 main-image: .main-image
-.main-image: scripts/Containerfile target/release/kilt-login login-frontend/dist/index.html
+.main-image: scripts/Containerfile target/release/simple-auth-relay-app login-frontend/dist/index.html
 	podman build -t $(MAIN_IMAGE):latest -f scripts/Containerfile .
 	touch .main-image
 
