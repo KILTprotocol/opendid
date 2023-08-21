@@ -22,7 +22,7 @@ pub struct Token {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TokenBuilder {
+pub struct TokenFactory {
     issuer: String,
     access_token_lifetime: i64,
     access_token_audience: String,
@@ -30,7 +30,7 @@ pub struct TokenBuilder {
     refresh_token_audience: String,
 }
 
-impl TokenBuilder {
+impl TokenFactory {
     pub fn new(
         issuer: &str,
         access_token_lifetime: i64,
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_token_builder() {
-        let token_builder = TokenBuilder::new(
+        let token_builder = TokenFactory::new(
             "did:kilt:verifier",
             30,
             "application",

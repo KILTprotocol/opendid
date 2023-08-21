@@ -23,7 +23,7 @@ mod well_known_did_config;
 
 use crate::{
     config::{Config, CredentialRequirement},
-    jwt::TokenBuilder,
+    jwt::TokenFactory,
     routes::*,
 };
 
@@ -35,7 +35,7 @@ struct AppState {
     public_key: Vec<u8>,
     secret_key: Vec<u8>,
     credential_requirements: Vec<CredentialRequirement>,
-    token_builder: TokenBuilder,
+    token_builder: TokenFactory,
     token_secret: String,
     well_known_did_config: well_known_did_config::WellKnownDidConfig,
     oauth_config: Option<config::OauthConfig>,
@@ -145,7 +145,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         public_key: config.get_nacl_public_key()?,
         secret_key: config.get_nacl_secret_key()?,
         credential_requirements: config.credential_requirements.clone(),
-        token_builder: config.get_token_builder(),
+        token_builder: config.get_token_factory(),
         token_secret: config.jwt_config.token_secret.clone(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
         oauth_config: config.oauth_config.clone(),

@@ -4,7 +4,7 @@ use actix_web::cookie::Key;
 use hex::FromHexError;
 use serde::{Deserialize, Serialize};
 
-use crate::jwt::TokenBuilder;
+use crate::jwt::TokenFactory;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -98,8 +98,8 @@ impl Config {
         hex::decode(self.session_config.nacl_secret_key.trim_start_matches("0x"))
     }
 
-    pub fn get_token_builder(&self) -> TokenBuilder {
-        TokenBuilder::new(
+    pub fn get_token_factory(&self) -> TokenFactory {
+        TokenFactory::new(
             &self.jwt_config.token_issuer,
             self.jwt_config.access_token_lifetime,
             &self.jwt_config.access_token_audience,
