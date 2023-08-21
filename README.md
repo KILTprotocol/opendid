@@ -9,7 +9,7 @@ It therefore acts as a bridge between the decentralized identity world and the c
 
 - a KILT account with at least 3 KILT tokens
 - an identity wallet like [Sporran](https://www.sporran.org/)
-- a DID with a Verifiable Credential for testing the login
+- a DID with a Verifiable Credential for testing from for example [SocialKYC](https://socialkyc.io)
 - a laptop or desktop computer with a container engine like podman or docker installed
 
 If you want to install podman on your machine (which I would recommend), you can follow the instructions [here](https://podman.io/getting-started/installation). If you have docker and want to stick with it, you can just replace every occurence of `podman` with `docker` in the following instructions.
