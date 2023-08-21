@@ -23,7 +23,7 @@ mod verify;
 mod well_known_did_config;
 
 use crate::{
-    config::{Config, CredentialRequirement},
+    config::CredentialRequirement,
     jwt::TokenFactory,
     routes::*,
 };
