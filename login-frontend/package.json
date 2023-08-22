@@ -1,12 +1,12 @@
 {
-  "name": "example-frontend",
+  "name": "login-frontend",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "parcel index.html --open",
-    "start": "parcel index.html",
-    "build": "parcel build index.html"
+    "dev": "parcel src/index.html --open",
+    "start": "parcel src/index.html",
+    "build": "parcel build src/index.html"
   },
   "devDependencies": {
     "@types/react": "^18.2.13",

@@ -1,13 +1,16 @@
+use std::collections::HashMap;
+
 use actix_web::cookie::Key;
 use hex::FromHexError;
 use serde::{Deserialize, Serialize};
 
-use crate::jwt::TokenBuilder;
+use crate::jwt::TokenFactory;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     pub host: String,
     pub port: u16,
+    pub production: bool,
     #[serde(rename = "basePath")]
     pub base_path: String,
     #[serde(rename = "credentialRequirements")]
@@ -18,6 +21,8 @@ pub struct Config {
     pub jwt_config: JWTConfig,
     #[serde(rename = "wellKnownDid")]
     pub well_known_did_config: WellKnownDidConfig,
+    #[serde(rename = "oauth")]
+    pub oauth_config: Option<OauthConfig>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -67,10 +72,20 @@ pub struct WellKnownDidConfig {
     pub seed: String,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OauthConfig {
+    #[serde(rename = "redirectUrls")]
+    pub redirect_urls: HashMap<String, Vec<String>>,
+}
+
 impl Config {
     pub fn get_session_key(&self) -> Key {
         if self.session_config.session_key.len() >= 32 {
-            Key::from(hex::decode(self.session_config.session_key.trim_start_matches("0x")).unwrap().as_slice())
+            Key::from(
+                hex::decode(self.session_config.session_key.trim_start_matches("0x"))
+                    .unwrap()
+                    .as_slice(),
+            )
         } else {
             Key::generate()
         }
@@ -84,8 +99,8 @@ impl Config {
         hex::decode(self.session_config.nacl_secret_key.trim_start_matches("0x"))
     }
 
-    pub fn get_token_builder(&self) -> TokenBuilder {
-        TokenBuilder::new(
+    pub fn get_token_factory(&self) -> TokenFactory {
+        TokenFactory::new(
             &self.jwt_config.token_issuer,
             self.jwt_config.access_token_lifetime,
             &self.jwt_config.access_token_audience,

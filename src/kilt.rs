@@ -8,10 +8,6 @@ pub mod kilt {}
 // re-export all the auto generated code
 pub use kilt::*;
 
-pub type ProxyType = kilt::runtime_types::spiritnet_runtime::ProxyType;
-pub type RuntimeCall = kilt::runtime_types::spiritnet_runtime::RuntimeCall;
-pub type RuntimeEvent = kilt::runtime_types::spiritnet_runtime::RuntimeEvent;
-
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct KiltConfig;
 impl Config for KiltConfig {

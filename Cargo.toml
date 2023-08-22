@@ -1,9 +1,8 @@
 [package]
-name = "kilt-login"
+name = "simple-auth-relay-app"
+authors = ["KILT <info@kilt.io>"]
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 actix-web = "4"
@@ -19,7 +18,7 @@ sp-runtime = "24.0.0"
 serde_cbor = "0.11.2"
 base58 = "0.2.0"
 sodiumoxide = "0.2.7"
-clap = "4.3.5"
+clap = { version = "4.3.5", features = ["derive"] }
 schnorrkel = { version = "0.10.2", features = ["preaudit_deprecated", "u64_backend"], default-features = false }
 env_logger = "0.10.0"
 log = "0.4.19"
