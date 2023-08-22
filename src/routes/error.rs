@@ -1,5 +1,4 @@
-use actix_session::{SessionInsertError, SessionGetError};
-
+use actix_session::{SessionGetError, SessionInsertError};
 
 #[derive(Debug)]
 pub enum Error {
@@ -52,15 +51,23 @@ impl Into<actix_web::Error> for Error {
     fn into(self) -> actix_web::Error {
         match self {
             // bad request
-            Error::OauthNotConfigured => actix_web::error::ErrorBadRequest("OAuth is not configured"),
+            Error::OauthNotConfigured => {
+                actix_web::error::ErrorBadRequest("OAuth is not configured")
+            }
             Error::OauthInvalidClientId => actix_web::error::ErrorBadRequest("Invalid client_id"),
-            Error::OauthInvalidRedirectUri => actix_web::error::ErrorBadRequest("Invalid redirect_uri"),
+            Error::OauthInvalidRedirectUri => {
+                actix_web::error::ErrorBadRequest("Invalid redirect_uri")
+            }
             Error::InvalidLightDid => actix_web::error::ErrorBadRequest("Invalid light DID"),
             Error::InvalidFullDid => actix_web::error::ErrorBadRequest("Invalid full DID"),
             Error::FailedToDecrypt => actix_web::error::ErrorBadRequest("Failed to decrypt"),
-            Error::FailedToParseMessage => actix_web::error::ErrorBadRequest("Failed to parse message"),
+            Error::FailedToParseMessage => {
+                actix_web::error::ErrorBadRequest("Failed to parse message")
+            }
             Error::GetChallenge => actix_web::error::ErrorBadRequest("Failed to get challenge"),
-            Error::VerifyCredential(e) => actix_web::error::ErrorBadRequest(format!("Failed to verify credential: {}", e)),
+            Error::VerifyCredential(e) => {
+                actix_web::error::ErrorBadRequest(format!("Failed to verify credential: {}", e))
+            }
             // unauthorized
             Error::SessionGetError => actix_web::error::ErrorUnauthorized("Failed to get session"),
             Error::InvalidChallenge => actix_web::error::ErrorUnauthorized("Invalid challenge"),
@@ -82,4 +89,3 @@ impl From<SessionGetError> for Error {
         Error::SessionGetError
     }
 }
-
