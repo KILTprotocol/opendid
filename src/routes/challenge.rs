@@ -6,9 +6,9 @@ use serde::{Deserialize, Serialize};
 
 use sodiumoxide::crypto::box_;
 
-use crate::AppState;
+use crate::{AppState, routes::error::Error};
 
-// Data that the user receives when starting a session
+/// Data that the user receives when starting a session
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct ChallengeData {
     #[serde(rename = "dAppName")]
@@ -31,7 +31,7 @@ impl ChallengeData {
     }
 }
 
-// Data that the user passes back to us when starting a session
+/// Data that the user passes back to us when starting a session
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct ChallengeResponse {
     #[serde(rename = "encryptionKeyUri")]
@@ -41,65 +41,44 @@ struct ChallengeResponse {
     nonce: String,
 }
 
-// GET /api/v1/challenge -> create a new challenge, store it in the cookies and send it to the user
+/// GET /api/v1/challenge -> create a new challenge, store it in the cookies and send it to the user
 #[get("/api/v1/challenge")]
-async fn challenge_handler(session: Session, app_state: web::Data<AppState>) -> impl Responder {
+async fn challenge_handler(session: Session, app_state: web::Data<AppState>) -> Result<HttpResponse, Error> {
     log::info!("GET challenge handler");
     let challenge_data = ChallengeData::new(&app_state.app_name, &app_state.encryption_key_uri);
-    session.insert("challenge", challenge_data.clone()).unwrap();
-    HttpResponse::Ok().json(challenge_data)
+    session.insert("challenge", challenge_data.clone())?;
+    Ok(HttpResponse::Ok().json(challenge_data))
 }
 
-// POST /api/v1/challenge -> check the challenge response and start a session
+/// POST /api/v1/challenge -> check the challenge response and start a session
 #[post("/api/v1/challenge")]
 async fn challenge_response_handler(
     session: Session,
     app_state: web::Data<AppState>,
     challenge_response: web::Json<ChallengeResponse>,
-) -> impl Responder {
+) -> Result<HttpResponse, Error> {
     log::info!("POST challenge handler");
-    let session_challenge = match session.get::<ChallengeData>("challenge") {
-        Ok(Some(data)) => data.challenge,
-        Ok(None) => return HttpResponse::Unauthorized().body("No session"),
-        Err(err) => return HttpResponse::Unauthorized().body(format!("Error: {err}")),
+    let session_challenge = match session.get::<ChallengeData>("challenge")? {
+        Some(data) => data.challenge,
+        None => return Err(Error::SessionGetError),
     };
-    let session_challenge_bytes = match hex::decode(session_challenge.trim_start_matches("0x")) {
-        Ok(bytes) => bytes,
-        _ => return HttpResponse::Unauthorized().body("Invalid challenge"),
-    };
-    let nonce = match hex::decode(challenge_response.nonce.trim_start_matches("0x")) {
-        Ok(nonce) => nonce,
-        _ => return HttpResponse::Unauthorized().body("Invalid nonce"),
-    };
-    let encrypted_challenge = match hex::decode(
-        challenge_response
-            .encrypted_challenge
-            .trim_start_matches("0x"),
-    ) {
-        Ok(encrypted_challenge) => encrypted_challenge,
-        _ => return HttpResponse::Unauthorized().body("Invalid encrypted challenge"),
-    };
-    let others_pubkey = match crate::util::parse_encryption_key_from_lightdid(
+    let session_challenge_bytes = hex::decode(session_challenge.trim_start_matches("0x")).map_err(|_| Error::InvalidChallenge)?;
+    let nonce = hex::decode(challenge_response.nonce.trim_start_matches("0x")).map_err(|_| Error::InvalidNonce)?;
+    let encrypted_challenge = hex::decode(challenge_response.encrypted_challenge.trim_start_matches("0x")).map_err(|_| Error::InvalidChallenge)?;
+    let others_pubkey = crate::util::parse_encryption_key_from_lightdid(
         challenge_response.encryption_key_uri.as_str(),
-    ) {
-        Ok(key) => key,
-        _ => return HttpResponse::Unauthorized().body("Invalid encryption key"),
-    };
+    ).map_err(|_|Error::InvalidLightDid)?;
     let our_secretkey = app_state.secret_key.clone();
-    let nonce = box_::Nonce::from_slice(&nonce).unwrap();
-    let pk = box_::PublicKey::from_slice(&others_pubkey).unwrap();
-    let sk = box_::SecretKey::from_slice(&our_secretkey).unwrap();
-    let decrypted_challenge = match box_::open(&encrypted_challenge, &nonce, &pk, &sk) {
-        Ok(decrypted_challenge) => decrypted_challenge,
-        _ => return HttpResponse::Unauthorized().body("Could not decrypt challenge"),
-    };
-
+    let nonce = box_::Nonce::from_slice(&nonce).ok_or(Error::InvalidNonce)?;
+    let pk = box_::PublicKey::from_slice(&others_pubkey).ok_or(Error::InvalidLightDid)?;
+    let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
+    let decrypted_challenge = box_::open(&encrypted_challenge, &nonce, &pk, &sk).map_err(|_| Error::InvalidChallenge)?;
     if session_challenge_bytes == decrypted_challenge {
         session
             .insert("key_uri", challenge_response.encryption_key_uri.clone())
             .unwrap();
-        HttpResponse::Ok().body("Challenge accepted")
+        Ok(HttpResponse::Ok().body("Challenge accepted"))
     } else {
-        HttpResponse::Unauthorized().body("Wrong challenge")
+        Err(Error::InvalidChallenge)
     }
 }
