@@ -12,6 +12,13 @@ pub enum Error {
     InvalidNonce,
     InvalidLightDid,
     InvalidPrivateKey,
+    CantConnectToBlockchain,
+    InvalidFullDid,
+    FailedToDecrypt,
+    FailedToParseMessage,
+    GetChallenge,
+    VerifyCredential(String),
+    CreateJWT,
     Other(String),
 }
 
@@ -29,6 +36,13 @@ impl std::fmt::Display for Error {
             Error::InvalidNonce => write!(f, "Invalid nonce"),
             Error::InvalidLightDid => write!(f, "Invalid light DID"),
             Error::InvalidPrivateKey => write!(f, "Invalid private key"),
+            Error::CantConnectToBlockchain => write!(f, "Can't connect to KILT blockchain"),
+            Error::InvalidFullDid => write!(f, "Invalid full DID"),
+            Error::FailedToDecrypt => write!(f, "Failed to decrypt"),
+            Error::FailedToParseMessage => write!(f, "Failed to parse message"),
+            Error::GetChallenge => write!(f, "Failed to get challenge"),
+            Error::VerifyCredential(ref s) => write!(f, "Failed to verify credential: {}", s),
+            Error::CreateJWT => write!(f, "Failed to create JWT"),
             Error::Other(ref s) => write!(f, "{}", s),
         }
     }
@@ -42,6 +56,11 @@ impl Into<actix_web::Error> for Error {
             Error::OauthInvalidClientId => actix_web::error::ErrorBadRequest("Invalid client_id"),
             Error::OauthInvalidRedirectUri => actix_web::error::ErrorBadRequest("Invalid redirect_uri"),
             Error::InvalidLightDid => actix_web::error::ErrorBadRequest("Invalid light DID"),
+            Error::InvalidFullDid => actix_web::error::ErrorBadRequest("Invalid full DID"),
+            Error::FailedToDecrypt => actix_web::error::ErrorBadRequest("Failed to decrypt"),
+            Error::FailedToParseMessage => actix_web::error::ErrorBadRequest("Failed to parse message"),
+            Error::GetChallenge => actix_web::error::ErrorBadRequest("Failed to get challenge"),
+            Error::VerifyCredential(e) => actix_web::error::ErrorBadRequest(format!("Failed to verify credential: {}", e)),
             // unauthorized
             Error::SessionGetError => actix_web::error::ErrorUnauthorized("Failed to get session"),
             Error::InvalidChallenge => actix_web::error::ErrorUnauthorized("Invalid challenge"),

@@ -17,7 +17,7 @@ use crate::{
         KiltConfig,
     },
     messages::{EncryptedMessage, Message, MessageBody},
-    routes::AuthorizeQueryParameters,
+    routes::{AuthorizeQueryParameters, error::Error},
     util::{get_did_doc, parse_encryption_key_from_lightdid},
     verify::verify_credential_message,
     AppState,
@@ -70,21 +70,17 @@ pub struct PostCredentialQueryParameter {
 async fn get_credential_requirements_handler(
     app_state: web::Data<AppState>,
     session: Session,
-) -> impl Responder {
+) -> Result<HttpResponse, Error> {
     log::info!("GET credential requirements handler");
-    let key_uri = match session.get::<String>("key_uri") {
-        Ok(Some(data)) => data,
-        _ => return HttpResponse::Unauthorized().body("No session"),
-    };
+    let key_uri = session.get::<String>("key_uri")?.ok_or(Error::SessionGetError)?;
     let challenge = format!("0x{}", hex::encode(box_::gen_nonce()));
-    match session.insert("credential-challenge", &challenge) {
-        Ok(_) => (),
-        _ => return HttpResponse::Unauthorized().body("Could not store challenge"),
-    };
+    session.insert("credential-challenge", challenge.clone())?;
     let sender = app_state
         .encryption_key_uri
         .split('#')
-        .collect::<Vec<&str>>()[0];
+        .collect::<Vec<&str>>()
+        .get(0).ok_or(Error::InvalidPrivateKey)?
+        .to_owned();
     let msg = Message {
         body: MessageBody {
             type_: "request-credential".to_string(),
@@ -103,13 +99,10 @@ async fn get_credential_requirements_handler(
     let msg_json = serde_json::to_string(&msg).unwrap();
     let msg_bytes = msg_json.as_bytes();
     let our_secretkey = app_state.secret_key.clone();
-    let others_pubkey = match parse_encryption_key_from_lightdid(key_uri.as_str()) {
-        Ok(key) => key,
-        _ => return HttpResponse::Unauthorized().body("Invalid encryption key"),
-    };
+    let others_pubkey = parse_encryption_key_from_lightdid(key_uri.as_str()).map_err(|_|Error::InvalidLightDid)?;
     let nonce = box_::gen_nonce();
-    let pk = box_::PublicKey::from_slice(&others_pubkey).unwrap();
-    let sk = box_::SecretKey::from_slice(&our_secretkey).unwrap();
+    let pk = box_::PublicKey::from_slice(&others_pubkey).ok_or(Error::InvalidLightDid)?;
+    let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
     let encrypted_msg = box_::seal(msg_bytes, &nonce, &pk, &sk);
     let encrypted_msg_hex = format!("0x{}", hex::encode(encrypted_msg));
     let nonce_hex = format!("0x{}", hex::encode(nonce));
@@ -119,7 +112,7 @@ async fn get_credential_requirements_handler(
         sender_key_uri: app_state.encryption_key_uri.clone(),
         receiver_key_uri: key_uri,
     };
-    HttpResponse::Ok().json(response)
+    Ok(HttpResponse::Ok().json(response))
 }
 
 #[post("/api/v1/credentials")]
@@ -128,65 +121,26 @@ async fn post_credential_handler(
     session: Session,
     body: web::Json<EncryptedMessage>,
     query: web::Query<PostCredentialQueryParameter>,
-) -> impl Responder {
+) -> Result<HttpResponse, Error> {
     log::info!("POST credential handler");
     log::info!("body: {:?}", body);
 
-    let cli = match kilt::connect("spiritnet").await {
-        Ok(cli) => cli,
-        _ => return HttpResponse::InternalServerError().body("Could not connect to KILT"),
-    };
+    let cli = kilt::connect("spiritnet").await.map_err(|_|Error::CantConnectToBlockchain)?;
+    let pk = get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli).await.map_err(|_|Error::InvalidFullDid)?;
 
-    let pk = match get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli).await {
-        Ok(pk) => pk,
-        _ => return HttpResponse::BadRequest().body("Could not get encryption key"),
-    };
+    let nonce_bytes = hex::decode(body.nonce.trim_start_matches("0x")).map_err(|_|Error::InvalidNonce)?;
+    let nonce = box_::Nonce::from_slice(&nonce_bytes).ok_or(Error::InvalidNonce)?;
+    let cipher_text = hex::decode(body.cipher_text.trim_start_matches("0x")).map_err(|_|Error::FailedToDecrypt)?;
+    let sk = box_::SecretKey::from_slice(&app_state.secret_key).ok_or(Error::InvalidPrivateKey)?;
+    let decrypted_msg = box_::open(&cipher_text, &nonce, &pk, &sk).map_err(|_|Error::FailedToDecrypt)?;
 
-    let nonce = match hex::decode(body.nonce.trim_start_matches("0x")) {
-        Ok(nonce) => box_::Nonce::from_slice(&nonce).unwrap(),
-        _ => return HttpResponse::BadRequest().body("Could not decode nonce"),
-    };
-
-    let cipher_text = match hex::decode(body.cipher_text.trim_start_matches("0x")) {
-        Ok(cipher_text) => cipher_text,
-        _ => return HttpResponse::BadRequest().body("Could not decode cipher text"),
-    };
-
-    let sk = box_::SecretKey::from_slice(&app_state.secret_key).unwrap();
-
-    let decrypted_msg = match box_::open(&cipher_text, &nonce, &pk, &sk) {
-        Ok(decrypted_msg) => decrypted_msg,
-        _ => return HttpResponse::BadRequest().body("Could not decrypt message"),
-    };
-
-    {
-        // Logging stuff
-        let data: serde_json::Value = serde_json::from_slice(&decrypted_msg).unwrap();
-        log::info!("Decrypted message: {:?}", data);
-    }
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
-        match serde_json::from_slice(&decrypted_msg) {
-            Ok(content) => content,
-            Err(err) => {
-                return HttpResponse::BadRequest().body(format!("Could not parse message {err:?}"))
-            }
-        };
+        serde_json::from_slice(&decrypted_msg).map_err(|_|Error::FailedToParseMessage)?;
 
-    let challenge = match session.get::<String>("credential-challenge") {
-        Ok(Some(data)) => match hex::decode(data.trim_start_matches("0x")) {
-            Ok(data) => data,
-            _ => return HttpResponse::Unauthorized().body("Could not decode challenge"),
-        },
-        _ => return HttpResponse::Unauthorized().body("No session"),
-    };
+    let challenge_hex = session.get::<String>("credential-challenge")?.ok_or(Error::GetChallenge)?;
+    let challenge = hex::decode(challenge_hex.trim_start_matches("0x")).map_err(|_|Error::GetChallenge)?;
 
-    // check internal integrity of the credential and look it up on chain
-    let attestations = match verify_credential_message(&content, challenge, &cli).await {
-        Ok(a) => a,
-        Err(err) => {
-            return HttpResponse::BadRequest().body(format!("Could not verify message {err:?}"))
-        }
-    };
+    let attestations = verify_credential_message(&content, challenge, &cli).await.map_err(|e|Error::VerifyCredential(format!("{}", e)))?;
 
     // go through all credential requirements and check that at least one is fulfilled with the given cred
     let mut fulfilled = false;
@@ -244,7 +198,7 @@ async fn post_credential_handler(
 
     if !fulfilled {
         log::info!("No credential requirement fulfilled");
-        return HttpResponse::BadRequest().body("No credential requirement fulfilled");
+        return Err(Error::VerifyCredential("No credential requirement fulfilled".into()));
     }
 
     let oauth_context = match session.get::<AuthorizeQueryParameters>("oauth-context") {
@@ -257,28 +211,22 @@ async fn post_credential_handler(
 
     let w3n = get_w3n(&content.sender, &cli).await.unwrap_or("".into());
 
-    let access_token = match app_state
+    let access_token = app_state
         .token_builder
         .new_access_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.token_secret)
-    {
-        Ok(data) => data,
-        _ => return HttpResponse::InternalServerError().body("Could not create access token"),
-    };
+        .map_err(|_|Error::CreateJWT)?;
 
-    let refresh_token = match app_state
+    let refresh_token = app_state
         .token_builder
         .new_refresh_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.token_secret)
-    {
-        Ok(data) => data,
-        _ => return HttpResponse::InternalServerError().body("Could not create refresh token"),
-    };
-
+        .map_err(|_|Error::CreateJWT)?;
+    
     // in case we have a redirect url, redirect to it with the tokens as query parameters
     // thats the simple custom flow
     if let Some(redirect_url) = &query.redirect {
-        return HttpResponse::Found()
+        return Ok(HttpResponse::Found()
             .append_header((
                 "Location",
                 format!(
@@ -286,13 +234,13 @@ async fn post_credential_handler(
                     redirect_url, access_token, refresh_token
                 ),
             ))
-            .finish();
+            .finish());
     }
 
     match &oauth_context {
         Some(context) => {
             log::info!("Got oauth context from session");
-            HttpResponse::Found()
+            Ok(HttpResponse::Found()
                 .append_header((
                     "Location",
                     format!(
@@ -304,11 +252,12 @@ async fn post_credential_handler(
                     ),
                 ))
                 .finish()
+            )
         }
-        _ => HttpResponse::Ok().json(json!({
+        _ => Ok(HttpResponse::Ok().json(json!({
             "accessToken": access_token,
             "refreshToken": refresh_token,
-        })),
+        }))),
     }
 }
 
