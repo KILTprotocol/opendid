@@ -1,7 +1,7 @@
 use std::{collections::HashMap, str::FromStr};
 
 use actix_session::Session;
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sodiumoxide::crypto::box_;
@@ -74,14 +74,13 @@ async fn get_credential_requirements_handler(
     log::info!("GET credential requirements handler");
     let key_uri = session
         .get::<String>("key_uri")?
-        .ok_or(Error::SessionGetError)?;
+        .ok_or(Error::SessionGet)?;
     let challenge = format!("0x{}", hex::encode(box_::gen_nonce()));
     session.insert("credential-challenge", challenge.clone())?;
     let sender = app_state
         .encryption_key_uri
         .split('#')
-        .collect::<Vec<&str>>()
-        .get(0)
+        .collect::<Vec<&str>>().first()
         .ok_or(Error::InvalidPrivateKey)?
         .to_owned();
     let msg = Message {

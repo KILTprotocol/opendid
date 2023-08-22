@@ -63,7 +63,7 @@ async fn challenge_response_handler(
     log::info!("POST challenge handler");
     let session_challenge = match session.get::<ChallengeData>("challenge")? {
         Some(data) => data.challenge,
-        None => return Err(Error::SessionGetError),
+        None => return Err(Error::SessionGet),
     };
     let session_challenge_bytes = hex::decode(session_challenge.trim_start_matches("0x"))
         .map_err(|_| Error::InvalidChallenge)?;

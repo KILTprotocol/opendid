@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
 use crate::{routes::error::Error, AppState};

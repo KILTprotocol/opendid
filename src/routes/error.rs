@@ -5,8 +5,8 @@ pub enum Error {
     OauthNotConfigured,
     OauthInvalidClientId,
     OauthInvalidRedirectUri,
-    SessionInsertError(SessionInsertError),
-    SessionGetError,
+    SessionInsert(SessionInsertError),
+    SessionGet,
     InvalidChallenge,
     InvalidNonce,
     InvalidLightDid,
@@ -18,7 +18,6 @@ pub enum Error {
     GetChallenge,
     VerifyCredential(String),
     CreateJWT,
-    Other(String),
 }
 
 impl std::error::Error for Error {}
@@ -29,8 +28,8 @@ impl std::fmt::Display for Error {
             Error::OauthNotConfigured => write!(f, "OAuth is not configured"),
             Error::OauthInvalidClientId => write!(f, "Invalid client_id"),
             Error::OauthInvalidRedirectUri => write!(f, "Invalid redirect_uri"),
-            Error::SessionInsertError(ref e) => write!(f, "SessionInsertError: {}", e),
-            Error::SessionGetError => write!(f, "Failed to get session"),
+            Error::SessionInsert(ref e) => write!(f, "SessionInsertError: {}", e),
+            Error::SessionGet => write!(f, "Failed to get session"),
             Error::InvalidChallenge => write!(f, "Invalid challenge"),
             Error::InvalidNonce => write!(f, "Invalid nonce"),
             Error::InvalidLightDid => write!(f, "Invalid light DID"),
@@ -42,14 +41,13 @@ impl std::fmt::Display for Error {
             Error::GetChallenge => write!(f, "Failed to get challenge"),
             Error::VerifyCredential(ref s) => write!(f, "Failed to verify credential: {}", s),
             Error::CreateJWT => write!(f, "Failed to create JWT"),
-            Error::Other(ref s) => write!(f, "{}", s),
         }
     }
 }
 
-impl Into<actix_web::Error> for Error {
-    fn into(self) -> actix_web::Error {
-        match self {
+impl From<Error> for actix_web::Error {
+    fn from(e: Error) -> Self {
+        match e {
             // bad request
             Error::OauthNotConfigured => {
                 actix_web::error::ErrorBadRequest("OAuth is not configured")
@@ -69,23 +67,23 @@ impl Into<actix_web::Error> for Error {
                 actix_web::error::ErrorBadRequest(format!("Failed to verify credential: {}", e))
             }
             // unauthorized
-            Error::SessionGetError => actix_web::error::ErrorUnauthorized("Failed to get session"),
+            Error::SessionGet => actix_web::error::ErrorUnauthorized("Failed to get session"),
             Error::InvalidChallenge => actix_web::error::ErrorUnauthorized("Invalid challenge"),
             Error::InvalidNonce => actix_web::error::ErrorUnauthorized("Invalid nonce"),
             // default internal server error
-            _ => actix_web::error::ErrorInternalServerError(self),
+            _ => actix_web::error::ErrorInternalServerError(e),
         }
     }
 }
 
 impl From<SessionInsertError> for Error {
     fn from(e: SessionInsertError) -> Self {
-        Error::SessionInsertError(e)
+        Error::SessionInsert(e)
     }
 }
 
 impl From<SessionGetError> for Error {
     fn from(_: SessionGetError) -> Self {
-        Error::SessionGetError
+        Error::SessionGet
     }
 }
