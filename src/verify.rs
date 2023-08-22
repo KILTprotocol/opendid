@@ -135,27 +135,26 @@ pub async fn check_signature(
         // verify the signature
         let signature_data = [root_hash, challenge.to_owned()].concat();
         let valid = {
-            match sp_runtime::MultiSignature::decode(&mut IoReader(signature.as_slice())) {
-                Ok(signature) => signature.verify(signature_data.as_slice(), &public_key),
-                Err(_) => {
-                    match sp_core::sr25519::Signature::decode(&mut IoReader(signature.as_slice())) {
-                        Ok(signature) => signature.verify(
-                            signature_data.as_slice(),
-                            &sp_core::sr25519::Public(public_key.into()),
-                        ),
-                        Err(_) => {
-                            match sp_core::ed25519::Signature::decode(&mut IoReader(
-                                signature.as_slice(),
-                            )) {
-                                Ok(signature) => signature.verify(
-                                    signature_data.as_slice(),
-                                    &sp_core::ed25519::Public(public_key.into()),
-                                ),
-                                Err(_) => false,
-                            }
-                        }
-                    }
-                }
+            if let Ok(signature) =
+                sp_runtime::MultiSignature::decode(&mut IoReader(signature.as_slice()))
+            {
+                signature.verify(signature_data.as_slice(), &public_key.into())
+            } else if let Ok(signature) =
+                sp_core::sr25519::Signature::decode(&mut IoReader(signature.as_slice()))
+            {
+                signature.verify(
+                    signature_data.as_slice(),
+                    &sp_core::sr25519::Public(public_key.into()),
+                )
+            } else if let Ok(signature) =
+                sp_core::ed25519::Signature::decode(&mut IoReader(signature.as_slice()))
+            {
+                signature.verify(
+                    signature_data.as_slice(),
+                    &sp_core::ed25519::Public(public_key.into()),
+                )
+            } else {
+                false
             }
         };
         if !valid {

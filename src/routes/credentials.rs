@@ -126,7 +126,6 @@ async fn post_credential_handler(
     query: web::Query<PostCredentialQueryParameter>,
 ) -> Result<HttpResponse, Error> {
     log::info!("POST credential handler");
-    log::info!("body: {:?}", body);
 
     let cli = kilt::connect("spiritnet")
         .await
