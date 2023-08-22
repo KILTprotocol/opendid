@@ -72,15 +72,14 @@ async fn get_credential_requirements_handler(
     session: Session,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET credential requirements handler");
-    let key_uri = session
-        .get::<String>("key_uri")?
-        .ok_or(Error::SessionGet)?;
+    let key_uri = session.get::<String>("key_uri")?.ok_or(Error::SessionGet)?;
     let challenge = format!("0x{}", hex::encode(box_::gen_nonce()));
     session.insert("credential-challenge", challenge.clone())?;
     let sender = app_state
         .encryption_key_uri
         .split('#')
-        .collect::<Vec<&str>>().first()
+        .collect::<Vec<&str>>()
+        .first()
         .ok_or(Error::InvalidPrivateKey)?
         .to_owned();
     let msg = Message {
