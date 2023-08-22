@@ -138,7 +138,7 @@ pub async fn check_signature(
             if let Ok(signature) =
                 sp_runtime::MultiSignature::decode(&mut IoReader(signature.as_slice()))
             {
-                signature.verify(signature_data.as_slice(), &public_key.into())
+                signature.verify(signature_data.as_slice(), &public_key)
             } else if let Ok(signature) =
                 sp_core::sr25519::Signature::decode(&mut IoReader(signature.as_slice()))
             {
