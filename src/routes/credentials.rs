@@ -15,10 +15,10 @@ use crate::{
         self,
         runtime_types::did::did_details::{DidEncryptionKey, DidPublicKey},
         KiltConfig,
+        get_did_doc, parse_encryption_key_from_lightdid
     },
     messages::{EncryptedMessage, Message, MessageBody},
     routes::{error::Error, AuthorizeQueryParameters},
-    util::{get_did_doc, parse_encryption_key_from_lightdid},
     verify::verify_credential_message,
     AppState,
 };
@@ -129,7 +129,7 @@ async fn post_credential_handler(
     let cli = kilt::connect("spiritnet")
         .await
         .map_err(|_| Error::CantConnectToBlockchain)?;
-    let pk = get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli)
+    let pk = kilt::get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli)
         .await
         .map_err(|_| Error::InvalidFullDid)?;
 
@@ -160,11 +160,13 @@ async fn post_credential_handler(
     let mut props = serde_json::Map::new();
 
     for (i, attestation) in attestations.iter().enumerate() {
-        let content = &content.body.content[i];
+        let content = &content.body.content.get(i).ok_or(Error::VerifyCredential(
+            "Could not get content from message".into(),
+        ))?;
         let credential_attester_did = format!(
             "did:kilt:{}",
             sp_runtime::AccountId32::from(attestation.attester.0)
-                .to_ss58check_with_version(38u16.into())
+                .to_ss58check_with_version(kilt::SS58_PREFIX.into())
         );
 
         for requirement in &app_state.credential_requirements {
@@ -224,7 +226,7 @@ async fn post_credential_handler(
 
     log::info!("Credential checked, all good to go");
 
-    let w3n = get_w3n(&content.sender, &cli).await.unwrap_or("".into());
+    let w3n = kilt::get_w3n(&content.sender, &cli).await.unwrap_or("".into());
 
     let access_token = app_state
         .token_builder
@@ -272,50 +274,5 @@ async fn post_credential_handler(
             "accessToken": access_token,
             "refreshToken": refresh_token,
         }))),
-    }
-}
-
-async fn get_encryption_key_from_fulldid_key_uri(
-    key_uri: &str,
-    cli: &OnlineClient<KiltConfig>,
-) -> Result<box_::PublicKey, Box<dyn std::error::Error>> {
-    let key_uri_parts: Vec<&str> = key_uri.split('#').collect();
-    if key_uri_parts.len() != 2 {
-        return Err("Invalid sender key URI".into());
-    }
-    let did = key_uri_parts[0].to_string();
-    let key_id = key_uri_parts[1].to_string();
-    let kid_bs: [u8; 32] = hex::decode(key_id.trim_start_matches("0x"))?
-        .try_into()
-        .map_err(|_| "malformed key id")?;
-    let kid = H256::from(kid_bs);
-    let doc = get_did_doc(&did, cli).await?;
-    match doc.public_keys.0.iter().find(|&(k, _v)| *k == kid) {
-        Some((_, details)) => {
-            let pk = match details.key {
-                DidPublicKey::PublicEncryptionKey(DidEncryptionKey::X25519(pk)) => pk,
-                _ => return Err("Invalid sender public key".into()),
-            };
-            box_::PublicKey::from_slice(&pk).ok_or("Invalid sender public key".into())
-        }
-        _ => Err("Could not get sender public key".into()),
-    }
-}
-
-async fn get_w3n(
-    did: &str,
-    cli: &OnlineClient<KiltConfig>,
-) -> Result<String, Box<dyn std::error::Error>> {
-    let account_id = match subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:"))
-    {
-        Ok(id) => id,
-        _ => return Err("Invalid DID".into()),
-    };
-    let storage_key = kilt::storage().web3_names().names(account_id);
-    let name = cli.storage().at_latest().await?.fetch(&storage_key).await?;
-    if let Some(name) = name {
-        Ok(String::from_utf8(name.0 .0)?)
-    } else {
-        Ok("".into())
     }
 }

@@ -18,7 +18,6 @@ mod jwt;
 mod kilt;
 mod messages;
 mod routes;
-mod util;
 mod verify;
 mod well_known_did_config;
 

@@ -1,4 +1,4 @@
-use actix_session::Session;
+use actix_session::{Session, SessionInsertError};
 use actix_web::{get, post, web, HttpResponse};
 
 use rand::Rng;
@@ -75,7 +75,7 @@ async fn challenge_response_handler(
             .trim_start_matches("0x"),
     )
     .map_err(|_| Error::InvalidChallenge)?;
-    let others_pubkey = crate::util::parse_encryption_key_from_lightdid(
+    let others_pubkey = crate::kilt::parse_encryption_key_from_lightdid(
         challenge_response.encryption_key_uri.as_str(),
     )
     .map_err(|_| Error::InvalidLightDid)?;
@@ -88,7 +88,7 @@ async fn challenge_response_handler(
     if session_challenge_bytes == decrypted_challenge {
         session
             .insert("key_uri", challenge_response.encryption_key_uri.clone())
-            .unwrap();
+            .map_err(|_| Error::SessionInsert)?;
         Ok(HttpResponse::Ok().body("Challenge accepted"))
     } else {
         Err(Error::InvalidChallenge)

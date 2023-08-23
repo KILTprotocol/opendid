@@ -1,12 +1,17 @@
+
+use sp_core::crypto::Ss58AddressFormat;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use subxt::{config::polkadot::PolkadotExtrinsicParams, config::Config, OnlineClient};
 
 #[subxt::subxt(runtime_metadata_path = "./metadata.scale")]
 pub mod kilt {}
-
-// re-export all the auto generated code
 pub use kilt::*;
+
+pub mod did_helper;
+pub use did_helper::*;
+
+pub const SS58_PREFIX: u16 = 38u16;
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct KiltConfig;
