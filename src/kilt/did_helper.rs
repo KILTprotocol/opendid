@@ -1,14 +1,14 @@
-use std::str::FromStr;
 use base58::FromBase58;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, Bytes};
 use sodiumoxide::crypto::box_;
 use sp_core::H256;
+use std::str::FromStr;
 use subxt::OnlineClient;
 
 use crate::kilt::{self, KiltConfig};
 
-use super::runtime_types::did::did_details::{DidPublicKey, DidEncryptionKey};
+use super::runtime_types::did::did_details::{DidEncryptionKey, DidPublicKey};
 
 pub async fn get_encryption_key_from_fulldid_key_uri(
     key_uri: &str,
@@ -55,7 +55,6 @@ pub async fn get_w3n(
     }
 }
 
-
 #[serde_as]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct LightDidKeyDetails {
@@ -84,7 +83,8 @@ pub fn parse_encryption_key_from_lightdid(
     let mut chars = details.chars();
     chars.next().ok_or("malformed")?;
     let bs: Vec<u8> = FromBase58::from_base58(chars.as_str()).map_err(|_| "malformed base58")?;
-    let details: LightDidDetails = serde_cbor::from_slice(&bs[1..]).map_err(|_|"malformed cbor")?;
+    let details: LightDidDetails =
+        serde_cbor::from_slice(&bs[1..]).map_err(|_| "malformed cbor")?;
     Ok(details.e.public_key.to_vec())
 }
 

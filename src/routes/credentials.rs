@@ -12,10 +12,9 @@ use subxt::OnlineClient;
 use crate::{
     config::CredentialRequirement,
     kilt::{
-        self,
+        self, get_did_doc, parse_encryption_key_from_lightdid,
         runtime_types::did::did_details::{DidEncryptionKey, DidPublicKey},
         KiltConfig,
-        get_did_doc, parse_encryption_key_from_lightdid
     },
     messages::{EncryptedMessage, Message, MessageBody},
     routes::{error::Error, AuthorizeQueryParameters},
@@ -226,7 +225,9 @@ async fn post_credential_handler(
 
     log::info!("Credential checked, all good to go");
 
-    let w3n = kilt::get_w3n(&content.sender, &cli).await.unwrap_or("".into());
+    let w3n = kilt::get_w3n(&content.sender, &cli)
+        .await
+        .unwrap_or("".into());
 
     let access_token = app_state
         .token_builder
