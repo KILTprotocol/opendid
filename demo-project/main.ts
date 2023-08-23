@@ -19,6 +19,11 @@ app.use(cors({
 // Parse cookies
 app.use(cookieParser());
 
+// redirect to login by default
+app.get('/', (req, res) => {
+  res.redirect('/login.html')
+})
+
 // Serve login page
 // This also sets a random nonce and state cookie that is used for constructing the openid connect request 
 app.get('/login.html', (req, res) => {
