@@ -1,4 +1,4 @@
-use actix_session::{Session, SessionInsertError};
+use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
 
 use rand::Rng;

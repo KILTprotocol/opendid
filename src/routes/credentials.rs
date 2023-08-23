@@ -1,20 +1,16 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sodiumoxide::crypto::box_;
-use sp_core::{crypto::Ss58Codec, H256};
-
-use subxt::OnlineClient;
+use sp_core::crypto::Ss58Codec;
 
 use crate::{
     config::CredentialRequirement,
     kilt::{
-        self, get_did_doc, parse_encryption_key_from_lightdid,
-        runtime_types::did::did_details::{DidEncryptionKey, DidPublicKey},
-        KiltConfig,
+        self, parse_encryption_key_from_lightdid,
     },
     messages::{EncryptedMessage, Message, MessageBody},
     routes::{error::Error, AuthorizeQueryParameters},
