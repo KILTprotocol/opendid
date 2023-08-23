@@ -14,27 +14,21 @@ interface SessionData {
 
 function ExtensionSelector(props: { onSelect: (extension: object) => void, selectedExtension: object | null }) {
     const [extensions, setExtensions] = React.useState<any[]>([]);
-    React.useEffect(() => {
-        setExtensions(
-            Object.values(window.kilt)
+    
+    const gatherExtensions = async () => {
+        let extensions = Object.values(window.kilt)
             .filter((extension: any) => typeof extension === 'object')
             .filter((extension: any) => extension.name && extension.version)
-        );
-        window.addEventListener('kilt-extension#initialized', () => {
-            console.log('kilt-extension#initialized');
-            setExtensions(
-                Object.values(window.kilt)
-                .filter((extension: any) => typeof extension === 'object')
-                .filter((extension: any) => extension.name && extension.version)
-            );
-        });
-    }, []);
+        setExtensions(extensions);
+        props.onSelect(extensions[0] as object);
+    };
 
     React.useEffect(() => {
-        if (extensions.length > 0 && props.selectedExtension === null) {
-            props.onSelect(extensions[0]);
-        }
-    });
+        gatherExtensions();
+        window.addEventListener('kilt-extension#initialized', () => {
+            gatherExtensions();
+        });
+    }, []);
 
     return (
         <select onChange={(e) => {
@@ -103,10 +97,10 @@ export function App() {
             
             console.log('posting credential to server', credentialResponse)
             let url = '/api/v1/credentials'
-            // get redirect uri from input field
-            const redirectUri = document.getElementById('redirect-uri') as HTMLInputElement
-            if (redirectUri.value) {
-                url = `${url}?redirect=${redirectUri.value}`
+            // get redirect uri query
+            let redirectUri = new URLSearchParams(window.location.search).get('redirect')
+            if (redirectUri) {
+                url = `${url}?redirect=${redirectUri}`
             }
             const credentialResponseResponse = await fetch(url, {
                 method: 'POST',
@@ -148,18 +142,54 @@ export function App() {
         }
     }
 
+    // some styles to center the login form
+    React.useEffect(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            #App {
+                width: 400px;
+                height: 400px;
+                border: 1px solid black;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+        `;
+        document.head.appendChild(style);
+    }, []);
+
     return (
-        <div>
-            <ExtensionSelector selectedExtension={extension} onSelect={(e) => {
-                console.log('selected extension', e);
-                setExtension(e)
-            }} />
-            <input id="redirect-uri" type="text" value={window.location.origin}/>
-            <button onClick={startSession}>Login</button>
-            <button onClick={refresh}>Refresh</button>
-            <p>Access Token: {loginResponse.accessToken}</p>
-            <p>Refresh Token: {loginResponse.refreshToken}</p>
-            <p>{error}</p>
+        <div id="App">
+            <h1>Login</h1>
+            <p>
+                <ExtensionSelector selectedExtension={extension} onSelect={(e) => {
+                    console.log('selected extension', e);
+                    setExtension(e)
+                }} />
+            </p>
+            <div style={{display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+                <p>
+                    <button onClick={startSession}>Login</button>
+                </p>
+                {loginResponse.accessToken !== '' && loginResponse.refreshToken !== '' && (
+                <div>
+                    <p><a href={'https://jwt.io?token='+loginResponse.accessToken}>Inspect Access Token</a></p>
+                    <p><a href={'https://jwt.io?token='+loginResponse.refreshToken}>Inspect Refresh Token</a></p>
+                </div>)}
+                {loginResponse.accessToken !== '' && loginResponse.refreshToken !== '' && (
+                    <p><button onClick={refresh}>Refresh</button></p>                
+                )}
+                <p>{error}</p>
+            </div>
+            
         </div>
     );
 }

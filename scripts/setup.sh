@@ -72,19 +72,19 @@ OUTPUT=$(kiltctl storage did did --did did:kilt:${AUTH_ACCOUNT_ADDRESS})
 KEYAGREEMENT_KEY_ID=$(echo "${OUTPUT}" | grep -2 PublicEncryptionKey | head -1 | tr -d ' ,')
 ATTESTATION_KEY_ID=$(echo "${OUTPUT}" | grep -1 attestation_key | tail -1 | tr -d ' ,')
 
-# generate random session secret and JWT secret
 SESSION_SECRET=$(openssl rand -hex 64)
-JWT_SECRET=$(openssl rand -hex 64)
+JWT_SECRET='super-secret-jwt-secret'
 
 echo "Writing login config file to config.yaml..."
 
 cat > /data/config.yaml <<EOF
-# kiltlogin config file
+# Simple-Auth-Relay-App config file
 
 # server config
 host: 0.0.0.0
 port: 3001
 basePath: /srv
+production: false
 
 # session config
 # contains the keyUri, naclSecretKey, naclPublicKey and sessionKey used to communicate with the identity extension
@@ -114,7 +114,7 @@ jwt:
   accessTokenAudience: application
   refreshTokenLifetime: 600
   refreshTokenAudience: authentication
-  tokenSecret: "0x${JWT_SECRET}"
+  tokenSecret: "${JWT_SECRET}"
 
 # well known DID
 wellKnownDid:
@@ -122,4 +122,10 @@ wellKnownDid:
   origin: http://localhost:3001
   keyUri: did:kilt:${AUTH_ACCOUNT_ADDRESS}#${ATTESTATION_KEY_ID}
   seed: "${ATTESTATION_SEED}"
+
+# oauth config
+oauth:
+  redirectUrls:
+    example-client:
+        - http://localhost:1606/callback.html
 EOF

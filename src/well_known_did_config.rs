@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 
-use hmac::digest::typenum::U32;
-use serde::{Serialize, Deserialize};
-use serde_json::json;
+use crate::{
+    config,
+    verify::{hex_decode, hex_encode},
+};
 use blake2::{Blake2b, Digest};
+use hmac::digest::typenum::U32;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sp_core::Pair;
-use crate::{verify::{hex_encode, hex_decode}, config};
 
 type Blake2b256 = Blake2b<U32>;
 
@@ -94,8 +97,12 @@ impl WellKnownDidConfig {
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let normalized = [
             serde_json::to_string(&json!({"@id": id}))?,
-            serde_json::to_string(&json!({"kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#id": id}))?,
-            serde_json::to_string(&json!({"kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#origin": origin}))?,
+            serde_json::to_string(
+                &json!({"kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#id": id}),
+            )?,
+            serde_json::to_string(
+                &json!({"kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#origin": origin}),
+            )?,
         ];
         let hashes = normalized
             .iter()
@@ -105,7 +112,7 @@ impl WellKnownDidConfig {
                 hex_encode(hasher.finalize())
             })
             .collect::<Vec<String>>();
-        let (nonce_map, salted_hashes) = {
+        let (_nonce_map, salted_hashes) = {
             let mut nonces = HashMap::new();
             let mut salted_hashes = Vec::new();
             hashes.iter().for_each(|hash| {
@@ -120,10 +127,12 @@ impl WellKnownDidConfig {
             (nonces, salted_hashes)
         };
         let mut hasher = Blake2b256::new();
-        salted_hashes.iter().try_for_each(|salted_hash| -> Result<(), Box<dyn std::error::Error>> {
-            hasher.update(hex_decode(salted_hash.as_str())?);
-            Ok(())
-        })?;
+        salted_hashes.iter().try_for_each(
+            |salted_hash| -> Result<(), Box<dyn std::error::Error>> {
+                hasher.update(hex_decode(salted_hash.as_str())?);
+                Ok(())
+            },
+        )?;
         let root_hash = hex_encode(hasher.finalize());
         let signature = signer.sign(&hex_decode(root_hash.as_str())?);
         let proof = Proof {
@@ -139,12 +148,9 @@ impl WellKnownDidConfig {
         };
         Ok(WellKnownDidConfig {
             context: "https://identity.foundation/.well-known/did-configuration/v1".to_string(),
-            linked_dids: [
-                LinkedDid::new(id, subject, proof),
-            ].into(),
+            linked_dids: [LinkedDid::new(id, subject, proof)].into(),
         })
     }
-
 }
 
 impl LinkedDid {
@@ -172,13 +178,10 @@ impl LinkedDid {
     }
 }
 
-pub fn create_well_known_did_config(cfg: &config::WellKnownDidConfig) -> Result<WellKnownDidConfig, Box<dyn std::error::Error>> {
+pub fn create_well_known_did_config(
+    cfg: &config::WellKnownDidConfig,
+) -> Result<WellKnownDidConfig, Box<dyn std::error::Error>> {
     let pair = sp_core::sr25519::Pair::from_string_with_seed(&cfg.seed, None)?.0;
-    let doc = WellKnownDidConfig::new(
-        &cfg.did,
-        &cfg.origin,
-        &cfg.key_uri,
-        &pair,
-    )?;
+    let doc = WellKnownDidConfig::new(&cfg.did, &cfg.origin, &cfg.key_uri, &pair)?;
     Ok(doc)
 }
