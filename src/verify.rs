@@ -9,10 +9,9 @@ use subxt::OnlineClient;
 
 use crate::kilt::runtime_types::attestation::attestations::AttestationDetails;
 use crate::kilt::runtime_types::did::did_details::{DidPublicKey, DidVerificationKey};
-use crate::kilt::{self, KiltConfig};
+use crate::kilt::{self, get_did_doc, KiltConfig};
 use crate::messages::Message;
 use crate::routes::{Claim, SubmitCredentialMessageBodyContent};
-use crate::util::get_did_doc;
 
 use blake2::{Blake2b, Digest};
 

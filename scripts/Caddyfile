@@ -1,8 +1,0 @@
-# a caddy config file to expose the backend and the frontend under one domain
-
-http://localhost:3001 {
-    reverse_proxy /api/* localhost:3002
-    reverse_proxy /.well-known/did-configuration.json localhost:3002
-    reverse_proxy localhost:1234
-}
-

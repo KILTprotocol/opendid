@@ -5,7 +5,7 @@ pub enum Error {
     OauthNotConfigured,
     OauthInvalidClientId,
     OauthInvalidRedirectUri,
-    SessionInsert(SessionInsertError),
+    SessionInsert,
     SessionGet,
     InvalidChallenge,
     InvalidNonce,
@@ -28,7 +28,7 @@ impl std::fmt::Display for Error {
             Error::OauthNotConfigured => write!(f, "OAuth is not configured"),
             Error::OauthInvalidClientId => write!(f, "Invalid client_id"),
             Error::OauthInvalidRedirectUri => write!(f, "Invalid redirect_uri"),
-            Error::SessionInsert(ref e) => write!(f, "SessionInsertError: {}", e),
+            Error::SessionInsert => write!(f, "Failed to insert session"),
             Error::SessionGet => write!(f, "Failed to get session"),
             Error::InvalidChallenge => write!(f, "Invalid challenge"),
             Error::InvalidNonce => write!(f, "Invalid nonce"),
@@ -77,8 +77,8 @@ impl From<Error> for actix_web::Error {
 }
 
 impl From<SessionInsertError> for Error {
-    fn from(e: SessionInsertError) -> Self {
-        Error::SessionInsert(e)
+    fn from(_: SessionInsertError) -> Self {
+        Error::SessionInsert
     }
 }
 
