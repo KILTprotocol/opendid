@@ -25,7 +25,7 @@ async fn refresh_handler(
     };
     let access_token = match app_state
         .token_builder
-        .new_access_token(&token.subject, &token.name, &token.properties, &token.nonce)
+        .new_id_token(&token.subject, &token.name, &token.properties, &token.nonce)
         .to_jwt(&app_state.token_secret)
     {
         Ok(token) => token,

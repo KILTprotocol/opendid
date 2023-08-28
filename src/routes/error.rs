@@ -5,6 +5,7 @@ pub enum Error {
     OauthNotConfigured,
     OauthInvalidClientId,
     OauthInvalidRedirectUri,
+    OauthNoSession,
     SessionInsert,
     SessionGet,
     InvalidChallenge,
@@ -41,6 +42,7 @@ impl std::fmt::Display for Error {
             Error::GetChallenge => write!(f, "Failed to get challenge"),
             Error::VerifyCredential(ref s) => write!(f, "Failed to verify credential: {}", s),
             Error::CreateJWT => write!(f, "Failed to create JWT"),
+            Error::OauthNoSession => write!(f, "No session"),
         }
     }
 }
@@ -70,6 +72,7 @@ impl From<Error> for actix_web::Error {
             Error::SessionGet => actix_web::error::ErrorUnauthorized("Failed to get session"),
             Error::InvalidChallenge => actix_web::error::ErrorUnauthorized("Invalid challenge"),
             Error::InvalidNonce => actix_web::error::ErrorUnauthorized("Invalid nonce"),
+            Error::OauthNoSession => actix_web::error::ErrorUnauthorized("No session"),
             // default internal server error
             _ => actix_web::error::ErrorInternalServerError(e),
         }

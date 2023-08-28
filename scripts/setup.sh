@@ -98,14 +98,6 @@ session:
   # session key used to encrypt the session data, needs to be the same on all instances
   sessionKey: "0x${SESSION_SECRET}"
 
-# credential requirements
-# contains the credential requirements for the verifiers DID
-# if the user provides ANY of the listed credentials, the login is successful
-credentialRequirements:
-  - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-    trustedAttesters: ["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
-    requiredProperties: ["Email"]
-
 # jwt config
 # contains the jwt config for the access and refresh tokens
 jwt:
@@ -123,9 +115,17 @@ wellKnownDid:
   keyUri: did:kilt:${AUTH_ACCOUNT_ADDRESS}#${ATTESTATION_KEY_ID}
   seed: "${ATTESTATION_SEED}"
 
-# oauth config
-oauth:
-  redirectUrls:
-    example-client:
-        - http://localhost:1606/callback.html
+# client configs
+clients:
+  example-client:
+    # credential requirements
+    # contains the credential requirements for the verifiers DID
+    # if the user provides ANY of the listed credentials, the login is successful
+    requirements:
+      - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
+        trustedAttesters: ["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
+        requiredProperties: ["Email"]
+    # valid redirect urls for this client
+    redirectUrls:
+      - http://localhost:1606/callback.html
 EOF

@@ -2,7 +2,7 @@ use actix_session::Session;
 use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 
-use crate::{routes::error::Error, AppState};
+use crate::{constants::OIDC_SESSION_KEY, routes::error::Error, AppState};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuthorizeQueryParameters {
@@ -14,7 +14,7 @@ pub struct AuthorizeQueryParameters {
     pub nonce: String,
 }
 
-/// This handler is the oauth entrypoint. It parses the query parameters and checks of the client_id and redirect_uri are valid.
+/// This handler is the oauth entrypoint. It parses the query parameters and checks if the client_id and redirect_uri are valid.
 /// after that it stores the query parameters in the session and redirects the user to the login page.
 #[get("/api/v1/authorize")]
 async fn authorize_handler(
@@ -23,23 +23,14 @@ async fn authorize_handler(
     query: web::Query<AuthorizeQueryParameters>,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET authorize handler");
-    log::info!("GET authorize handler");
-    let redirect_urls = if let Some(oauth_config) = &app_state.oauth_config {
-        oauth_config.redirect_urls.get(&query.client_id)
-    } else {
-        return Err(Error::OauthNotConfigured);
-    };
-
-    let redirect_urls = if let Some(redirect_urls) = redirect_urls {
-        redirect_urls
-    } else {
-        return Err(Error::OauthInvalidClientId);
-    };
+    let redirect_urls = &app_state
+        .client_configs
+        .get(&query.client_id)
+        .ok_or(Error::OauthInvalidClientId)?
+        .redirect_urls;
 
     if redirect_urls.contains(&query.redirect_uri) {
-        session
-            .insert("oauth-context", query.clone().into_inner())
-            .unwrap();
+        session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
         return Ok(HttpResponse::Found()
             .append_header(("Location", "/"))
             .finish());

@@ -58,7 +58,7 @@ impl TokenFactory {
         }
     }
 
-    pub fn new_access_token(
+    pub fn new_id_token(
         &self,
         subject: &str,
         web3_name: &str,
@@ -166,7 +166,7 @@ mod tests {
         );
         let secret = "secret";
         let access_token =
-            token_builder.new_access_token("did:kilt:user", "user", &serde_json::Map::new(), &None);
+            token_builder.new_id_token("did:kilt:user", "user", &serde_json::Map::new(), &None);
         let jwt = access_token.to_jwt(secret).unwrap();
         println!("access_token {jwt}");
         let refresh_token = token_builder.new_refresh_token(
