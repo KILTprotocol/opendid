@@ -3,15 +3,14 @@ use std::collections::HashMap;
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+
 use sodiumoxide::crypto::box_;
 use sp_core::crypto::Ss58Codec;
 
 use crate::{
     config::CredentialRequirement,
-    kilt::{
-        self, parse_encryption_key_from_lightdid,
-    },
+    constants::OIDC_SESSION_KEY,
+    kilt::{self, parse_encryption_key_from_lightdid},
     messages::{EncryptedMessage, Message, MessageBody},
     routes::{error::Error, AuthorizeQueryParameters},
     verify::verify_credential_message,
@@ -67,9 +66,13 @@ async fn get_credential_requirements_handler(
     session: Session,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET credential requirements handler");
+
+    // create a challenge and store it in the session
     let key_uri = session.get::<String>("key_uri")?.ok_or(Error::SessionGet)?;
     let challenge = format!("0x{}", hex::encode(box_::gen_nonce()));
     session.insert("credential-challenge", challenge.clone())?;
+
+    // get sender DID for the response from local encryption key URI
     let sender = app_state
         .encryption_key_uri
         .split('#')
@@ -77,11 +80,24 @@ async fn get_credential_requirements_handler(
         .first()
         .ok_or(Error::InvalidPrivateKey)?
         .to_owned();
+
+    // get the credential requirements for this specific client. The client ID comes from the session
+    let oidc_context = session
+        .get::<AuthorizeQueryParameters>(OIDC_SESSION_KEY)
+        .map_err(|_| Error::OauthNoSession)?
+        .ok_or(Error::OauthInvalidClientId)?;
+    let requirements = &app_state
+        .client_configs
+        .get(&oidc_context.client_id)
+        .ok_or(Error::OauthInvalidClientId)?
+        .requirements;
+
+    // construct response message
     let msg = Message {
         body: MessageBody {
             type_: "request-credential".to_string(),
             content: RequestCredentialMessageBodyContent {
-                ctypes: app_state.credential_requirements.clone(),
+                ctypes: requirements.clone(),
                 challenge,
             },
         },
@@ -92,6 +108,8 @@ async fn get_credential_requirements_handler(
         in_reply_to: None,
         references: None,
     };
+
+    // encode and encrypt it for the receiver
     let msg_json = serde_json::to_string(&msg).unwrap();
     let msg_bytes = msg_json.as_bytes();
     let our_secretkey = app_state.secret_key.clone();
@@ -109,6 +127,8 @@ async fn get_credential_requirements_handler(
         sender_key_uri: app_state.encryption_key_uri.clone(),
         receiver_key_uri: key_uri,
     };
+
+    // send it back
     Ok(HttpResponse::Ok().json(response))
 }
 
@@ -117,17 +137,20 @@ async fn post_credential_handler(
     app_state: web::Data<AppState>,
     session: Session,
     body: web::Json<EncryptedMessage>,
-    query: web::Query<PostCredentialQueryParameter>,
 ) -> Result<HttpResponse, Error> {
     log::info!("POST credential handler");
 
-    let cli = kilt::connect("spiritnet")
+    // connect to KILT to lookup the sender's public key
+    let cli = kilt::connect(&app_state.kilt_endpoint)
         .await
         .map_err(|_| Error::CantConnectToBlockchain)?;
+
+    // get the sender's public key from the encryption key URI
     let pk = kilt::get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli)
         .await
         .map_err(|_| Error::InvalidFullDid)?;
 
+    // decrypt the message
     let nonce_bytes =
         hex::decode(body.nonce.trim_start_matches("0x")).map_err(|_| Error::InvalidNonce)?;
     let nonce = box_::Nonce::from_slice(&nonce_bytes).ok_or(Error::InvalidNonce)?;
@@ -136,24 +159,35 @@ async fn post_credential_handler(
     let sk = box_::SecretKey::from_slice(&app_state.secret_key).ok_or(Error::InvalidPrivateKey)?;
     let decrypted_msg =
         box_::open(&cipher_text, &nonce, &pk, &sk).map_err(|_| Error::FailedToDecrypt)?;
-
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         serde_json::from_slice(&decrypted_msg).map_err(|_| Error::FailedToParseMessage)?;
 
+    // get the challenge from the session
     let challenge_hex = session
         .get::<String>("credential-challenge")?
         .ok_or(Error::GetChallenge)?;
     let challenge =
         hex::decode(challenge_hex.trim_start_matches("0x")).map_err(|_| Error::GetChallenge)?;
 
+    // verify the credential message
     let attestations = verify_credential_message(&content, challenge, &cli)
         .await
         .map_err(|e| Error::VerifyCredential(format!("{}", e)))?;
 
+    // get credential requirements for this client, the client id comes from the session
+    let oidc_context = session
+        .get::<AuthorizeQueryParameters>(OIDC_SESSION_KEY)
+        .map_err(|_| Error::OauthNoSession)?
+        .ok_or(Error::OauthInvalidClientId)?;
+    let requirements = &app_state
+        .client_configs
+        .get(&oidc_context.client_id)
+        .ok_or(Error::OauthInvalidClientId)?
+        .requirements;
+
     // go through all credential requirements and check that at least one is fulfilled with the given cred
     let mut fulfilled = false;
     let mut props = serde_json::Map::new();
-
     for (i, attestation) in attestations.iter().enumerate() {
         let content = &content.body.content.get(i).ok_or(Error::VerifyCredential(
             "Could not get content from message".into(),
@@ -163,8 +197,7 @@ async fn post_credential_handler(
             sp_runtime::AccountId32::from(attestation.attester.0)
                 .to_ss58check_with_version(kilt::SS58_PREFIX.into())
         );
-
-        for requirement in &app_state.credential_requirements {
+        for requirement in requirements {
             if requirement.ctype_hash != content.claim.ctype_id {
                 log::info!("Requirement ctype hash does not match");
                 continue;
@@ -176,7 +209,6 @@ async fn post_credential_handler(
                 log::info!("Requirement attester DID does not match");
                 continue;
             }
-            // go through all required properties and check they are in the attestation
             let mut properties_fulfilled = true;
             let content_object = match content.claim.contents.as_object() {
                 Some(data) => data,
@@ -197,7 +229,6 @@ async fn post_credential_handler(
             fulfilled = true;
             break;
         }
-
         if fulfilled {
             for (key, value) in content.claim.contents.as_object().unwrap() {
                 props.insert(key.clone(), value.clone());
@@ -206,6 +237,7 @@ async fn post_credential_handler(
         }
     }
 
+    // if no requirement is fulfilled, return an error
     if !fulfilled {
         log::info!("No credential requirement fulfilled");
         return Err(Error::VerifyCredential(
@@ -213,21 +245,18 @@ async fn post_credential_handler(
         ));
     }
 
-    let oauth_context = match session.get::<AuthorizeQueryParameters>("oauth-context") {
-        Ok(data) => data,
-        _ => None,
-    };
-    let nonce = oauth_context.clone().map(|data| data.nonce);
-
     log::info!("Credential checked, all good to go");
 
+    // get the web3 name for the senders DID
     let w3n = kilt::get_w3n(&content.sender, &cli)
         .await
         .unwrap_or("".into());
 
-    let access_token = app_state
+    // construct id_token and refresh_token
+    let nonce = Some(oidc_context.nonce.clone());
+    let id_token = app_state
         .token_builder
-        .new_access_token(&content.sender, &w3n, &props, &nonce)
+        .new_id_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.token_secret)
         .map_err(|_| Error::CreateJWT)?;
 
@@ -237,39 +266,17 @@ async fn post_credential_handler(
         .to_jwt(&app_state.token_secret)
         .map_err(|_| Error::CreateJWT)?;
 
-    // in case we have a redirect url, redirect to it with the tokens as query parameters
-    // thats the simple custom flow
-    if let Some(redirect_url) = &query.redirect {
-        return Ok(HttpResponse::Found()
-            .append_header((
-                "Location",
-                format!(
-                    "{}?access_token={}&refresh_token={}",
-                    redirect_url, access_token, refresh_token
-                ),
-            ))
-            .finish());
-    }
-
-    match &oauth_context {
-        Some(context) => {
-            log::info!("Got oauth context from session");
-            Ok(HttpResponse::Found()
-                .append_header((
-                    "Location",
-                    format!(
-                        "{}?access_token={}&refresh_token={}&state={}",
-                        context.redirect_uri.clone(),
-                        access_token,
-                        refresh_token,
-                        context.state.clone(),
-                    ),
-                ))
-                .finish())
-        }
-        _ => Ok(HttpResponse::Ok().json(json!({
-            "accessToken": access_token,
-            "refreshToken": refresh_token,
-        }))),
-    }
+    // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own
+    Ok(HttpResponse::NoContent()
+        .append_header((
+            "Location",
+            format!(
+                "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
+                oidc_context.redirect_uri.clone(),
+                id_token,
+                refresh_token,
+                oidc_context.state.clone(),
+            ),
+        ))
+        .finish())
 }

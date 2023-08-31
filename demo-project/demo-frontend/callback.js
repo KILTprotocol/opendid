@@ -1,14 +1,16 @@
-const params = new URLSearchParams(window.location.search);
-const accessToken = params.get('access_token');
+// get the id_token and refresh_token from the fragment part of the url
+// and store them in the session storage
+const params = new URLSearchParams(window.location.hash.slice(1));
+const idToken = params.get('id_token');
 const refreshToken = params.get('refresh_token');
 const state = params.get('state');
 
-if (accessToken && refreshToken && state) {
+if (idToken && refreshToken && state) {
     const fn = async ()=>{
         // use token to access protected route
         const resp = await fetch('/protected', {
             headers: {
-                Authorization: `Bearer ${accessToken}`
+                Authorization: `Bearer ${idToken}`
             }
         });
         const greeting = document.createElement('h2');

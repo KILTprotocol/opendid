@@ -1,4 +1,3 @@
-
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use subxt::{config::polkadot::PolkadotExtrinsicParams, config::Config, OnlineClient};

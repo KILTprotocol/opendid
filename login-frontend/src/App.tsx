@@ -46,16 +46,16 @@ function ExtensionSelector(props: { onSelect: (extension: object) => void, selec
 export function App() {
 
     const [extension, setExtension] = React.useState<any>(null);
-    const [loginResponse, setLoginResponse] = React.useState({accessToken: '', refreshToken: ''});
+    const [loginResponse, setLoginResponse] = React.useState({idToken: '', refreshToken: ''});
     const [error, setError] = React.useState('');
 
     React.useEffect(() => {
         // check for query parameters access_token and refresh_token
         const urlParams = new URLSearchParams(window.location.search)
-        const accessToken = urlParams.get('access_token')
+        const idToken = urlParams.get('access_token')
         const refreshToken = urlParams.get('refresh_token')
-        if (accessToken && refreshToken) {
-            setLoginResponse({accessToken, refreshToken})
+        if (idToken && refreshToken) {
+            setLoginResponse({idToken, refreshToken})
         }
     })
 
@@ -110,10 +110,25 @@ export function App() {
                 },
                 credentials: 'include'
             });
-            if (credentialResponseResponse.redirected) {
-                window.location.href = credentialResponseResponse.url
+
+            console.log('credentialResponseResponse', credentialResponseResponse)
+
+            if (credentialResponseResponse.status > 400) {
+                const credentialResponseData = await credentialResponseResponse.text();
+                console.log('response to posted credential', credentialResponseData);
+                setError(credentialResponseData);
                 return
             }
+
+            if (credentialResponseResponse.status === 204) {
+                const uri = credentialResponseResponse.headers.get('Location')
+                if (uri !== null) {
+                    console.log('redirecting to', uri)
+                    window.location.href = uri
+                    return
+                }
+            }
+
             const credentialResponseData = await credentialResponseResponse.json();
             console.log('response to posted credential', credentialResponseData);
             setLoginResponse(credentialResponseData);            
@@ -179,12 +194,12 @@ export function App() {
                 <p>
                     <button onClick={startSession}>Login</button>
                 </p>
-                {loginResponse.accessToken !== '' && loginResponse.refreshToken !== '' && (
+                {loginResponse.idToken !== '' && loginResponse.refreshToken !== '' && (
                 <div>
-                    <p><a href={'https://jwt.io?token='+loginResponse.accessToken}>Inspect Access Token</a></p>
+                    <p><a href={'https://jwt.io?token='+loginResponse.idToken}>Inspect ID Token</a></p>
                     <p><a href={'https://jwt.io?token='+loginResponse.refreshToken}>Inspect Refresh Token</a></p>
                 </div>)}
-                {loginResponse.accessToken !== '' && loginResponse.refreshToken !== '' && (
+                {loginResponse.idToken !== '' && loginResponse.refreshToken !== '' && (
                     <p><button onClick={refresh}>Refresh</button></p>                
                 )}
                 <p>{error}</p>

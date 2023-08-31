@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use actix_session::{
     config::{CookieContentSecurity, PersistentSession},
     storage::CookieSessionStore,
@@ -14,6 +16,7 @@ use well_known_did_config::create_well_known_did_config;
 
 mod cli;
 mod config;
+mod constants;
 mod jwt;
 mod kilt;
 mod messages;
@@ -21,7 +24,7 @@ mod routes;
 mod verify;
 mod well_known_did_config;
 
-use crate::{config::CredentialRequirement, jwt::TokenFactory, routes::*};
+use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
 // shared state
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -30,11 +33,11 @@ struct AppState {
     encryption_key_uri: String,
     public_key: Vec<u8>,
     secret_key: Vec<u8>,
-    credential_requirements: Vec<CredentialRequirement>,
     token_builder: TokenFactory,
     token_secret: String,
     well_known_did_config: well_known_did_config::WellKnownDidConfig,
-    oauth_config: Option<config::OauthConfig>,
+    kilt_endpoint: String,
+    client_configs: HashMap<String, config::ClientConfig>,
 }
 
 #[actix_web::main]
@@ -51,11 +54,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         encryption_key_uri: config.session_config.key_uri.to_string(),
         public_key: config.get_nacl_public_key()?,
         secret_key: config.get_nacl_secret_key()?,
-        credential_requirements: config.credential_requirements.clone(),
         token_builder: config.get_token_factory(),
         token_secret: config.jwt_config.token_secret.clone(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
-        oauth_config: config.oauth_config.clone(),
+        kilt_endpoint: config
+            .kilt_endpoint
+            .clone()
+            .unwrap_or("spiritnet".to_string()),
+        client_configs: config.clients.clone(),
     };
 
     let host = config.host.clone();
@@ -73,7 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .cookie_http_only(true)
                     .cookie_same_site(SameSite::Lax)
                     .cookie_secure(config.production)
-                    .cookie_name("sara".to_string())
+                    .cookie_name(SESSION_COOKIE_NAME.to_string())
                     .session_lifecycle(
                         PersistentSession::default().session_ttl(Duration::seconds(60)),
                     )

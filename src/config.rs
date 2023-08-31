@@ -11,18 +11,17 @@ pub struct Config {
     pub host: String,
     pub port: u16,
     pub production: bool,
+    #[serde(rename = "kiltEndpoint")]
+    pub kilt_endpoint: Option<String>,
     #[serde(rename = "basePath")]
     pub base_path: String,
-    #[serde(rename = "credentialRequirements")]
-    pub credential_requirements: Vec<CredentialRequirement>,
     #[serde(rename = "session")]
     pub session_config: SessionConfig,
     #[serde(rename = "jwt")]
     pub jwt_config: JWTConfig,
     #[serde(rename = "wellKnownDid")]
     pub well_known_did_config: WellKnownDidConfig,
-    #[serde(rename = "oauth")]
-    pub oauth_config: Option<OauthConfig>,
+    pub clients: HashMap<String, ClientConfig>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -78,12 +77,19 @@ pub struct OauthConfig {
     pub redirect_urls: HashMap<String, Vec<String>>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ClientConfig {
+    pub requirements: Vec<CredentialRequirement>,
+    #[serde(rename = "redirectUrls")]
+    pub redirect_urls: Vec<String>,
+}
+
 impl Config {
     pub fn get_session_key(&self) -> Key {
         if self.session_config.session_key.len() >= 32 {
             Key::from(
                 hex::decode(self.session_config.session_key.trim_start_matches("0x"))
-                    .unwrap()
+                    .expect("session key is not a valid hex string")
                     .as_slice(),
             )
         } else {
