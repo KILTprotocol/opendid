@@ -22,6 +22,7 @@ pub struct Config {
     #[serde(rename = "wellKnownDid")]
     pub well_known_did_config: WellKnownDidConfig,
     pub clients: HashMap<String, ClientConfig>,
+    pub etcd: Option<EtcdConfig>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -72,9 +73,25 @@ pub struct WellKnownDidConfig {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OauthConfig {
+pub struct ClientConfig {
+    pub requirements: Vec<CredentialRequirement>,
     #[serde(rename = "redirectUrls")]
-    pub redirect_urls: HashMap<String, Vec<String>>,
+    pub redirect_urls: Vec<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EtcdConfig {
+    pub endpoints: Vec<String>,
+    pub user: Option<String>,
+    pub password: Option<String>,
+    #[serde(rename = "tlsDomainName")]
+    pub tls_domain_name: Option<String>,
+    #[serde(rename = "tlsCaCert")]
+    pub tls_ca_cert: Option<String>,
+    #[serde(rename = "tlsClientCert")]
+    pub tls_client_cert: Option<String>,
+    #[serde(rename = "tlsClientKey")]
+    pub tls_client_key: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

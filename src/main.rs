@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Mutex};
 
 use actix_session::{
     config::{CookieContentSecurity, PersistentSession},
@@ -16,6 +16,7 @@ use well_known_did_config::create_well_known_did_config;
 
 mod cli;
 mod config;
+mod config_updater;
 mod constants;
 mod jwt;
 mod kilt;
@@ -28,7 +29,7 @@ use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
 // shared state
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct AppState {
+pub struct AppState {
     app_name: String,
     encryption_key_uri: String,
     public_key: Vec<u8>,
@@ -49,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = cli.get_config()?;
 
-    let state = AppState {
+    let state = web::Data::new(Mutex::new(AppState {
         app_name: "simple-auth-relay-app".to_string(),
         encryption_key_uri: config.session_config.key_uri.to_string(),
         public_key: config.get_nacl_public_key()?,
@@ -62,7 +63,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .clone()
             .unwrap_or("spiritnet".to_string()),
         client_configs: config.clients.clone(),
-    };
+    }));
+
+    if config.etcd.is_some() {
+        log::info!("Starting config updater");
+        let config = config.etcd.clone().unwrap();
+        let mut updater = config_updater::ConfigUpdater::new(state.clone(), config).await?;
+        actix_web::rt::spawn(async move {
+            if let Err(e) = updater.read_initial_config().await {
+                log::error!("Error reading initial config: {}", e);
+            }
+            if let Err(e) = updater.watch_for_updates().await {
+                log::error!("Error updating config: {}", e);
+            }
+        });
+    }
 
     let host = config.host.clone();
     let port = config.port;
@@ -71,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(state.clone()))
+            .app_data(state.clone())
             .wrap(Logger::default())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), config.get_session_key())

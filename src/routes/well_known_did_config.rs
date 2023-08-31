@@ -1,9 +1,13 @@
-use actix_web::{get, web, Responder};
+use std::sync::Mutex;
 
-use crate::AppState;
+use actix_web::{get, web, HttpResponse};
+
+use crate::{routes::error::Error, AppState};
 
 #[get("/.well-known/did-configuration.json")]
-async fn well_known_did_config_handler(app_state: web::Data<AppState>) -> impl Responder {
-    // return app_state.well_known_did_config as JSON
-    web::Json(app_state.well_known_did_config.clone())
+async fn well_known_did_config_handler(
+    app_state: web::Data<Mutex<AppState>>,
+) -> Result<HttpResponse, Error> {
+    let app_state = app_state.lock()?;
+    Ok(HttpResponse::Ok().json(&app_state.well_known_did_config))
 }

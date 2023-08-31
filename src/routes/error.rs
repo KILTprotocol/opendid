@@ -19,6 +19,7 @@ pub enum Error {
     GetChallenge,
     VerifyCredential(String),
     CreateJWT,
+    LockPoison,
 }
 
 impl std::error::Error for Error {}
@@ -43,6 +44,7 @@ impl std::fmt::Display for Error {
             Error::VerifyCredential(ref s) => write!(f, "Failed to verify credential: {}", s),
             Error::CreateJWT => write!(f, "Failed to create JWT"),
             Error::OauthNoSession => write!(f, "No session"),
+            Error::LockPoison => write!(f, "Lock poison"),
         }
     }
 }
@@ -88,5 +90,11 @@ impl From<SessionInsertError> for Error {
 impl From<SessionGetError> for Error {
     fn from(_: SessionGetError) -> Self {
         Error::SessionGet
+    }
+}
+
+impl<T> From<std::sync::PoisonError<T>> for Error {
+    fn from(_: std::sync::PoisonError<T>) -> Self {
+        Error::LockPoison
     }
 }
