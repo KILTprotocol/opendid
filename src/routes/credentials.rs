@@ -266,10 +266,7 @@ async fn post_credential_handler(
 
     // construct id_token and refresh_token
     let nonce = Some(oidc_context.nonce.clone());
-<<<<<<< HEAD
-=======
     let app_state = app_state.lock()?;
->>>>>>> 3080f5d... parent ab153bdd9a2fa50c1746081006d556007a316748
     let id_token = app_state
         .token_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)
