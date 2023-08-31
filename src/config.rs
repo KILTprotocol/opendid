@@ -73,13 +73,6 @@ pub struct WellKnownDidConfig {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ClientConfig {
-    pub requirements: Vec<CredentialRequirement>,
-    #[serde(rename = "redirectUrls")]
-    pub redirect_urls: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EtcdConfig {
     pub endpoints: Vec<String>,
     pub user: Option<String>,
