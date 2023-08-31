@@ -45,7 +45,6 @@ pub struct JWTConfig {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialRequirement {
-    #[serde(rename = "cTypeHash")]
     pub ctype_hash: String,
     pub trusted_attesters: Vec<String>,
     pub required_properties: Vec<String>,
@@ -97,6 +96,8 @@ pub struct ClientConfig {
     pub requirements: Vec<CredentialRequirement>,
     #[serde(rename = "redirectUrls")]
     pub redirect_urls: Vec<String>,
+    #[serde(rename = "checksDirectory")]
+    pub checks_directory: Option<String>,
 }
 
 impl Config {
@@ -110,10 +111,6 @@ impl Config {
         } else {
             Key::generate()
         }
-    }
-
-    pub fn get_nacl_public_key(&self) -> Result<Vec<u8>, FromHexError> {
-        hex::decode(self.session.nacl_public_key.trim_start_matches("0x"))
     }
 
     pub fn get_nacl_secret_key(&self) -> Result<Vec<u8>, FromHexError> {

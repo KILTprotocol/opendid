@@ -93,6 +93,8 @@ podman run --rm -it \
         /app/scripts/delete-did.sh "${SEED}"
 ```
 
+## Advanced usage
+
 ### Use dynamic client management
 
 In case you want to dynamically create or remove OpenID Connect clients, you can configure the service to get its configuration from an [etcd cluster](https://etcd.io).
@@ -140,3 +142,56 @@ etcdctl put /sara/clients/new-client "${CLIENT_SPEC}"
 ```
 
 If you want to quickly try this out you can first generate a config using the setup image as described above, add the etcd configuration and then start the service using the example script in [./scripts/start-demo-etcd.sh](./scripts/start-demo-etcd.sh).
+
+### Add advanced claim checks using RHAI scripts
+
+To add custom checks that are executed on the claims of the Verifiable Credential, you can use [Rhai](https://rhai.rs) scripts.
+To try it out you only have to add a `checksDirectory` entry to the client configuration in the `config.yaml` file.
+
+Example:
+```yaml
+...
+clients:
+  example-client:
+    requirements:
+      - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
+        trustedAttesters: ["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
+        requiredProperties: ["Email"]
+    redirectUrls:
+      - http://localhost:1606/callback.html
+    checksDirectory: /app/checks
+...
+```
+
+Now create a directory `checks` in the same directory as the `config.yaml` file and add a file `example-check.rhai` with the following content:
+
+```rust
+// This is a simple example of a login policy that allows only users with an email address ending with `kilt.io` to login.
+
+let SUFFIX = "kilt.io";
+
+// ID_TOKEN contains the id_token as to be send to the user from the OIDC provider
+let token = parse_id_token(ID_TOKEN);
+
+// We can inspect the token and especially the `pro` sub-object that contains the users claims
+if token.pro.Email.ends_with(SUFFIX) {
+  // The user is allowed to login
+  return true;
+}
+
+// The user is not allowed to login
+return false;
+```
+
+You can now start the service bind-mounting the script and try it out.
+
+```bash
+podman run -d --rm \
+    -v $(pwd)/config.yaml:/app/config.yaml \
+    -v $(pwd)/checks:/app/checks \
+    -p 3001:3001 \
+    quay.io/kilt/simple-auth-relay-app:latest
+```
+
+When you now login with a user that has an email address ending with `kilt.io` you will be allowed to login.
+If you use a different email address, you will be denied access.

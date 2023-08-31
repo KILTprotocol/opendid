@@ -144,8 +144,6 @@ async fn post_credential_handler(
         let app_state = app_state.read()?;
         app_state.kilt_endpoint.clone()
     };
-
-    // connect to KILT to lookup the sender's public key
     let cli = kilt::connect(&endpoint)
         .await
         .map_err(|_| Error::CantConnectToBlockchain)?;
@@ -278,6 +276,14 @@ async fn post_credential_handler(
         .new_refresh_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.token_secret)
         .map_err(|_| Error::CreateJWT)?;
+
+    // check if there are any additional scripting checks to be done
+    let client_config = client_configs
+        .get(&oidc_context.client_id)
+        .ok_or(Error::OauthInvalidClientId)?;
+    if let Some(checks_directory) = &client_config.checks_directory {
+        crate::rhai_checker::check(&oidc_context.client_id, checks_directory, &id_token)?;
+    }
 
     // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own
     Ok(HttpResponse::NoContent()

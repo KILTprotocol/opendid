@@ -11,7 +11,7 @@ use actix_web::{
     web, App, HttpServer,
 };
 use clap::Parser;
-use serde::{Deserialize, Serialize};
+
 use well_known_did_config::create_well_known_did_config;
 
 mod cli;
@@ -21,6 +21,7 @@ mod constants;
 mod jwt;
 mod kilt;
 mod messages;
+mod rhai_checker;
 mod routes;
 mod verify;
 mod well_known_did_config;
@@ -28,11 +29,10 @@ mod well_known_did_config;
 use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
 // shared state
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     app_name: String,
     encryption_key_uri: String,
-    public_key: Vec<u8>,
     secret_key: Vec<u8>,
     token_builder: TokenFactory,
     token_secret: String,
@@ -53,7 +53,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = web::Data::new(RwLock::new(AppState {
         app_name: "simple-auth-relay-app".to_string(),
         encryption_key_uri: config.session.key_uri.to_string(),
-        public_key: config.get_nacl_public_key()?,
         secret_key: config.get_nacl_secret_key()?,
         token_builder: config.get_token_factory(),
         token_secret: config.jwt.token_secret.clone(),

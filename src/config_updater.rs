@@ -73,9 +73,8 @@ impl ConfigUpdater {
             client_configs.insert(client_id, client_config);
         }
 
-        // we update the app state with the latest client configs
-        let mut app_state = self.app_state.write()?;
-        app_state.client_configs = client_configs.clone();
+        self.app_state.write()?.client_configs = client_configs;
+
         Ok(())
     }
 
