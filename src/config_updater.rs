@@ -44,7 +44,10 @@ impl ConfigUpdater {
     }
 
     pub async fn read_initial_config(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
-        let mut client_configs = HashMap::new();
+        let mut client_configs = {
+            let app_state = self.app_state.lock()?;
+            app_state.client_configs.clone()
+        };
         let resp = self
             .cli
             .get(
@@ -68,7 +71,10 @@ impl ConfigUpdater {
     }
 
     pub async fn watch_for_updates(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
-        let mut client_configs = HashMap::new();
+        let mut client_configs = {
+            let app_state = self.app_state.lock()?;
+            app_state.client_configs.clone()
+        };
         // watch for changes
         let (_, mut stream) = self
             .cli
