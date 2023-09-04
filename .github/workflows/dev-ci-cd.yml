@@ -39,7 +39,7 @@ jobs:
         podman tag quay.io/kilt/simple-auth-relay-app-demo ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
         podman tag quay.io/kilt/simple-auth-relay-app-setup ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
         podman tag ${REGISTRY}/${REPOSITORY_BASE}:IMAGE_TAG ${REGISTRY}/${REPOSITORY_BASE}:latest
-        podman tag ${REGISTRY}/${REPOSITORY_BASE}-demo:latest ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
+        podman tag ${REGISTRY}/${REPOSITORY_BASE}-demo:IMAGE_TAG ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
         podman tag ${REGISTRY}/${REPOSITORY_BASE}-setup:latest ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
         podman push ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
         podman push ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
