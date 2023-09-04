@@ -27,7 +27,7 @@ jobs:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASS: ${{ secrets.REPO_ACCESS_TOKEN }}
       run: |
-        echo -n $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io
+        echo -n $DOCKER_PASS | podman login -u $DOCKER_USER --password-stdin docker.io
 
     - name: Tag and push image
       env:
