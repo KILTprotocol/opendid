@@ -25,7 +25,7 @@ jobs:
     - name: Login to Docker Hub
       env:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
-        DOCKER_PASS: ${{ secrets.REGISTRY_TOKEN }}
+        DOCKER_PASS: ${{ secrets.REPO_ACCESS_TOKEN }}
       run: |
         echo -n $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io
 
