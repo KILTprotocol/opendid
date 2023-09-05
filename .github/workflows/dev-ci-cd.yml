@@ -35,9 +35,9 @@ jobs:
         REPOSITORY_BASE: opendid
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        podman tag quay.io/kilt/simple-auth-relay-app ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
-        podman tag quay.io/kilt/simple-auth-relay-app-demo ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
-        podman tag quay.io/kilt/simple-auth-relay-app-setup ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
+        podman tag quay.io/kilt/simple-auth-relay-app:latest ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
+        podman tag quay.io/kilt/simple-auth-relay-app-demo:latest ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
+        podman tag quay.io/kilt/simple-auth-relay-app-setup:latest ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
         podman tag ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}:latest
         podman tag ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
         podman tag ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
