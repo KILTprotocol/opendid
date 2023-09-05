@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/ci-cd-workflow # for testing
 
 name: Build container image
 
