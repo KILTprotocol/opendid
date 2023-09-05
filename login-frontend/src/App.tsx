@@ -35,7 +35,7 @@ export function App() {
     if (idToken && refreshToken) {
       setLoginResponse({ idToken, refreshToken });
     }
-  });
+  }, []);
 
   const handleLogin = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -46,13 +46,11 @@ export function App() {
 
       const session = await getSession(kilt[extension]);
 
-      console.log('fetching credential requirements');
       const credentialRequirements = await (
         await fetch('/api/v1/credentials', {
           credentials: 'include',
         })
       ).json();
-      console.log('got credential requirements', credentialRequirements);
       const credentialResponse = await new Promise(async (resolve, reject) => {
         try {
           await session.listen(async (credentialResponse) => {
@@ -64,7 +62,6 @@ export function App() {
         }
       });
 
-      console.log('posting credential to server', credentialResponse);
       let url = '/api/v1/credentials';
       // get redirect uri query
       let redirectUri = new URLSearchParams(window.location.search).get('redirect');
@@ -80,11 +77,8 @@ export function App() {
         credentials: 'include',
       });
 
-      console.log('credentialResponseResponse', credentialResponseResponse);
-
-      if (credentialResponseResponse.status > 400) {
+      if (credentialResponseResponse.status >= 400) {
         const credentialResponseData = await credentialResponseResponse.text();
-        console.log('response to posted credential', credentialResponseData);
         setError(credentialResponseData);
         return;
       }
@@ -92,14 +86,12 @@ export function App() {
       if (credentialResponseResponse.status === 204) {
         const uri = credentialResponseResponse.headers.get('Location');
         if (uri !== null) {
-          console.log('redirecting to', uri);
           window.location.href = uri;
           return;
         }
       }
 
       const credentialResponseData = await credentialResponseResponse.json();
-      console.log('response to posted credential', credentialResponseData);
       setLoginResponse(credentialResponseData);
     } catch (e) {
       console.error(e);
@@ -117,7 +109,6 @@ export function App() {
         },
       });
       const respData = await resp.json();
-      console.log('refresh response', respData);
       setLoginResponse(respData);
     } catch (e) {
       console.error(e);
