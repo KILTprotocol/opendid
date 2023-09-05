@@ -16,6 +16,7 @@ jobs:
         with:
           node-version-file: "login-frontend/package.json"
           cache: "yarn"
+          cache-dependency-path: "login-frontend/yarn.lock"
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
