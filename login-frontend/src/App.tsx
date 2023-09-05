@@ -37,67 +37,70 @@ export function App() {
     }
   }, []);
 
-  const handleLogin = useCallback(async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleLogin = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
 
-    try {
-      const form = event.currentTarget;
-      const extension = new FormData(form).get('extension') as string;
+      try {
+        const form = event.currentTarget;
+        const extension = new FormData(form).get('extension') as string;
 
-      const session = await getSession(kilt[extension]);
+        const session = await getSession(kilt[extension]);
 
-      const credentialRequirements = await (
-        await fetch('/api/v1/credentials', {
-          credentials: 'include',
-        })
-      ).json();
-      const credentialResponse = await new Promise(async (resolve, reject) => {
-        try {
-          await session.listen(async (credentialResponse) => {
-            resolve(credentialResponse);
-          });
-          await session.send(credentialRequirements);
-        } catch (e) {
-          reject(e);
+        const credentialRequirements = await (
+          await fetch('/api/v1/credentials', {
+            credentials: 'include',
+          })
+        ).json();
+        const credentialResponse = await new Promise(async (resolve, reject) => {
+          try {
+            await session.listen(async (credentialResponse) => {
+              resolve(credentialResponse);
+            });
+            await session.send(credentialRequirements);
+          } catch (e) {
+            reject(e);
+          }
+        });
+
+        let url = '/api/v1/credentials';
+        // get redirect uri query
+        const redirectUri = new URLSearchParams(window.location.search).get('redirect');
+        if (redirectUri) {
+          url = `${url}?redirect=${redirectUri}`;
         }
-      });
+        const credentialResponseResponse = await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify(credentialResponse),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
 
-      let url = '/api/v1/credentials';
-      // get redirect uri query
-      let redirectUri = new URLSearchParams(window.location.search).get('redirect');
-      if (redirectUri) {
-        url = `${url}?redirect=${redirectUri}`;
-      }
-      const credentialResponseResponse = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify(credentialResponse),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      });
-
-      if (credentialResponseResponse.status >= 400) {
-        const credentialResponseData = await credentialResponseResponse.text();
-        setError(credentialResponseData);
-        return;
-      }
-
-      if (credentialResponseResponse.status === 204) {
-        const uri = credentialResponseResponse.headers.get('Location');
-        if (uri !== null) {
-          window.location.href = uri;
+        if (credentialResponseResponse.status >= 400) {
+          const credentialResponseData = await credentialResponseResponse.text();
+          setError(credentialResponseData);
           return;
         }
-      }
 
-      const credentialResponseData = await credentialResponseResponse.json();
-      setLoginResponse(credentialResponseData);
-    } catch (e) {
-      console.error(e);
-      setError(e.message);
-    }
-  }, []);
+        if (credentialResponseResponse.status === 204) {
+          const uri = credentialResponseResponse.headers.get('Location');
+          if (uri !== null) {
+            window.location.href = uri;
+            return;
+          }
+        }
+
+        const credentialResponseData = await credentialResponseResponse.json();
+        setLoginResponse(credentialResponseData);
+      } catch (e) {
+        console.error(e);
+        setError(e.message);
+      }
+    },
+    [kilt],
+  );
 
   const handleRefresh = useCallback(async () => {
     try {
@@ -114,7 +117,7 @@ export function App() {
       console.error(e);
       setError(e.message);
     }
-  }, []);
+  }, [refreshToken]);
 
   return (
     <div className="container">
