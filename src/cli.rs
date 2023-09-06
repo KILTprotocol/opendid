@@ -1,6 +1,6 @@
 use clap::Parser;
+use clap_verbosity_flag::{InfoLevel, Verbosity};
 use std::path::PathBuf;
-use clap_verbosity_flag::{Verbosity, InfoLevel};
 
 use crate::config::Config;
 

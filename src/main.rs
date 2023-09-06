@@ -43,7 +43,6 @@ pub struct AppState {
 
 #[actix_web::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     let cli = cli::Cli::parse();
     env_logger::Builder::new()
         .filter_level(cli.verbose.log_level_filter())
