@@ -65,13 +65,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_configs: config.clients.clone(),
     }));
 
-    let mut tasks = vec![];
-
     if let Some(etcd_config) = &config.etcd {
         log::info!("Starting config updater");
         let mut updater =
             config_updater::ConfigUpdater::new(state.clone(), etcd_config.clone()).await?;
-        tasks.push(actix_web::rt::spawn(async move {
+        actix_web::rt::spawn(async move {
             if let Err(e) = updater.read_initial_config().await {
                 log::error!("Error reading initial config: {}", e);
                 std::process::exit(1);
@@ -80,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 log::error!("Error updating config: {}", e);
                 std::process::exit(1);
             }
-        }));
+        });
     }
 
     let host = config.host.clone();
@@ -114,9 +112,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })
     .bind((host.as_str(), port))?
-    .run();
-
-    server.await?;
+    .run()
+    .await;
 
     Ok(())
 }
