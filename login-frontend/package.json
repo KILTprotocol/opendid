@@ -3,18 +3,38 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">= v18.17.1"
+  },
   "scripts": {
-    "dev": "parcel src/index.html --open",
-    "start": "parcel src/index.html",
-    "build": "parcel build src/index.html"
+    "dev": "parcel --open",
+    "build": "parcel build",
+    "lint": "eslint --max-warnings 0 --config ./.eslintrc.json \"src/**/*.ts*\""
   },
   "devDependencies": {
     "@types/react": "^18.2.13",
+    "@typescript-eslint/eslint-plugin": "^6.6.0",
+    "@typescript-eslint/parser": "^6.6.0",
+    "eslint": "^8.48.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-import-resolver-typescript": "^3.6.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "parcel": "^2.9.2",
-    "process": "^0.11.10"
+    "prettier": "^3.0.3",
+    "process": "^0.11.10",
+    "typescript": "^5.2.2"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
+  },
+  "targets": {
+    "default": {
+      "source": "src/index.html",
+      "context": "browser"
+    }
   }
 }
