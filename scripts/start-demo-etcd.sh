@@ -8,7 +8,7 @@
 #
 
 # create the pod to hold the backend, frontend, and etcd
-podman pod create --replace -p 1606:1606 -p 3001:3001 -p 2379:2379 sara-test
+podman pod create --replace -p 1606:1606 -p 3001:3001 -p 2379:2379 -n sara-test
 
 # start single node etcd deployment
 podman run -d --rm --pod sara-test -v /usr/share/ca-certificates/:/etc/ssl/certs \

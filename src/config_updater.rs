@@ -20,28 +20,19 @@ impl ConfigUpdater {
         let mut opts = etcd_client::ConnectOptions::new();
 
         // we support user/password
-        if config.user.is_some() && config.password.is_some() {
-            opts = opts.with_user(config.user.unwrap(), config.password.unwrap());
+        if let Some(user_auth) = config.user_auth {
+            opts = opts.with_user(user_auth.username, user_auth.password);
         }
 
-        // we support tls
-        if config.tls_ca_cert.is_some()
-            || config.tls_domain_name.is_some()
-            || (config.tls_client_cert.is_some() && config.tls_client_key.is_some())
-        {
-            let mut tls_options = etcd_client::TlsOptions::new();
-            if let Some(ca_cert) = config.tls_ca_cert {
-                let cert = etcd_client::Certificate::from_pem(ca_cert);
-                tls_options = tls_options.ca_certificate(cert);
-            }
-            if let Some(domain_name) = config.tls_domain_name {
-                tls_options = tls_options.domain_name(domain_name);
-            }
-            if let Some(client_cert) = config.tls_client_cert {
-                if let Some(client_key) = config.tls_client_key {
-                    let identity = etcd_client::Identity::from_pem(client_cert, client_key);
-                    tls_options = tls_options.identity(identity);
-                }
+        if let Some(tls_auth) = config.tls_auth {
+            let mut tls_options = etcd_client::TlsOptions::new()
+                .domain_name(tls_auth.domain_name);
+            if let Some(client_auth) = tls_auth.client_auth {
+                let identity = etcd_client::Identity::from_pem(
+                    client_auth.client_cert,
+                    client_auth.client_key,
+                );
+                tls_options = tls_options.identity(identity);
             }
             opts = opts.with_tls(tls_options);
         }

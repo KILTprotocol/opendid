@@ -7,17 +7,14 @@ use serde::{Deserialize, Serialize};
 use crate::jwt::TokenFactory;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     pub host: String,
     pub port: u16,
     pub production: bool,
-    #[serde(rename = "kiltEndpoint")]
     pub kilt_endpoint: Option<String>,
-    #[serde(rename = "basePath")]
     pub base_path: String,
-    #[serde(rename = "session")]
     pub session_config: SessionConfig,
-    #[serde(rename = "jwt")]
     pub jwt_config: JWTConfig,
     #[serde(rename = "wellKnownDid")]
     pub well_known_did_config: WellKnownDidConfig,
@@ -26,65 +23,72 @@ pub struct Config {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionConfig {
-    #[serde(rename = "sessionKey")]
     pub session_key: String,
-    #[serde(rename = "keyUri")]
     pub key_uri: String,
-    #[serde(rename = "naclPublicKey")]
     pub nacl_public_key: String,
-    #[serde(rename = "naclSecretKey")]
     pub nacl_secret_key: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JWTConfig {
-    #[serde(rename = "tokenIssuer")]
     pub token_issuer: String,
-    #[serde(rename = "tokenSecret")]
     pub token_secret: String,
-    #[serde(rename = "accessTokenLifetime")]
     pub access_token_lifetime: i64,
-    #[serde(rename = "accessTokenAudience")]
     pub access_token_audience: String,
-    #[serde(rename = "refreshTokenLifetime")]
     pub refresh_token_lifetime: i64,
-    #[serde(rename = "refreshTokenAudience")]
     pub refresh_token_audience: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CredentialRequirement {
-    #[serde(rename = "cTypeHash")]
     pub ctype_hash: String,
-    #[serde(rename = "trustedAttesters")]
     pub trusted_attesters: Vec<String>,
-    #[serde(rename = "requiredProperties")]
     pub required_properties: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WellKnownDidConfig {
     pub did: String,
-    #[serde(rename = "keyUri")]
     pub key_uri: String,
     pub origin: String,
     pub seed: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EtcdConfig {
     pub endpoints: Vec<String>,
-    pub user: Option<String>,
-    pub password: Option<String>,
-    #[serde(rename = "tlsDomainName")]
-    pub tls_domain_name: Option<String>,
-    #[serde(rename = "tlsCaCert")]
-    pub tls_ca_cert: Option<String>,
-    #[serde(rename = "tlsClientCert")]
-    pub tls_client_cert: Option<String>,
-    #[serde(rename = "tlsClientKey")]
-    pub tls_client_key: Option<String>,
+    #[serde(flatten)]
+    pub user_auth: Option<EtcdUserAuth>,
+    #[serde(flatten)]
+    pub tls_auth: Option<EtcdTlsAuth>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct EtcdUserAuth {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EtcdTlsAuth {
+    pub domain_name: String,
+    pub ca_cert: String,
+    #[serde(flatten)]
+    pub client_auth: Option<EtcdTlsClientAuth>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EtcdTlsClientAuth {
+    pub client_cert: String,
+    pub client_key: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

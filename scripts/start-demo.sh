@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # create a pod to hold backend and frontend
-podman pod create --replace -p 1606:1606 -p 3001:3001 sara-test
+podman pod create --replace -p 1606:1606 -p 3001:3001 -n sara-test
 
 # start the simple auth relay app
 podman run -d --rm \

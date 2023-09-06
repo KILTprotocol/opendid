@@ -104,7 +104,7 @@ etcd:
   endpoints: ["localhost:2379"]
   user: etcd-user
   password: my-password
-  tlsDomainName: my.etcd.cluster.com
+  tlsDomainName: my.etcd.cluster.example.com
   tlsCaCert: >
     -----BEGIN CERTIFICATE-----
     <ca certificate data>
