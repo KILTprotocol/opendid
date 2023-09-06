@@ -26,7 +26,10 @@ impl ConfigUpdater {
 
         if let Some(tls_auth) = config.tls_auth {
             let mut tls_options = etcd_client::TlsOptions::new()
-                .domain_name(tls_auth.domain_name);
+                .domain_name(tls_auth.domain_name)
+                .ca_certificate(etcd_client::Certificate::from_pem(
+                    tls_auth.ca_cert,
+                ));
             if let Some(client_auth) = tls_auth.client_auth {
                 let identity = etcd_client::Identity::from_pem(
                     client_auth.client_cert,
