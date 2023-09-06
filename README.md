@@ -13,7 +13,7 @@ The resulting tokens can be used with any service that supports JWT tokens.
 - a DID with a Verifiable Credential for testing from for example [SocialKYC](https://socialkyc.io)
 - a laptop or desktop computer with a container engine like podman or docker installed
 
-If you want to install podman on your machine (which I would recommend), you can follow the instructions [here](https://podman.io/getting-started/installation).
+If you want to install podman on your machine (which I would recommend), you can [follow the instructions](https://podman.io/getting-started/installation).
 If you have docker and want to stick with it, you can just replace every occurence of `podman` with `docker` in the following instructions.
 
 ### Generate the config file
@@ -92,3 +92,51 @@ podman run --rm -it \
     quay.io/kilt/simple-auth-relay-app-setup:latest \
         /app/scripts/delete-did.sh "${SEED}"
 ```
+
+### Use dynamic client management
+
+In case you want to dynamically create or remove OpenID Connect clients, you can configure the service to get its configuration from an [etcd cluster](https://etcd.io).
+To do so all you need is to configure the connection parameters for the etcd cluster in the `config.yaml` file.
+
+```yaml
+...
+etcd:
+  endpoints: ["localhost:2379"]
+  user: etcd-user
+  password: my-password
+  tlsDomainName: my.etcd.cluster.example.com
+  tlsCaCert: >
+    -----BEGIN CERTIFICATE-----
+    <ca certificate data>
+    -----END CERTIFICATE-----
+  tlsClientCert: >
+    -----BEGIN CERTIFICATE-----
+    <client certificate data>
+    -----END CERTIFICATE-----
+  tlsClientKey: >
+    -----BEGIN RSA PRIVATE KEY-----
+    <client key data>
+    -----END RSA PRIVATE KEY-----
+...
+```
+
+All fields except `endpoints` are optional and depending on your etcd setup you might not need them.
+When everything is setup you can start putting client configurations into the etcd cluster.
+
+```bash
+CLIENT_SPEC=$(cat <<EOF
+{
+  "requirements": [{
+    "cTypeHash":"0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac",
+    "trustedAttesters":["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"],
+    "requiredProperties": ["Email"]
+  }],
+  "redirectUrls": ["http://localhost:1606/callback.html"]
+}
+EOF
+)
+CLIENT_SPEC=$(echo $CLIENT_SPEC | jq -c)
+etcdctl put /sara/clients/new-client "${CLIENT_SPEC}"
+```
+
+If you want to quickly try this out you can first generate a config using the setup image as described above, add the etcd configuration and then start the service using the example script in [./scripts/start-demo-etcd.sh](./scripts/start-demo-etcd.sh).

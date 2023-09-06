@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::RwLock};
 
 use actix_session::{
     config::{CookieContentSecurity, PersistentSession},
@@ -16,6 +16,7 @@ use well_known_did_config::create_well_known_did_config;
 
 mod cli;
 mod config;
+mod config_updater;
 mod constants;
 mod jwt;
 mod kilt;
@@ -28,7 +29,7 @@ use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
 // shared state
 #[derive(Clone, Debug, Serialize, Deserialize)]
-struct AppState {
+pub struct AppState {
     app_name: String,
     encryption_key_uri: String,
     public_key: Vec<u8>,
@@ -42,27 +43,43 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
-
     let cli = cli::Cli::parse();
-    cli.set_log_level();
+    env_logger::Builder::new()
+        .filter_level(cli.verbose.log_level_filter())
+        .init();
 
     let config = cli.get_config()?;
 
-    let state = AppState {
+    let state = web::Data::new(RwLock::new(AppState {
         app_name: "simple-auth-relay-app".to_string(),
-        encryption_key_uri: config.session_config.key_uri.to_string(),
+        encryption_key_uri: config.session.key_uri.to_string(),
         public_key: config.get_nacl_public_key()?,
         secret_key: config.get_nacl_secret_key()?,
         token_builder: config.get_token_factory(),
-        token_secret: config.jwt_config.token_secret.clone(),
+        token_secret: config.jwt.token_secret.clone(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
         kilt_endpoint: config
             .kilt_endpoint
             .clone()
             .unwrap_or("spiritnet".to_string()),
         client_configs: config.clients.clone(),
-    };
+    }));
+
+    if let Some(etcd_config) = &config.etcd {
+        log::info!("Starting config updater");
+        let mut updater =
+            config_updater::ConfigUpdater::new(state.clone(), etcd_config.clone()).await?;
+        actix_web::rt::spawn(async move {
+            if let Err(e) = updater.read_initial_config().await {
+                log::error!("Error reading initial config: {}", e);
+                std::process::exit(1);
+            }
+            if let Err(e) = updater.watch_for_updates().await {
+                log::error!("Error updating config: {}", e);
+                std::process::exit(1);
+            }
+        });
+    }
 
     let host = config.host.clone();
     let port = config.port;
@@ -71,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(state.clone()))
+            .app_data(state.clone())
             .wrap(Logger::default())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), config.get_session_key())

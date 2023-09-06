@@ -1,3 +1,5 @@
+use std::sync::RwLock;
+
 use actix_session::Session;
 use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -19,10 +21,11 @@ pub struct AuthorizeQueryParameters {
 #[get("/api/v1/authorize")]
 async fn authorize_handler(
     session: Session,
-    app_state: web::Data<AppState>,
+    app_state: web::Data<RwLock<AppState>>,
     query: web::Query<AuthorizeQueryParameters>,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET authorize handler");
+    let app_state = app_state.read()?;
     let redirect_urls = &app_state
         .client_configs
         .get(&query.client_id)
