@@ -1,11 +1,11 @@
 use crate::{config::EtcdConfig, routes::error::Error, AppState};
 use actix_web::web;
-use std::sync::Mutex;
+use std::sync::RwLock;
 
 // ConfigUpdater is responsible for fetching client configurations from etcd and
 // updating the app state with the latest configurations.
 pub struct ConfigUpdater {
-    app_state: web::Data<Mutex<AppState>>,
+    app_state: web::Data<RwLock<AppState>>,
     cli: etcd_client::Client,
 }
 
@@ -13,7 +13,7 @@ impl ConfigUpdater {
     // new creates a new ConfigUpdater.
     // it takes a protected reference to the app state and the etcd config.
     pub async fn new(
-        app_state: web::Data<Mutex<AppState>>,
+        app_state: web::Data<RwLock<AppState>>,
         config: EtcdConfig,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         // first we need to assemble the etcd client options
@@ -48,7 +48,7 @@ impl ConfigUpdater {
     pub async fn read_initial_config(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
         // we start from the client configs in the current app state
         let mut client_configs = {
-            let app_state = self.app_state.lock()?;
+            let app_state = self.app_state.read()?;
             app_state.client_configs.clone()
         };
 
@@ -74,7 +74,7 @@ impl ConfigUpdater {
         }
 
         // we update the app state with the latest client configs
-        let mut app_state = self.app_state.lock()?;
+        let mut app_state = self.app_state.write()?;
         app_state.client_configs = client_configs.clone();
         Ok(())
     }
@@ -83,7 +83,7 @@ impl ConfigUpdater {
     pub async fn watch_for_updates(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
         // we start from the client configs in the current app state
         let mut client_configs = {
-            let app_state = self.app_state.lock()?;
+            let app_state = self.app_state.read()?;
             app_state.client_configs.clone()
         };
 
@@ -127,7 +127,7 @@ impl ConfigUpdater {
             }
 
             // we update the app state with the latest client configs
-            let mut app_state = self.app_state.lock()?;
+            let mut app_state = self.app_state.write()?;
             app_state.client_configs = client_configs.clone();
         }
 

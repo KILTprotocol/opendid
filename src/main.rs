@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{collections::HashMap, sync::RwLock};
 
 use actix_session::{
     config::{CookieContentSecurity, PersistentSession},
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = cli.get_config()?;
 
-    let state = web::Data::new(Mutex::new(AppState {
+    let state = web::Data::new(RwLock::new(AppState {
         app_name: "simple-auth-relay-app".to_string(),
         encryption_key_uri: config.session_config.key_uri.to_string(),
         public_key: config.get_nacl_public_key()?,
@@ -67,7 +67,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(etcd_config) = &config.etcd {
         log::info!("Starting config updater");
-        let mut updater = config_updater::ConfigUpdater::new(state.clone(), etcd_config.clone()).await?;
+        let mut updater =
+            config_updater::ConfigUpdater::new(state.clone(), etcd_config.clone()).await?;
         actix_web::rt::spawn(async move {
             if let Err(e) = updater.read_initial_config().await {
                 log::error!("Error reading initial config: {}", e);

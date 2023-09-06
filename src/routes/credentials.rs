@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{collections::HashMap, sync::RwLock};
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
@@ -62,11 +62,11 @@ pub struct PostCredentialQueryParameter {
 
 #[get("/api/v1/credentials")]
 async fn get_credential_requirements_handler(
-    app_state: web::Data<Mutex<AppState>>,
+    app_state: web::Data<RwLock<AppState>>,
     session: Session,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET credential requirements handler");
-    let app_state = app_state.lock()?;
+    let app_state = app_state.read()?;
 
     // create a challenge and store it in the session
     let key_uri = session.get::<String>("key_uri")?.ok_or(Error::SessionGet)?;
@@ -135,13 +135,13 @@ async fn get_credential_requirements_handler(
 
 #[post("/api/v1/credentials")]
 async fn post_credential_handler(
-    app_state: web::Data<Mutex<AppState>>,
+    app_state: web::Data<RwLock<AppState>>,
     session: Session,
     body: web::Json<EncryptedMessage>,
 ) -> Result<HttpResponse, Error> {
     log::info!("POST credential handler");
     let endpoint = {
-        let app_state = app_state.lock()?;
+        let app_state = app_state.read()?;
         app_state.kilt_endpoint.clone()
     };
 
@@ -162,7 +162,7 @@ async fn post_credential_handler(
     let cipher_text = hex::decode(body.cipher_text.trim_start_matches("0x"))
         .map_err(|_| Error::FailedToDecrypt)?;
     let secret_key = {
-        let app_state = app_state.lock()?;
+        let app_state = app_state.read()?;
         app_state.secret_key.clone()
     };
     let sk = box_::SecretKey::from_slice(&secret_key).ok_or(Error::InvalidPrivateKey)?;
@@ -189,7 +189,7 @@ async fn post_credential_handler(
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
     let client_configs = {
-        let app_state = app_state.lock()?;
+        let app_state = app_state.read()?;
         app_state.client_configs.clone()
     };
     let requirements = &client_configs
@@ -266,7 +266,7 @@ async fn post_credential_handler(
 
     // construct id_token and refresh_token
     let nonce = Some(oidc_context.nonce.clone());
-    let app_state = app_state.lock()?;
+    let app_state = app_state.read()?;
     let id_token = app_state
         .token_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)

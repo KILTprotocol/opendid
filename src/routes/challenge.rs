@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::RwLock;
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
@@ -47,10 +47,10 @@ struct ChallengeResponse {
 #[get("/api/v1/challenge")]
 async fn challenge_handler(
     session: Session,
-    app_state: web::Data<Mutex<AppState>>,
+    app_state: web::Data<RwLock<AppState>>,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET challenge handler");
-    let app_state = app_state.lock()?;
+    let app_state = app_state.read()?;
     let challenge_data = ChallengeData::new(&app_state.app_name, &app_state.encryption_key_uri);
     session.insert("challenge", challenge_data.clone())?;
     Ok(HttpResponse::Ok().json(challenge_data))
@@ -60,11 +60,11 @@ async fn challenge_handler(
 #[post("/api/v1/challenge")]
 async fn challenge_response_handler(
     session: Session,
-    app_state: web::Data<Mutex<AppState>>,
+    app_state: web::Data<RwLock<AppState>>,
     challenge_response: web::Json<ChallengeResponse>,
 ) -> Result<HttpResponse, Error> {
     log::info!("POST challenge handler");
-    let app_state = app_state.lock()?;
+    let app_state = app_state.read()?;
     let session_challenge = match session.get::<ChallengeData>("challenge")? {
         Some(data) => data.challenge,
         None => return Err(Error::SessionGet),
