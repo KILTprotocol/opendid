@@ -65,20 +65,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_configs: config.clients.clone(),
     }));
 
+    let mut tasks = vec![];
+
     if let Some(etcd_config) = &config.etcd {
         log::info!("Starting config updater");
         let mut updater =
             config_updater::ConfigUpdater::new(state.clone(), etcd_config.clone()).await?;
-        actix_web::rt::spawn(async move {
+        tasks.push(actix_web::rt::spawn(async move {
             if let Err(e) = updater.read_initial_config().await {
                 log::error!("Error reading initial config: {}", e);
-                panic!("Error reading initial config: {}", e)
+                std::process::exit(1);
             }
             if let Err(e) = updater.watch_for_updates().await {
                 log::error!("Error updating config: {}", e);
-                panic!("Error updating config: {}", e)
+                std::process::exit(1);
             }
-        });
+        }));
     }
 
     let host = config.host.clone();
@@ -86,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("Starting server at {}:{}", host, port);
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
             .wrap(Logger::default())
@@ -112,8 +114,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })
     .bind((host.as_str(), port))?
-    .run()
-    .await?;
+    .run();
+
+    server.await?;
 
     Ok(())
 }
+
