@@ -52,11 +52,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let state = web::Data::new(RwLock::new(AppState {
         app_name: "simple-auth-relay-app".to_string(),
-        encryption_key_uri: config.session_config.key_uri.to_string(),
+        encryption_key_uri: config.session.key_uri.to_string(),
         public_key: config.get_nacl_public_key()?,
         secret_key: config.get_nacl_secret_key()?,
         token_builder: config.get_token_factory(),
-        token_secret: config.jwt_config.token_secret.clone(),
+        token_secret: config.jwt.token_secret.clone(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
         kilt_endpoint: config
             .kilt_endpoint

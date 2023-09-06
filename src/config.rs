@@ -14,8 +14,8 @@ pub struct Config {
     pub production: bool,
     pub kilt_endpoint: Option<String>,
     pub base_path: String,
-    pub session_config: SessionConfig,
-    pub jwt_config: JWTConfig,
+    pub session: SessionConfig,
+    pub jwt: JWTConfig,
     #[serde(rename = "wellKnownDid")]
     pub well_known_did_config: WellKnownDidConfig,
     pub clients: HashMap<String, ClientConfig>,
@@ -100,9 +100,9 @@ pub struct ClientConfig {
 
 impl Config {
     pub fn get_session_key(&self) -> Key {
-        if self.session_config.session_key.len() >= 32 {
+        if self.session.session_key.len() >= 32 {
             Key::from(
-                hex::decode(self.session_config.session_key.trim_start_matches("0x"))
+                hex::decode(self.session.session_key.trim_start_matches("0x"))
                     .expect("session key is not a valid hex string")
                     .as_slice(),
             )
@@ -112,20 +112,20 @@ impl Config {
     }
 
     pub fn get_nacl_public_key(&self) -> Result<Vec<u8>, FromHexError> {
-        hex::decode(self.session_config.nacl_public_key.trim_start_matches("0x"))
+        hex::decode(self.session.nacl_public_key.trim_start_matches("0x"))
     }
 
     pub fn get_nacl_secret_key(&self) -> Result<Vec<u8>, FromHexError> {
-        hex::decode(self.session_config.nacl_secret_key.trim_start_matches("0x"))
+        hex::decode(self.session.nacl_secret_key.trim_start_matches("0x"))
     }
 
     pub fn get_token_factory(&self) -> TokenFactory {
         TokenFactory::new(
-            &self.jwt_config.token_issuer,
-            self.jwt_config.access_token_lifetime,
-            &self.jwt_config.access_token_audience,
-            self.jwt_config.refresh_token_lifetime,
-            &self.jwt_config.refresh_token_audience,
+            &self.jwt.token_issuer,
+            self.jwt.access_token_lifetime,
+            &self.jwt.access_token_audience,
+            self.jwt.refresh_token_lifetime,
+            &self.jwt.refresh_token_audience,
         )
     }
 }
