@@ -65,16 +65,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_configs: config.clients.clone(),
     }));
 
-    if config.etcd.is_some() {
+    if let Some(etcd_config) = &config.etcd {
         log::info!("Starting config updater");
-        let config = config.etcd.clone().unwrap();
-        let mut updater = config_updater::ConfigUpdater::new(state.clone(), config).await?;
+        let mut updater = config_updater::ConfigUpdater::new(state.clone(), etcd_config.clone()).await?;
         actix_web::rt::spawn(async move {
             if let Err(e) = updater.read_initial_config().await {
                 log::error!("Error reading initial config: {}", e);
+                panic!("Error reading initial config: {}", e)
             }
             if let Err(e) = updater.watch_for_updates().await {
                 log::error!("Error updating config: {}", e);
+                panic!("Error updating config: {}", e)
             }
         });
     }
