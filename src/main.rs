@@ -43,10 +43,11 @@ pub struct AppState {
 
 #[actix_web::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
 
     let cli = cli::Cli::parse();
-    cli.set_log_level();
+    env_logger::Builder::new()
+        .filter_level(cli.verbose.log_level_filter())
+        .init();
 
     let config = cli.get_config()?;
 
