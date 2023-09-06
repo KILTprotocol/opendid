@@ -86,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     log::info!("Starting server at {}:{}", host, port);
 
-    let server = HttpServer::new(move || {
+    HttpServer::new(move || {
         App::new()
             .app_data(state.clone())
             .wrap(Logger::default())
@@ -113,8 +113,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     })
     .bind((host.as_str(), port))?
     .run()
-    .await;
+    .await?;
 
     Ok(())
 }
-
