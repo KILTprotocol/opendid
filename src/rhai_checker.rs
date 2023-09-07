@@ -37,11 +37,11 @@ impl RhaiChecker {
             log::info!("Running check");
             let result: Result<bool, Box<EvalAltResult>> =
                 self.engine.eval_ast_with_scope(&mut scope, ast);
-                match result {
-                    Err(e) => return Err(e.to_string().into()),
-                    Ok(false) => return Err("Check failed".into()),
-                    Ok(true) => {}
-                }
+            match result {
+                Err(e) => return Err(e.to_string().into()),
+                Ok(false) => return Err("Check failed".into()),
+                Ok(true) => {}
+            }
         }
         Ok(())
     }
