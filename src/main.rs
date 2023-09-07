@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = cli.get_config()?;
 
     let state = web::Data::new(RwLock::new(AppState {
-        app_name: "simple-auth-relay-app".to_string(),
+        app_name: "OpenDID".to_string(),
         encryption_key_uri: config.session.key_uri.to_string(),
         public_key: config.get_nacl_public_key()?,
         secret_key: config.get_nacl_secret_key()?,

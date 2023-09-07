@@ -78,7 +78,7 @@ JWT_SECRET='super-secret-jwt-secret'
 echo "Writing login config file to config.yaml..."
 
 cat > /data/config.yaml <<EOF
-# Simple-Auth-Relay-App config file
+# OpenDID Config File
 
 # server config
 host: 0.0.0.0
