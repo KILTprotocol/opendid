@@ -45,6 +45,7 @@ pub struct JWTConfig {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CredentialRequirement {
+    #[serde(rename = "cTypeHash")]
     pub ctype_hash: String,
     pub trusted_attesters: Vec<String>,
     pub required_properties: Vec<String>,
