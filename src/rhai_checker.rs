@@ -91,6 +91,9 @@ pub fn check(
 fn parse_id_token(token: &str) -> Result<rhai::Dynamic, Box<EvalAltResult>> {
     // parse the jwt token into a json object
     let parts = token.split('.').collect::<Vec<&str>>();
+    if parts.len() != 3 {
+        return Err("Invalid token".into());
+    }
     let payload = parts[1];
     let engine = base64::engine::GeneralPurpose::new(&alphabet::URL_SAFE, general_purpose::NO_PAD);
     let payload = engine
