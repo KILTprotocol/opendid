@@ -1,6 +1,6 @@
 # OpenDID
 
-This is a service to authenticate users using their DID and Verifiable-Credentials and generate JWT tokens from it.
+OpenDID is a service that generates JWT tokens to authenticate users using the user’s DID and Verifiable-Credentials.
 It therefore acts as a bridge between the decentralized identity world and the centralized authentication world.
 The resulting tokens can be used with any service that supports JWT tokens.
 
@@ -8,13 +8,13 @@ The resulting tokens can be used with any service that supports JWT tokens.
 
 ### Prerequisites
 
-- a KILT account with at least 3 KILT tokens
+- a KILT account with at least 3 KILT Coins
 - an identity wallet like [Sporran](https://www.sporran.org/)
-- a DID with a Verifiable Credential for testing from for example [SocialKYC](https://socialkyc.io)
+- a DID with a Verifiable Credential for testing, for example, from [SocialKYC](https://socialkyc.io)
 - a laptop or desktop computer with a container engine like podman or docker installed
 
-If you want to install podman on your machine (which I would recommend), you can [follow the instructions](https://podman.io/getting-started/installation).
-If you have docker and want to stick with it, you can just replace every occurence of `podman` with `docker` in the following instructions.
+If you want to install podman on your machine (which is recommend), you can [follow the instructions](https://podman.io/getting-started/installation).
+If you have docker and want to stick with it, you can just replace every occurrence of `podman` with `docker` in the following instructions.
 
 ### Generate the config file
 
@@ -27,17 +27,18 @@ podman run --rm -it -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest 
 ```
 
 The command will first generate a set of new mnemonics and then derive a DID from it.
+The DID requires a deposit of around 2 KILT.
 All public and private keys will be stored in the `did-secrets.json` file.
 Make a backup of this file!
 If you lose it, you will lose access to your DID.
 The `config.yaml` file will contain all the information needed to run the service including the private keys it needs to operate.
 Note that this doesn't include the authentication key for the DID, so even if someone gets access to the config file, they can't steal your DID.
-What they could do is writing wrong attestations to the blockchain, so make sure to also keep the config file safe.
-In production you should place it in a secure location and only give read access to the user running the service.
+However, they could write untrue attestations to the blockchain, so make sure to also keep the config file safe.
+In production you need to place it in a secure location and only give read access to the user running the service.
 
 ### Run the service
 
-Now that we have the config file, we can run the service. For this we will use the `opendid` docker image.
+Now that you have the config file, you can run the service. For this, use the `docker.io/kiltprotocol/opendid` docker image.
 
 ```bash
 podman run -d --rm \
@@ -82,7 +83,8 @@ After success you will be redirected back to the application and the token will 
 ### Cleanup and delete the DID
 
 If you want to delete the DID you generated earlier, you can use the `opendid-setup` image again.
-It will use the authentication key from the `did-secrets.json` file to delete the DID from the blockchain. 
+This will use the authentication key from the `did-secrets.json` file to delete the DID from the blockchain.
+(If you delete your DID, your deposit will be returned.)
 
 ```bash
 SEED="dont try this seed its completely made up for this nice example"
