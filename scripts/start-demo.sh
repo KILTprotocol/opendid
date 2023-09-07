@@ -1,20 +1,20 @@
 #!/bin/bash
 
 # create a pod to hold backend and frontend
-podman pod create --replace -p 1606:1606 -p 3001:3001 -n sara-test
+podman pod create --replace -p 1606:1606 -p 3001:3001 -n opendid-test
 
 # start the simple auth relay app
 podman run -d --rm \
-  --pod sara-test \
-  --name sara-backend \
+  --pod opendid-test \
+  --name opendid-backend \
   -e RUST_LOG=info \
   -v $(pwd)/config.yaml:/app/config.yaml \
-  quay.io/kilt/simple-auth-relay-app:latest
+  docker.io/kiltprotocol/opendid:latest
 
 # start the example client frontend
 podman run -d --rm \
-  --pod sara-test \
+  --pod opendid-test \
   --name demo-frontend \
-  quay.io/kilt/simple-auth-relay-app-demo
+  docker.io/kiltprotocol/opendid-demo:latest
 
 exit $?
