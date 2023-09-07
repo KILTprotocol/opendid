@@ -1,4 +1,4 @@
-# Simple Auth Relay App
+# OpenDID
 
 This is a service to authenticate users using their DID and Verifiable-Credentials and generate JWT tokens from it.
 It therefore acts as a bridge between the decentralized identity world and the centralized authentication world.
@@ -23,7 +23,7 @@ For this we will first generate a fresh DID for the service deployment and then 
 
 ```bash
 SEED="dont try this seed its completely made up for this nice example"
-podman run --rm -it -v $(pwd):/data quay.io/kilt/simple-auth-relay-app-setup:latest "${SEED}"
+podman run --rm -it -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
 ```
 
 The command will first generate a set of new mnemonics and then derive a DID from it.
@@ -37,13 +37,13 @@ In production you should place it in a secure location and only give read access
 
 ### Run the service
 
-Now that we have the config file, we can run the service. For this we will use the `simple-auth-relay-app` docker image.
+Now that we have the config file, we can run the service. For this we will use the `opendid` docker image.
 
 ```bash
 podman run -d --rm \
     -v $(pwd)/config.yaml:/app/config.yaml \
     -p 3001:3001 \
-    quay.io/kilt/simple-auth-relay-app:latest
+    docker.io/kiltprotocol/opendid:latest
 ```
 
 Now you can visit http://localhost:3001/ and see the login page.
@@ -60,9 +60,9 @@ You can use this information to check if the user is allowed to access your appl
 
 #### Example
 
-The example code at [demo-project](./demo-project/) contains a minimal application which uses login via the simple-auth-relay-app. It is a simple [express](https://expressjs.com) application which exposes three things:
+The example code at [demo-project](./demo-project/) contains a minimal application which uses login via the opendid. It is a simple [express](https://expressjs.com) application which exposes three things:
 
-* a login page which handles the dispatching of the user to the simple-auth-relay-app
+* a login page which handles the dispatching of the user to the opendid
 * a callback page for the openid connect flow to accept the token
 * a protected resource which can only be accessed by authenticated users
 
@@ -72,16 +72,16 @@ If you wish to run this preconfigured demo application you can do it like this:
 podman run -it -d --rm \
     --name demo-frontend \
     -p 1606:1606 \
-    quay.io/kilt/simple-auth-relay-app-demo
+    docker.io/kiltprotocol/opendid-demo
 ```
 
 You can now go to [http://localhost:1606/login.html](http://localhost:1606/login.html) to see a login page from the demo application.
-When you click on login, you will be redirected to the simple-auth-relay-app login screen where you authenticate using your wallet.
+When you click on login, you will be redirected to the opendid login screen where you authenticate using your wallet.
 After success you will be redirected back to the application and the token will be used to access a protected resource.
 
 ### Cleanup and delete the DID
 
-If you want to delete the DID you generated earlier, you can use the `simple-auth-relay-app-setup` image again.
+If you want to delete the DID you generated earlier, you can use the `opendid-setup` image again.
 It will use the authentication key from the `did-secrets.json` file to delete the DID from the blockchain. 
 
 ```bash
@@ -89,7 +89,7 @@ SEED="dont try this seed its completely made up for this nice example"
 podman run --rm -it \
     -v $(pwd):/data -w /data \
     --entrypoint /bin/bash \
-    quay.io/kilt/simple-auth-relay-app-setup:latest \
+    docker.io/kiltprotocol/opendid-setup:latest \
         /app/scripts/delete-did.sh "${SEED}"
 ```
 

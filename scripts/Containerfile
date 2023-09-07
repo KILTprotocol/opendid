@@ -1,8 +1,8 @@
 FROM docker.io/library/debian:stable-slim
 
 RUN apt update && apt install -y openssl ca-certificates
-COPY ./target/release/simple-auth-relay-app /app/simple-auth-relay-app
+COPY ./target/release/sara /app/sara
 COPY ./login-frontend/dist /srv
 VOLUME /app/config.yaml
 
-CMD [ "/app/simple-auth-relay-app", "--config", "/app/config.yaml"]
+CMD [ "/app/sara", "--config", "/app/config.yaml"]

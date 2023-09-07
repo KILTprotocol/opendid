@@ -8,10 +8,10 @@
 #
 
 # create the pod to hold the backend, frontend, and etcd
-podman pod create --replace -p 1606:1606 -p 3001:3001 -p 2379:2379 -n sara-test
+podman pod create --replace -p 1606:1606 -p 3001:3001 -p 2379:2379 -n opendid-test
 
 # start single node etcd deployment
-podman run -d --rm --pod sara-test -v /usr/share/ca-certificates/:/etc/ssl/certs \
+podman run -d --rm --pod opendid-test -v /usr/share/ca-certificates/:/etc/ssl/certs \
   --name etcd quay.io/coreos/etcd \
   etcd \
   -name etcd0 \
@@ -25,17 +25,17 @@ podman run -d --rm --pod sara-test -v /usr/share/ca-certificates/:/etc/ssl/certs
 
 # start the example client frontend
 podman run -d --rm \
-  --pod sara-test \
+  --pod opendid-test \
   --name demo-frontend \
-  quay.io/kilt/simple-auth-relay-app-demo
+  docker.io/kiltprotocol/opendid-demo
 
 # start the simple auth relay app
 podman run -d --rm \
-  --pod sara-test \
-  --name sara-backend \
+  --pod opendid-test \
+  --name opendid-backend \
   -e RUST_LOG=info \
   -v $(pwd)/config.yaml:/app/config.yaml \
-  quay.io/kilt/simple-auth-relay-app:latest
+  docker.io/kiltprotocol/opendid:latest
 
 # add a client to etcd
 CLIENT_SPEC=$(cat <<EOF

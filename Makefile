@@ -1,7 +1,7 @@
-APP_NAME=simple-auth-relay-app
-MAIN_IMAGE="quay.io/kilt/$(APP_NAME)"
-SETUP_IMAGE="quay.io/kilt/$(APP_NAME)-setup"
-DEMO_IMAGE="quay.io/kilt/$(APP_NAME)-demo"
+APP_NAME=opendid
+MAIN_IMAGE="docker.io/kiltprotocol/$(APP_NAME)"
+SETUP_IMAGE="docker.io/kiltprotocol/$(APP_NAME)-setup"
+DEMO_IMAGE="docker.io/kiltprotocol/$(APP_NAME)-demo"
 
 all: images
 
@@ -16,16 +16,16 @@ setup: config.yaml
 config.yaml: setup-image
 	podman run --rm -it -v $(shell pwd):/data $(SETUP_IMAGE) $(PAYMENT_SEED)
 
-delete-did: simple-auth-relay-app-setup-image
+delete-did: opendid-setup-image
 	podman run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash $(SETUP_IMAGE) /app/scripts/delete-did.sh $(PAYMENT_SEED)
 
-binary: target/release/simple-auth-relay-app
-target/release/simple-auth-relay-app: $(shell find ./src -type f -name '*.rs')
+binary: target/release/sara
+target/release/sara: $(shell find ./src -type f -name '*.rs')
 	cargo build --release
 
 
 main-image: .main-image
-.main-image: scripts/Containerfile target/release/simple-auth-relay-app login-frontend/dist/index.html
+.main-image: scripts/Containerfile target/release/sara login-frontend/dist/index.html
 	podman build -t $(MAIN_IMAGE):latest -f scripts/Containerfile .
 	touch .main-image
 
