@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{RwLock},
+    sync::RwLock,
 };
 
 use actix_session::{

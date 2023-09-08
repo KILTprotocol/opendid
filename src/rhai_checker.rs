@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Arc},
+    sync::Arc,
 };
 
 use base64::{alphabet, engine::general_purpose, Engine as Base64Engine};
