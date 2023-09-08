@@ -264,7 +264,7 @@ async fn post_credential_handler(
 
     // construct id_token and refresh_token
     let nonce = Some(oidc_context.nonce.clone());
-    let app_state = app_state.read()?;
+    let mut app_state = app_state.write()?; // may update the rhai checkers
     let id_token = app_state
         .token_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)
@@ -282,7 +282,10 @@ async fn post_credential_handler(
         .get(&oidc_context.client_id)
         .ok_or(Error::OauthInvalidClientId)?;
     if let Some(checks_directory) = &client_config.checks_directory {
-        crate::rhai_checker::check(&oidc_context.client_id, checks_directory, &id_token)?;
+        let checker = app_state
+            .rhai_checkers
+            .get_or_create(&oidc_context.client_id, checks_directory)?;
+        checker.check(&id_token)?;
     }
 
     // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own

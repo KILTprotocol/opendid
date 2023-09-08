@@ -1,7 +1,10 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc},
+};
 
 use base64::{alphabet, engine::general_purpose, Engine as Base64Engine};
-use once_cell::sync::Lazy;
+
 use rhai::{Engine, EvalAltResult, AST};
 
 use crate::constants::ID_TOKEN_VARIABLE_NAME;
@@ -49,9 +52,9 @@ impl RhaiChecker {
 
 // This struct holds a RhaiChecker for each client
 // The RhaiChecker is created on demand when a client_id is first seen and cached afterwards
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct RhaiCheckerMap {
-    map: HashMap<String, RhaiChecker>,
+    map: HashMap<String, Arc<RhaiChecker>>,
 }
 
 impl RhaiCheckerMap {
@@ -67,25 +70,13 @@ impl RhaiCheckerMap {
         checks_directory: &str,
     ) -> Result<&RhaiChecker, Box<dyn std::error::Error>> {
         if !self.map.contains_key(client_id) {
-            self.map
-                .insert(client_id.to_string(), RhaiChecker::new(checks_directory)?);
+            self.map.insert(
+                client_id.to_string(),
+                Arc::new(RhaiChecker::new(checks_directory)?),
+            );
         }
         Ok(self.map.get(client_id).unwrap())
     }
-}
-
-// setup a global variable for the checker map that can be accessed from all threads safely and is stored on the heap
-// do it this way to avoid having to pass the map around everywhere
-static CHECKER_MAP: Lazy<Mutex<RhaiCheckerMap>> = Lazy::new(|| Mutex::new(RhaiCheckerMap::new()));
-
-pub fn check(
-    client_id: &str,
-    checks_directory: &str,
-    data: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut checker_map = CHECKER_MAP.lock()?;
-    let checker = checker_map.get_or_create(client_id, checks_directory)?;
-    checker.check(data)
 }
 
 fn parse_id_token(token: &str) -> Result<rhai::Dynamic, Box<EvalAltResult>> {

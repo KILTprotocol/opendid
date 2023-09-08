@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::RwLock};
+use std::{
+    collections::HashMap,
+    sync::{RwLock},
+};
 
 use actix_session::{
     config::{CookieContentSecurity, PersistentSession},
@@ -12,6 +15,7 @@ use actix_web::{
 };
 use clap::Parser;
 
+use rhai_checker::RhaiCheckerMap;
 use well_known_did_config::create_well_known_did_config;
 
 mod cli;
@@ -39,6 +43,7 @@ pub struct AppState {
     well_known_did_config: well_known_did_config::WellKnownDidConfig,
     kilt_endpoint: String,
     client_configs: HashMap<String, config::ClientConfig>,
+    rhai_checkers: RhaiCheckerMap,
 }
 
 #[actix_web::main]
@@ -62,6 +67,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .clone()
             .unwrap_or("spiritnet".to_string()),
         client_configs: config.clients.clone(),
+        rhai_checkers: RhaiCheckerMap::new(),
     }));
 
     if let Some(etcd_config) = &config.etcd {
