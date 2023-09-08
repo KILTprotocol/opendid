@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 use base64::{alphabet, engine::general_purpose, Engine as Base64Engine};
 
