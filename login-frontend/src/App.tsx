@@ -1,5 +1,9 @@
-import { FormEvent, Fragment, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import './App.css';
+
+// remove this stylesheet if you want to add your own custom styles
+import './kilt/styles.css';
+
 import { apiWindow, getCompatibleExtensions, getSession } from './session';
 
 function useCompatibleExtensions() {
@@ -20,26 +24,14 @@ export function App() {
   const { kilt } = apiWindow;
 
   const { extensions } = useCompatibleExtensions();
+  const hasExtension = extensions.length > 0;
 
-  const [loginResponse, setLoginResponse] = useState({ idToken: '', refreshToken: '' });
-  const { idToken, refreshToken } = loginResponse;
-  const isLoggedIn = Boolean(idToken) && Boolean(refreshToken);
-
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    // check for query parameters access_token and refresh_token
-    const urlParams = new URLSearchParams(window.location.search);
-    const idToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
-    if (idToken && refreshToken) {
-      setLoginResponse({ idToken, refreshToken });
-    }
-  }, []);
+  const [error, setError] = useState(false);
 
   const handleLogin = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      setError(false);
 
       try {
         const form = event.currentTarget;
@@ -80,8 +72,7 @@ export function App() {
 
         if (credentialResponseResponse.status >= 400) {
           const credentialResponseData = await credentialResponseResponse.text();
-          setError(credentialResponseData);
-          return;
+          throw new Error(credentialResponseData);
         }
 
         if (credentialResponseResponse.status === 204) {
@@ -91,67 +82,47 @@ export function App() {
             return;
           }
         }
-
-        const credentialResponseData = await credentialResponseResponse.json();
-        setLoginResponse(credentialResponseData);
       } catch (e) {
         console.error(e);
-        setError(e.message);
+        setError(true);
       }
     },
     [kilt],
   );
 
-  const handleRefresh = useCallback(async () => {
-    try {
-      const resp = await fetch('/api/v1/refresh', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const respData = await resp.json();
-      setLoginResponse(respData);
-    } catch (e) {
-      console.error(e);
-      setError(e.message);
-    }
-  }, [refreshToken]);
-
   return (
-    <div className="container">
-      <h1>Login</h1>
+    <div className="app">
+      <div className="loginContainer">
+        <h1 className="heading">Log in with KILT</h1>
 
-      <form onSubmit={handleLogin} className="loginForm">
-        <select name="extension" defaultValue={extensions[0]}>
-          {extensions.map((extension) => (
-            <option value={extension} key={extension} label={`${kilt[extension].name} ${kilt[extension].version}`} />
-          ))}
-        </select>
+        {hasExtension && (
+          <form onSubmit={handleLogin}>
+            <select className="select" name="extension" defaultValue={extensions[0]}>
+              {extensions.map((extension) => (
+                <option value={extension} key={extension} label={kilt[extension].name} />
+              ))}
+            </select>
 
-        <p>
-          <button type="submit">Login</button>
-        </p>
-      </form>
-
-      {isLoggedIn && (
-        <Fragment>
-          <p>
-            <a href={`https://jwt.io?token=${idToken}`}>Inspect ID Token</a>
-          </p>
-          <p>
-            <a href={`https://jwt.io?token=${refreshToken}`}>Inspect Refresh Token</a>
-          </p>
-          <p>
-            <button type="button" onClick={handleRefresh}>
-              Refresh
+            <button className="button" type="submit">
+              Continue
             </button>
-          </p>
-        </Fragment>
-      )}
 
-      <p>{error}</p>
+            {error && <p>Error</p>}
+          </form>
+        )}
+
+        {!hasExtension && (
+          <div>
+            <p className="noWallet">Sorry, no identity wallet found!</p>
+            <p>
+              Please install a{' '}
+              <a className="link" href="https://www.sporran.org/">
+                wallet
+              </a>
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
