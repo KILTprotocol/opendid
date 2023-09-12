@@ -1,0 +1,15 @@
+{
+  "name": "gen-did",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@kiltprotocol/sdk-js": "^0.34.0",
+    "@kiltprotocol/types": "^0.34.0",
+    "@polkadot/util": "^12.4.2",
+    "@polkadot/util-crypto": "^12.4.2",
+    "axios": "^1.5.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
