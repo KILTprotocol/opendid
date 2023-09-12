@@ -35,7 +35,9 @@ pub struct SessionConfig {
 #[serde(rename_all = "camelCase")]
 pub struct JWTConfig {
     pub token_issuer: String,
-    pub token_secret: String,
+    pub algorithm: String,
+    pub secret_key: String,
+    pub public_key: Option<String>,
     pub access_token_lifetime: i64,
     pub access_token_audience: String,
     pub refresh_token_lifetime: i64,

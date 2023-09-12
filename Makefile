@@ -7,10 +7,10 @@ all: images
 
 images: main-image setup-image demo-image
 
-push: images
-	podman push $(MAIN_IMAGE)
-	podman push $(SETUP_IMAGE)
-	podman push $(DEMO_IMAGE)
+# push: images
+# 	podman push $(MAIN_IMAGE)
+# 	podman push $(SETUP_IMAGE)
+# 	podman push $(DEMO_IMAGE)
 
 setup: config.yaml
 config.yaml: setup-image
@@ -34,7 +34,7 @@ login-frontend/dist/index.html: $(shell find ./login-frontend/src -type f)
 
 setup-image: .setup-image
 .setup-image: scripts/setup.Containerfile scripts/setup.sh
-	podman build -t $(SETUP_IMAGE) -f scripts/setup.Containerfile .
+	podman build -t $(SETUP_IMAGE):latest -f scripts/setup.Containerfile .
 	touch .setup-image
 
 
@@ -45,3 +45,8 @@ demo-image: .demo-image
 
 demo-project/index.js: demo-project/main.ts 
 	cd demo-project && yarn && yarn build
+
+push-dev-images: .setup-image .demo-image .main-image
+	skopeo copy containers-storage:$(MAIN_IMAGE):latest docker://$(MAIN_IMAGE):dev
+	skopeo copy containers-storage:$(SETUP_IMAGE):latest docker://$(SETUP_IMAGE):dev
+	skopeo copy containers-storage:$(DEMO_IMAGE):latest docker://$(DEMO_IMAGE):dev
