@@ -20,6 +20,7 @@ pub enum Error {
     VerifyCredential(String),
     CreateJWT,
     LockPoison,
+    Internal(String),
 }
 
 impl std::error::Error for Error {}
@@ -45,6 +46,7 @@ impl std::fmt::Display for Error {
             Error::CreateJWT => write!(f, "Failed to create JWT"),
             Error::OauthNoSession => write!(f, "No session"),
             Error::LockPoison => write!(f, "Lock poison"),
+            Error::Internal(ref s) => write!(f, "Internal error: {}", s),
         }
     }
 }
@@ -96,5 +98,11 @@ impl From<SessionGetError> for Error {
 impl<T> From<std::sync::PoisonError<T>> for Error {
     fn from(_: std::sync::PoisonError<T>) -> Self {
         Error::LockPoison
+    }
+}
+
+impl From<Box<dyn std::error::Error>> for Error {
+    fn from(e: Box<dyn std::error::Error>) -> Self {
+        Error::Internal(e.to_string())
     }
 }
