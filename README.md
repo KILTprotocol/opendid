@@ -109,15 +109,15 @@ etcd:
   user: etcd-user
   password: my-password
   tlsDomainName: my.etcd.cluster.example.com
-  tlsCaCert: >
+  tlsCaCert: |
     -----BEGIN CERTIFICATE-----
     <ca certificate data>
     -----END CERTIFICATE-----
-  tlsClientCert: >
+  tlsClientCert: |
     -----BEGIN CERTIFICATE-----
     <client certificate data>
     -----END CERTIFICATE-----
-  tlsClientKey: >
+  tlsClientKey: |
     -----BEGIN RSA PRIVATE KEY-----
     <client key data>
     -----END RSA PRIVATE KEY-----
