@@ -1,0 +1,69 @@
+@font-face {
+  font-family: 'Overpass Thin';
+  src: url('overpass-v12-latin-100.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Overpass Regular';
+  src: url('overpass-v12-latin-regular.woff2') format('woff2');
+}
+
+:root {
+  font-family: 'Overpass Regular', sans-serif;
+  font-size: 16px;
+  color: #fff;
+}
+
+.app {
+  background:
+    url('./logo.svg') no-repeat top 1.75rem left 1.75rem/90px auto,
+    #481038 url('./cover.png') no-repeat top left/ cover;
+}
+
+.loginContainer {
+  box-sizing: border-box;
+  background: rgba(249, 105, 67, 0.1);
+  border: 1px solid #666666;
+  max-inline-size: 425px;
+  min-block-size: 360px;
+}
+
+.heading {
+  font-family: 'Overpass Thin', sans-serif;
+  font-size: 3rem;
+  margin: 0;
+}
+
+.select {
+  appearance: none;
+  width: 90%;
+  color: inherit;
+  padding: 0.25rem;
+  border: 1px solid #f96943;
+  background: #481038 url('./chevron.svg') no-repeat center right 0.25rem;
+  font-size: 1.25rem;
+  font-family: inherit;
+  cursor: pointer;
+  margin-block: 2.75rem 3rem;
+}
+
+.button {
+  block-size: 2.25rem;
+  inline-size: 9rem;
+  background: #f96943;
+  text-transform: uppercase;
+  font-family: inherit;
+  color: inherit;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.noWallet {
+  padding-block-end: 4.75rem;
+  background: url('./error.svg') no-repeat bottom center;
+}
+
+.link {
+  color: #f9a043;
+}
