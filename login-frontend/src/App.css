@@ -7,6 +7,15 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .loginContainer {
@@ -23,4 +32,9 @@ p {
 .button {
   display: block;
   margin: auto;
+}
+
+.footer {
+  block-size: 3rem;
+  inline-size: 100%;
 }
