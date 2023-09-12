@@ -1,7 +1,13 @@
-FROM docker.io/library/debian:stable-slim
+FROM rust:1.72-bookworm as builder
+WORKDIR /app
+RUN apt update && apt install protobuf-compiler -y
+COPY Cargo.toml Cargo.lock metadata.scale ./
+COPY src ./src
+RUN cargo build --release
 
-RUN apt update && apt install -y openssl ca-certificates
-COPY ./target/release/sara /app/sara
+FROM docker.io/library/debian:stable-slim
+RUN apt update && apt install -y openssl ca-certificates libssl-dev
+COPY --from=builder /app/target/release/sara /app/sara
 COPY ./login-frontend/dist /srv
 VOLUME /app/config.yaml
 

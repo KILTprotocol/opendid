@@ -271,13 +271,19 @@ async fn post_credential_handler(
         .jwt_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
-        .map_err(|_| Error::CreateJWT)?;
+        .map_err(|e| {
+            log::error!("Failed to create id token: {}", e);
+            Error::CreateJWT
+        })?;
 
     let refresh_token = app_state
         .jwt_builder
         .new_refresh_token(&content.sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
-        .map_err(|_| Error::CreateJWT)?;
+        .map_err(|e| {
+            log::error!("Failed to create refresh token: {}", e);
+            Error::CreateJWT
+        })?;
 
     // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own
     Ok(HttpResponse::NoContent()
