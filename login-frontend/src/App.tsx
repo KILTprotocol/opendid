@@ -126,7 +126,7 @@ export function App() {
         </div>
       </main>
 
-      <footer class="footer"></footer>
+      <footer className="footer"></footer>
     </div>
   );
 }
