@@ -51,7 +51,6 @@ impl Token {
         let jwt = self.sign_with_key(&key)?;
         Ok(jwt)
     }
-
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,7 +121,12 @@ impl TokenFactory {
         }
     }
 
-    pub fn parse_token(&self, token: &str, secret: &str, alg: &str) -> Result<Token, Box<dyn std::error::Error>> {
+    pub fn parse_token(
+        &self,
+        token: &str,
+        secret: &str,
+        alg: &str,
+    ) -> Result<Token, Box<dyn std::error::Error>> {
         let key: Box<dyn VerifyingAlgorithm> = match alg {
             "HS256" => Box::new(Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())?),
             "HS384" => Box::new(Hmac::<sha2::Sha384>::new_from_slice(secret.as_bytes())?),
