@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, hash_map::Entry}, sync::Arc};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    sync::Arc,
+};
 
 use base64::{alphabet, engine::general_purpose, Engine as Base64Engine};
 
@@ -67,12 +70,8 @@ impl RhaiCheckerMap {
         checks_directory: &str,
     ) -> Result<&RhaiChecker, Box<dyn std::error::Error>> {
         let checker = match self.map.entry(client_id.into()) {
-            Entry::Vacant(vacant) => {
-                vacant.insert(Arc::new(RhaiChecker::new(checks_directory)?))
-            },
-            Entry::Occupied(occupied) => {
-                occupied.into_mut()
-            },
+            Entry::Vacant(vacant) => vacant.insert(Arc::new(RhaiChecker::new(checks_directory)?)),
+            Entry::Occupied(occupied) => occupied.into_mut(),
         };
         Ok(checker)
     }
