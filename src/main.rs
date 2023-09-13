@@ -11,7 +11,8 @@ use actix_web::{
     web, App, HttpServer,
 };
 use clap::Parser;
-use serde::{Deserialize, Serialize};
+
+use rhai_checker::RhaiCheckerMap;
 use well_known_did_config::create_well_known_did_config;
 
 mod cli;
@@ -21,6 +22,7 @@ mod constants;
 mod jwt;
 mod kilt;
 mod messages;
+mod rhai_checker;
 mod routes;
 mod verify;
 mod well_known_did_config;
@@ -28,7 +30,7 @@ mod well_known_did_config;
 use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
 // shared state
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct AppState {
     app_name: String,
     encryption_key_uri: String,
@@ -41,6 +43,7 @@ pub struct AppState {
     well_known_did_config: well_known_did_config::WellKnownDidConfig,
     kilt_endpoint: String,
     client_configs: HashMap<String, config::ClientConfig>,
+    rhai_checkers: RhaiCheckerMap,
 }
 
 #[actix_web::main]
@@ -67,6 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .clone()
             .unwrap_or("spiritnet".to_string()),
         client_configs: config.clients.clone(),
+        rhai_checkers: RhaiCheckerMap::new(),
     }));
 
     if let Some(etcd_config) = &config.etcd {

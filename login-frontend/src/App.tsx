@@ -92,37 +92,41 @@ export function App() {
 
   return (
     <div className="app">
-      <div className="loginContainer">
-        <h1 className="heading">Log in with KILT</h1>
+      <main className="main">
+        <div className="loginContainer">
+          <h1 className="heading">Log in with KILT</h1>
 
-        {hasExtension && (
-          <form onSubmit={handleLogin}>
-            <select className="select" name="extension" defaultValue={extensions[0]}>
-              {extensions.map((extension) => (
-                <option value={extension} key={extension} label={kilt[extension].name} />
-              ))}
-            </select>
+          {hasExtension && (
+            <form onSubmit={handleLogin}>
+              <select className="select" name="extension" defaultValue={extensions[0]}>
+                {extensions.map((extension) => (
+                  <option value={extension} key={extension} label={kilt[extension].name} />
+                ))}
+              </select>
 
-            <button className="button" type="submit">
-              Continue
-            </button>
+              <button className="button" type="submit">
+                Continue
+              </button>
 
-            {error && <p>Error</p>}
-          </form>
-        )}
+              {error && <p>Error</p>}
+            </form>
+          )}
 
-        {!hasExtension && (
-          <div>
-            <p className="noWallet">Sorry, no identity wallet found!</p>
-            <p>
-              Please install a{' '}
-              <a className="link" href="https://www.sporran.org/">
-                wallet
-              </a>
-            </p>
-          </div>
-        )}
-      </div>
+          {!hasExtension && (
+            <div>
+              <p className="noWallet">Sorry, no identity wallet found!</p>
+              <p>
+                Please install a{' '}
+                <a className="link" href="https://www.sporran.org/">
+                  wallet
+                </a>
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <footer className="footer"></footer>
     </div>
   );
 }

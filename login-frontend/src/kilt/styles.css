@@ -14,10 +14,14 @@
   color: #fff;
 }
 
-.app {
+body {
+  background: #481038;
+}
+
+.main {
   background:
     url('./logo.svg') no-repeat top 1.75rem left 1.75rem/90px auto,
-    #481038 url('./cover.png') no-repeat top left/ cover;
+    url('./cover.png') no-repeat top left/ cover;
 }
 
 .loginContainer {
@@ -66,4 +70,8 @@
 
 .link {
   color: #f9a043;
+}
+
+.footer {
+  background: #481038;
 }
