@@ -192,7 +192,7 @@ podman run -d --rm \
     -v $(pwd)/config.yaml:/app/config.yaml \
     -v $(pwd)/checks:/app/checks \
     -p 3001:3001 \
-    quay.io/kilt/simple-auth-relay-app:latest
+    docker.io/kiltprotocol/opendid:latest
 ```
 
 When you now login with a user that has an email address ending with `kilt.io` you will be allowed to login.
