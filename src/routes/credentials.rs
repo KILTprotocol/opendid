@@ -113,7 +113,7 @@ async fn get_credential_requirements_handler(
     // encode and encrypt it for the receiver
     let msg_json = serde_json::to_string(&msg).unwrap();
     let msg_bytes = msg_json.as_bytes();
-    let our_secretkey = app_state.secret_key.clone();
+    let our_secretkey = app_state.session_secret_key.clone();
     let others_pubkey =
         parse_encryption_key_from_lightdid(key_uri.as_str()).map_err(|_| Error::InvalidLightDid)?;
     let nonce = box_::gen_nonce();
@@ -161,7 +161,7 @@ async fn post_credential_handler(
         .map_err(|_| Error::FailedToDecrypt)?;
     let secret_key = {
         let app_state = app_state.read()?;
-        app_state.secret_key.clone()
+        app_state.session_secret_key.clone()
     };
     let sk = box_::SecretKey::from_slice(&secret_key).ok_or(Error::InvalidPrivateKey)?;
     let decrypted_msg =
@@ -266,16 +266,22 @@ async fn post_credential_handler(
     let nonce = Some(oidc_context.nonce.clone());
     let mut app_state = app_state.write()?; // may update the rhai checkers
     let id_token = app_state
-        .token_builder
+        .jwt_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)
-        .to_jwt(&app_state.token_secret)
-        .map_err(|_| Error::CreateJWT)?;
+        .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
+        .map_err(|e| {
+            log::error!("Failed to create id token: {}", e);
+            Error::CreateJWT
+        })?;
 
     let refresh_token = app_state
-        .token_builder
+        .jwt_builder
         .new_refresh_token(&content.sender, &w3n, &props, &nonce)
-        .to_jwt(&app_state.token_secret)
-        .map_err(|_| Error::CreateJWT)?;
+        .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
+        .map_err(|e| {
+            log::error!("Failed to create refresh token: {}", e);
+            Error::CreateJWT
+        })?;
 
     // check if there are any additional scripting checks to be done
     let client_config = client_configs

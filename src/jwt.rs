@@ -1,8 +1,7 @@
 use hmac::{Hmac, Mac};
-use jwt::SignWithKey;
-use jwt::VerifyWithKey;
+use jwt::{PKeyWithDigest, SignWithKey, SigningAlgorithm, VerifyWithKey, VerifyingAlgorithm};
+use openssl::{hash::MessageDigest, pkey::PKey};
 use serde::{Deserialize, Serialize};
-use sha2::Sha256;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Token {
@@ -25,8 +24,25 @@ pub struct Token {
 }
 
 impl Token {
-    pub fn to_jwt(&self, secret: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let key: Hmac<Sha256> = Hmac::new_from_slice(secret.as_bytes())?;
+    pub fn to_jwt(&self, secret: &str, alg: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let key: Box<dyn SigningAlgorithm> = match alg {
+            "HS256" => Box::new(Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())?),
+            "HS384" => Box::new(Hmac::<sha2::Sha384>::new_from_slice(secret.as_bytes())?),
+            "HS512" => Box::new(Hmac::<sha2::Sha512>::new_from_slice(secret.as_bytes())?),
+            "RS256" | "ES256" => Box::new(PKeyWithDigest {
+                digest: MessageDigest::sha256(),
+                key: PKey::private_key_from_pem(secret.as_bytes())?,
+            }),
+            "RS384" | "ES384" => Box::new(PKeyWithDigest {
+                digest: MessageDigest::sha384(),
+                key: PKey::private_key_from_pem(secret.as_bytes())?,
+            }),
+            "RS512" | "ES512" => Box::new(PKeyWithDigest {
+                digest: MessageDigest::sha512(),
+                key: PKey::private_key_from_pem(secret.as_bytes())?,
+            }),
+            _ => return Err("unsupported algorithm".into()),
+        };
         let jwt = self.sign_with_key(&key)?;
         Ok(jwt)
     }
@@ -100,8 +116,30 @@ impl TokenFactory {
         }
     }
 
-    pub fn parse_token(&self, token: &str, key: &str) -> Result<Token, Box<dyn std::error::Error>> {
-        let key: Hmac<Sha256> = Hmac::new_from_slice(key.as_bytes())?;
+    pub fn parse_token(
+        &self,
+        token: &str,
+        secret: &str,
+        alg: &str,
+    ) -> Result<Token, Box<dyn std::error::Error>> {
+        let key: Box<dyn VerifyingAlgorithm> = match alg {
+            "HS256" => Box::new(Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())?),
+            "HS384" => Box::new(Hmac::<sha2::Sha384>::new_from_slice(secret.as_bytes())?),
+            "HS512" => Box::new(Hmac::<sha2::Sha512>::new_from_slice(secret.as_bytes())?),
+            "RS256" | "ES256" => Box::new(PKeyWithDigest {
+                digest: MessageDigest::sha256(),
+                key: PKey::public_key_from_pem(secret.as_bytes())?,
+            }),
+            "RS384" | "ES384" => Box::new(PKeyWithDigest {
+                digest: MessageDigest::sha384(),
+                key: PKey::public_key_from_pem(secret.as_bytes())?,
+            }),
+            "RS512" | "ES512" => Box::new(PKeyWithDigest {
+                digest: MessageDigest::sha512(),
+                key: PKey::public_key_from_pem(secret.as_bytes())?,
+            }),
+            _ => return Err("unsupported algorithm".into()),
+        };
         let token = token.verify_with_key(&key)?;
         Ok(token)
     }
@@ -110,8 +148,9 @@ impl TokenFactory {
         &self,
         token: &str,
         key: &str,
+        alg: &str,
     ) -> Result<Token, Box<dyn std::error::Error>> {
-        let token = self.parse_token(token, key)?;
+        let token = self.parse_token(token, key, alg)?;
         // check audience
         if token.audience != self.refresh_token_audience {
             return Err("invalid audience".into());
@@ -151,7 +190,7 @@ mod tests {
             nonce: None,
         };
         let secret = "secret";
-        let jwt = token.to_jwt(secret).unwrap();
+        let jwt = token.to_jwt(secret, "HS256").unwrap();
         println!("{jwt}");
     }
 
@@ -167,7 +206,7 @@ mod tests {
         let secret = "secret";
         let access_token =
             token_builder.new_id_token("did:kilt:user", "user", &serde_json::Map::new(), &None);
-        let jwt = access_token.to_jwt(secret).unwrap();
+        let jwt = access_token.to_jwt(secret, "HS256").unwrap();
         println!("access_token {jwt}");
         let refresh_token = token_builder.new_refresh_token(
             "did:kilt:user",
@@ -175,7 +214,7 @@ mod tests {
             &serde_json::Map::new(),
             &None,
         );
-        let jwt = refresh_token.to_jwt(secret).unwrap();
+        let jwt = refresh_token.to_jwt(secret, "HS256").unwrap();
         println!("refresh_token {jwt}");
     }
 }

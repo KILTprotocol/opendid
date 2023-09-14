@@ -56,7 +56,9 @@ jwt:
   accessTokenAudience: application
   refreshTokenLifetime: 600
   refreshTokenAudience: authentication
-  tokenSecret: "${JWT_SECRET}"
+  secretKey: "${JWT_SECRET}"
+  publicKey: "${JWT_SECRET}"
+  algorithm: HS256
 
 # well known DID
 wellKnownDid:

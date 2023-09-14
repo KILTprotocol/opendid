@@ -34,9 +34,11 @@ use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 pub struct AppState {
     app_name: String,
     encryption_key_uri: String,
-    secret_key: Vec<u8>,
-    token_builder: TokenFactory,
-    token_secret: String,
+    session_secret_key: Vec<u8>,
+    jwt_builder: TokenFactory,
+    jwt_secret_key: String,
+    jwt_public_key: Option<String>,
+    jwt_algorithm: String,
     well_known_did_config: well_known_did_config::WellKnownDidConfig,
     kilt_endpoint: String,
     client_configs: HashMap<String, config::ClientConfig>,
@@ -55,9 +57,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = web::Data::new(RwLock::new(AppState {
         app_name: "OpenDID".to_string(),
         encryption_key_uri: config.session.key_uri.to_string(),
-        secret_key: config.get_nacl_secret_key()?,
-        token_builder: config.get_token_factory(),
-        token_secret: config.jwt.token_secret.clone(),
+        session_secret_key: config.get_nacl_secret_key()?,
+        jwt_builder: config.get_token_factory(),
+        jwt_secret_key: config.jwt.secret_key.to_string(),
+        jwt_public_key: config.jwt.public_key.clone(),
+        jwt_algorithm: config.jwt.algorithm.to_string(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
         kilt_endpoint: config
             .kilt_endpoint

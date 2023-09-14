@@ -83,7 +83,7 @@ async fn challenge_response_handler(
         challenge_response.encryption_key_uri.as_str(),
     )
     .map_err(|_| Error::InvalidLightDid)?;
-    let our_secretkey = app_state.secret_key.clone();
+    let our_secretkey = app_state.session_secret_key.clone();
     let nonce = box_::Nonce::from_slice(&nonce).ok_or(Error::InvalidNonce)?;
     let pk = box_::PublicKey::from_slice(&others_pubkey).ok_or(Error::InvalidLightDid)?;
     let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
