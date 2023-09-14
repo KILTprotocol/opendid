@@ -108,13 +108,14 @@ async function main() {
             default: endpoint = process.env.ENDPOINT;
         }
     }
+    console.debug(`Connecting to ${endpoint}...`);
     const api = await Kilt.connect(endpoint);
     console.debug(`Connected to ${endpoint}`);
 
     // get first command line argument as seed for the payment account and fail if not provided
     const paymentSeed = process.argv[2];
     if (!paymentSeed) {
-        console.error('Please provide a seed for the payment account as first command line argument.');
+        // console.error('Please provide a seed for the payment account as first command line argument.');
         process.exit(1);
     }
     let paymentKeyPair = Kilt.Utils.Crypto.makeKeypairFromSeed(
@@ -129,7 +130,8 @@ async function main() {
     const keypairs = generateKeypairs();
     const didSecrets = exportKeypairs(keypairs);
     await writeDidSecretsFile(didSecrets, 'did-secrets.json');
-    
+    console.debug(`Wrote did-secrets.json`);
+
     let signCallback = (signData: Kilt.SignRequestData): Promise<Kilt.SignResponseData> => {
         return new Promise<Kilt.SignResponseData>((resolve, reject) => {
             const signResponseData: Kilt.SignResponseData = {
@@ -142,6 +144,7 @@ async function main() {
     };
 
     // register the DID on chain
+    console.debug(`Registering DID ${keypairs.authentication.address} on chain`);
     const fullDidCreationTx = await Kilt.Did.getStoreTx({
         authentication: [{publicKey: keypairs.authentication.publicKey, type: 'sr25519'}],
         assertionMethod: [{publicKey: keypairs.assertionMethod.publicKey, type: 'sr25519'}],
@@ -152,12 +155,15 @@ async function main() {
     );
     try {
         await Kilt.Blockchain.signAndSubmitTx(fullDidCreationTx, paymentKeyPair);
+        console.debug(`Registered DID ${keypairs.authentication.address} on chain`);
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         process.exit(1);
     }
-
-    console.log(`did:kilt:${keypairs.authentication.address}`);
+    let result = await Kilt.Did.resolve(`did:kilt:${keypairs.authentication.address}`);
+    console.debug(`Resolved DID ${keypairs.authentication.address} from chain`);
+    // write the DID document to a file
+    await fs.writeFile('did-document.json', JSON.stringify(result.document, null, 2));
 
     await Kilt.disconnect();
 }

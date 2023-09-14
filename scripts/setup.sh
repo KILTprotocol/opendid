@@ -8,22 +8,25 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 PAYMENT_ACCOUNT_SEED=$1
+ENDPOINT=${ENDPOINT:-spiritnet}
 
-DID=$(npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}")
-KEYAGREEMENT_PRIVKEY=$(cat did-secret.json | jq -r .keyAgreementKey.privKey)
-KEYAGREEMENT_PUBKEY=$(cat did-secret.json | jq -r .keyAgreementKey.pubKey)
-ATTESTATION_SEED=$(cat did-secret.json | jq -r .attestation.seed)
+echo "Generating DID..."
+DID_DOC=$(npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}")
+DID=$(cat did-document.json | jq -r .uri)
+echo "DID: ${DID}"
+KEYAGREEMENT_PRIVKEY=$(cat did-secrets.json | jq -r .keyAgreement.privKey)
+KEYAGREEMENT_PUBKEY=$(cat did-secrets.json | jq -r .keyAgreement.pubKey)
+ATTESTATION_SEED=$(cat did-secrets.json | jq -r .attestation.seed)
 
 echo "Getting key IDs from chain..."
-OUTPUT=$(kiltctl storage did did --did ${DID})
-KEYAGREEMENT_KEY_ID=$(echo "${OUTPUT}" | grep -2 PublicEncryptionKey | head -1 | tr -d ' ,')
-ATTESTATION_KEY_ID=$(echo "${OUTPUT}" | grep -1 attestation_key | tail -1 | tr -d ' ,')
+KEYAGREEMENT_KEY_ID=${DID}$(cat did-document.json | jq -r .keyAgreement[0].id)
+ATTESTATION_KEY_ID=${DID}$(cat did-document.json | jq -r .assertionMethod[0].id)
 SESSION_SECRET=$(openssl rand -hex 64)
 JWT_SECRET='super-secret-jwt-secret'
 
 echo "Writing login config file to config.yaml..."
 
-cat > /data/config.yaml <<EOF
+cat > config.yaml <<EOF
 # OpenDID Config File
 
 # server config
@@ -31,12 +34,13 @@ host: 0.0.0.0
 port: 3001
 basePath: /srv
 production: false
+kiltEndpoint: ${ENDPOINT}
 
 # session config
 # contains the keyUri, naclSecretKey, naclPublicKey and sessionKey used to communicate with the identity extension
 session:
   # key uri of the key agreement key of the verifiers DID
-  keyUri: ${DID}#${KEYAGREEMENT_KEY_ID}
+  keyUri: ${KEYAGREEMENT_KEY_ID}
   # nacl secret key of the key agreement key of the verifiers DID
   naclSecretKey: "${KEYAGREEMENT_PRIVKEY}"
   # nacl public key of the key agreement key of the verifiers DID
@@ -58,7 +62,7 @@ jwt:
 wellKnownDid:
   did: ${DID}
   origin: http://localhost:3001
-  keyUri: ${DID}#${ATTESTATION_KEY_ID}
+  keyUri: ${ATTESTATION_KEY_ID}
   seed: "${ATTESTATION_SEED}"
 
 # client configs
@@ -75,3 +79,6 @@ clients:
     redirectUrls:
       - http://localhost:1606/callback.html
 EOF
+
+mv config.yaml did-secrets.json did-document.json /data/
+
