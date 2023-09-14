@@ -25,7 +25,7 @@ async fn refresh_handler(
     let token = if let Ok(token) =
         app_state
             .jwt_builder
-            .parse_refresh_token(&jwt, &verification_key, &app_state.jwt_algorithm)
+            .parse_refresh_token(&jwt, verification_key, &app_state.jwt_algorithm)
     {
         token
     } else {
