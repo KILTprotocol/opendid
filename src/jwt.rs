@@ -1,5 +1,5 @@
 use hmac::{Hmac, Mac};
-use jwt::{PKeyWithDigest, SignWithKey. SigningAlgorithm,VerifyWithKey, VerifyingAlgorithm};
+use jwt::{PKeyWithDigest, SignWithKey, SigningAlgorithm, VerifyWithKey, VerifyingAlgorithm};
 use openssl::{hash::MessageDigest, pkey::PKey};
 use serde::{Deserialize, Serialize};
 
