@@ -7,11 +7,6 @@ all: images
 
 images: main-image setup-image demo-image
 
-# push: images
-# 	podman push $(MAIN_IMAGE)
-# 	podman push $(SETUP_IMAGE)
-# 	podman push $(DEMO_IMAGE)
-
 setup: config.yaml
 config.yaml: setup-image
 	podman run --rm -it -v $(shell pwd):/data $(SETUP_IMAGE) $(PAYMENT_SEED)
@@ -46,7 +41,7 @@ demo-image: .demo-image
 demo-project/index.js: demo-project/main.ts 
 	cd demo-project && yarn && yarn build
 
-push-dev-images: .setup-image .demo-image .main-image
+push-dev-images: .main-image .setup-image .demo-image
 	skopeo copy containers-storage:$(MAIN_IMAGE):latest docker://$(MAIN_IMAGE):dev
 	skopeo copy containers-storage:$(SETUP_IMAGE):latest docker://$(SETUP_IMAGE):dev
 	skopeo copy containers-storage:$(DEMO_IMAGE):latest docker://$(DEMO_IMAGE):dev
