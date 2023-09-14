@@ -45,3 +45,8 @@ demo-image: .demo-image
 
 demo-project/index.js: demo-project/main.ts 
 	cd demo-project && yarn && yarn build
+
+push-dev-images: .main-image .setup-image .demo-image
+	skopeo copy containers-storage:$(MAIN_IMAGE):latest docker://$(MAIN_IMAGE):dev
+	skopeo copy containers-storage:$(SETUP_IMAGE):latest docker://$(SETUP_IMAGE):dev
+	skopeo copy containers-storage:$(DEMO_IMAGE):latest docker://$(DEMO_IMAGE):dev
