@@ -16,20 +16,16 @@ async fn refresh_handler(
     refresh_token: web::Json<RefreshTokenContainer>,
 ) -> impl Responder {
     let jwt = refresh_token.refresh_token.clone();
-    let verification_key = {
         // if there is a public key use this for verification, otherwise fall back to the secret key, i.e. HS256 case etc.
-        match &app_state.jwt_public_key {
-            Some(key) => key,
-            None => &app_state.jwt_secret_key,
-        }
-    };
-    let token = match app_state.jwt_builder.parse_refresh_token(
+    let verification_key = &app_state.jwt_public_key.unwrap_or(&app_state.jwt_secret_key);
+    let token = if let Ok(token) = app_state.jwt_builder.parse_refresh_token(
         &jwt,
         verification_key,
         &app_state.jwt_algorithm,
     ) {
-        Ok(token) => token,
-        Err(_) => return HttpResponse::Unauthorized().body("Invalid token"),
+        token
+    } else {
+        return HttpResponse::Unauthorized().body("Invalid token"),
     };
     let access_token = match app_state
         .jwt_builder
