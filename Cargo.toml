@@ -4,10 +4,6 @@ authors = ["KILT <info@kilt.io>"]
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "opendid"
-path = "src/main.rs"
-
 [dependencies]
 actix-web = "4"
 actix-session ={version = "0.7", features = ["cookie-session"]}
