@@ -140,7 +140,7 @@ CLIENT_SPEC=$(cat <<EOF
 EOF
 )
 CLIENT_SPEC=$(echo $CLIENT_SPEC | jq -c)
-etcdctl put /sara/clients/new-client "${CLIENT_SPEC}"
+etcdctl put /opendid/clients/new-client "${CLIENT_SPEC}"
 ```
 
 If you want to quickly try this out you can first generate a config using the setup image as described above, add the etcd configuration and then start the service using the example script in [./scripts/start-demo-etcd.sh](./scripts/start-demo-etcd.sh).
