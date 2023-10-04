@@ -14,13 +14,13 @@ config.yaml: setup-image
 delete-did: opendid-setup-image
 	podman run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash $(SETUP_IMAGE) /app/scripts/delete-did.sh $(PAYMENT_SEED)
 
-binary: target/release/sara
-target/release/sara: $(shell find ./src -type f -name '*.rs')
+binary: target/release/opendid
+target/release/opendid: $(shell find ./src -type f -name '*.rs')
 	cargo build --release
 
 
 main-image: .main-image
-.main-image: scripts/Containerfile target/release/sara login-frontend/dist/index.html
+.main-image: scripts/Containerfile target/release/opendid login-frontend/dist/index.html
 	podman build -t $(MAIN_IMAGE):latest -f scripts/Containerfile .
 	touch .main-image
 

@@ -52,11 +52,11 @@ impl ConfigUpdater {
             app_state.client_configs.clone()
         };
 
-        // we fetch all the client configs from etcd prefixed by "/sara/clients"
+        // we fetch all the client configs from etcd prefixed by "/opendid/clients"
         let resp = self
             .cli
             .get(
-                "/sara/clients",
+                "/opendid/clients",
                 Some(etcd_client::GetOptions::new().with_prefix()),
             )
             .await?;
@@ -66,7 +66,7 @@ impl ConfigUpdater {
             let client_id = kv
                 .key_str()?
                 .to_string()
-                .trim_start_matches("/sara/clients/")
+                .trim_start_matches("/opendid/clients/")
                 .to_string();
             let client_config: crate::config::ClientConfig = serde_json::from_slice(kv.value())?;
             log::info!("Loaded client config for {}", &client_id);
@@ -86,15 +86,15 @@ impl ConfigUpdater {
             app_state.client_configs.clone()
         };
 
-        // we watch for changes in "/sara/clients"
+        // we watch for changes in "/opendid/clients"
         let (_, mut stream) = self
             .cli
             .watch(
-                "/sara/clients",
+                "/opendid/clients",
                 Some(etcd_client::WatchOptions::new().with_prefix()),
             )
             .await?;
-        log::info!("Watching for changes in /sara/clients");
+        log::info!("Watching for changes in /opendid/clients");
 
         // we iterate over the stream of events
         while let Some(resp) = stream.message().await? {
@@ -105,7 +105,7 @@ impl ConfigUpdater {
                     .ok_or(Error::OauthInvalidClientId)?
                     .key_str()?
                     .to_string()
-                    .trim_start_matches("/sara/clients/")
+                    .trim_start_matches("/opendid/clients/")
                     .to_string();
                 log::info!("Received event for client {}", client_id);
                 match event.event_type() {
