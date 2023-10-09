@@ -14,18 +14,10 @@ config.yaml: setup-image
 delete-did: opendid-setup-image
 	podman run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash $(SETUP_IMAGE) /app/scripts/delete-did.sh $(PAYMENT_SEED)
 
-binary: target/release/opendid
-target/release/opendid: $(shell find ./src -type f -name '*.rs')
-	cargo build --release
-
-
 main-image: .main-image
-.main-image: scripts/Containerfile target/release/opendid login-frontend/dist/index.html
+.main-image: scripts/Containerfile
 	podman build -t $(MAIN_IMAGE):latest -f scripts/Containerfile .
 	touch .main-image
-
-login-frontend/dist/index.html: $(shell find ./login-frontend/src -type f)
-	cd login-frontend && yarn && yarn build
 
 setup-image: .setup-image
 .setup-image: scripts/setup.Containerfile scripts/setup.sh
@@ -34,12 +26,9 @@ setup-image: .setup-image
 
 
 demo-image: .demo-image
-.demo-image: scripts/demo.Containerfile demo-project/index.js $(shell find ./demo-project/demo-frontend)
+.demo-image: scripts/demo.Containerfile
 	podman build -t $(DEMO_IMAGE):latest -f scripts/demo.Containerfile .
 	touch .demo-image
-
-demo-project/index.js: demo-project/main.ts 
-	cd demo-project && yarn && yarn build
 
 push-dev-images: .main-image .setup-image .demo-image
 	skopeo copy containers-storage:$(MAIN_IMAGE):latest docker://$(MAIN_IMAGE):dev
