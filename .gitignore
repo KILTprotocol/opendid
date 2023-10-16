@@ -14,3 +14,5 @@ demo-project/.parcel-cache
 .main-image
 .setup-image
 did-document.json
+
+/.vscode

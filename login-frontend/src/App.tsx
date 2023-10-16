@@ -5,6 +5,7 @@ import './App.css';
 import './kilt/styles.css';
 
 import { apiWindow, getCompatibleExtensions, getSession } from './session';
+import React from 'react';
 
 function useCompatibleExtensions() {
   const [extensions, setExtensions] = useState(getCompatibleExtensions());
@@ -40,7 +41,7 @@ export function App() {
         const session = await getSession(kilt[extension]);
 
         const credentialRequirements = await (
-          await fetch('/api/v1/credentials', {
+          await fetch('http://0.0.0.0:3000/api/v1/credentials', {
             credentials: 'include',
           })
         ).json();

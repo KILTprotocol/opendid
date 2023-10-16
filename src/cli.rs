@@ -7,7 +7,7 @@ use crate::config::Config;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
-    #[arg(short, long, value_name = "FILE")]
+    #[arg(short, long, value_name = "FILE", env)]
     config: PathBuf,
 
     #[command(flatten)]
