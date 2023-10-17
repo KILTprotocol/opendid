@@ -4,14 +4,14 @@ set -e
 
 # get payment account address and seed from command line arguments
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 \"<payment account seed>\""
+    echo "Usage: $0 \"<PAYMENT_ACCOUNT_SEED>\""
     exit 1
 fi
 PAYMENT_ACCOUNT_SEED=$1
 ENDPOINT=${ENDPOINT:-spiritnet}
 
 echo "Generating DID..."
-DID_DOC=$(npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}")
+npx ts-node ./gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"
 DID=$(cat did-document.json | jq -r .uri)
 echo "DID: ${DID}"
 KEYAGREEMENT_PRIVKEY=$(cat did-secrets.json | jq -r .keyAgreement.privKey)
