@@ -54,12 +54,9 @@ export function generateKeypairs(mnemonic = mnemonicGenerate()): {
     keyAgreement: Kilt.KiltEncryptionKeypair
     assertionMethod: Kilt.KiltKeyringPair
 } {
-    console.log('2', mnemonic)
-    const baseKey = Kilt.Utils.Crypto.makeKeypairFromSeed(mnemonicToMiniSecret(mnemonic), signingKeyType)
+    const authentication = Kilt.Utils.Crypto.makeKeypairFromUri(mnemonic + '//did//0')
 
-    const authentication = baseKey.derive('//did//0') as typeof baseKey
-
-    const assertionMethod = baseKey.derive('//did//assertion//0') as typeof baseKey
+    const assertionMethod = Kilt.Utils.Crypto.makeKeypairFromUri(mnemonic + '//did//assertion//0')
 
     const keyAgreement = generateKeyAgreement(mnemonic)
 
