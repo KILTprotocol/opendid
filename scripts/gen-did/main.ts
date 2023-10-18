@@ -20,7 +20,6 @@ async function main() {
     console.debug(`Connecting to ${endpoint}...`)
     const api = await Kilt.connect(endpoint)
     console.debug(`Connected to ${endpoint}`)
-    // console.log('api', api.on)
     // get first command line argument as seed for the payment account and fail if not provided
     const paymentSeed = process.argv[2]
     console.debug(paymentSeed)
