@@ -20,7 +20,7 @@ export interface InjectedWindowProvider {
   name: string;
   version: string;
   specVersion: '3.0';
-  signWithDid: (data: string) => Promise<{didKeyUri: string, signature: string}>;
+  signWithDid: (data: string) => Promise<{ didKeyUri: string; signature: string }>;
 }
 
 export const apiWindow = window as unknown as {
