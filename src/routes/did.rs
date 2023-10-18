@@ -83,7 +83,7 @@ async fn post_did_handler(
         .await
         .map_err(|_| Error::CantConnectToBlockchain)?;
 
-    let did_document = get_did_doc(&sender, &cli).await?;
+    let did_document = get_did_doc(sender, &cli).await?;
 
     let signed_key = hex_decode(payload.key_uri.trim_start_matches("0x"))
         .map_err(|_| Error::InvalidDidSignature)?;
@@ -145,7 +145,7 @@ async fn post_did_handler(
     let mut app_state = app_state.write()?; // may update the rhai checkers
     let id_token = app_state
         .jwt_builder
-        .new_id_token(&sender, &w3n, &props, &Some(nonce.clone()))
+        .new_id_token(sender, &w3n, &props, &Some(nonce.clone()))
         .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
         .map_err(|e| {
             log::error!("Failed to create id token: {}", e);
@@ -154,7 +154,7 @@ async fn post_did_handler(
 
     let refresh_token = app_state
         .jwt_builder
-        .new_refresh_token(&sender, &w3n, &props, &Some(nonce.clone()))
+        .new_refresh_token(sender, &w3n, &props, &Some(nonce.clone()))
         .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
         .map_err(|e| {
             log::error!("Failed to create refresh token: {}", e);
