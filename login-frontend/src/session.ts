@@ -20,6 +20,7 @@ export interface InjectedWindowProvider {
   name: string;
   version: string;
   specVersion: '3.0';
+  signWithDid: (data: string) => Promise<{didKeyUri: string, signature: string}>;
 }
 
 export const apiWindow = window as unknown as {
@@ -37,9 +38,9 @@ export async function getSession(provider: InjectedWindowProvider): Promise<PubS
     throw new Error('No provider');
   }
 
-  const challenge = await (await fetch('http://0.0.0.0:3001/api/v1/challenge')).json();
+  const challenge = await (await fetch('/api/v1/challenge')).json();
   const session = await provider.startSession(challenge.dAppName, challenge.dAppEncryptionKeyUri, challenge.challenge);
-  await fetch('http:://0.0.0.0:3001/api/v1/challenge', {
+  await fetch('/api/v1/challenge', {
     method: 'POST',
     body: JSON.stringify({
       encryptionKeyUri: session.encryptionKeyUri ?? session.encryptionKeyId,

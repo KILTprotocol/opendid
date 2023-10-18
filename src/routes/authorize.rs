@@ -32,12 +32,29 @@ async fn authorize_handler(
         .ok_or(Error::OauthInvalidClientId)?
         .redirect_urls;
 
-    if redirect_urls.contains(&query.redirect_uri) {
-        session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
-        return Ok(HttpResponse::Found()
-            .append_header(("Location", "/"))
-            .finish());
-    } else {
-        Err(Error::OauthInvalidRedirectUri)
+    let are_requirements_empty = &app_state
+        .client_configs
+        .get(&query.client_id)
+        .ok_or(Error::OauthInvalidClientId)?
+        .requirements
+        .is_empty();
+
+    let is_redirect_uri_in_query = redirect_urls.contains(&query.redirect_uri);
+
+    match (are_requirements_empty, is_redirect_uri_in_query) {
+        (true, true) => {
+            session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
+            let redirect_uri_with_nonce = format!("/?nonce={}", query.nonce);
+            Ok(HttpResponse::Found()
+                .append_header(("Location", redirect_uri_with_nonce))
+                .finish())
+        }
+        (false, true) => {
+            session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
+            Ok(HttpResponse::Found()
+                .append_header(("Location", "/"))
+                .finish())
+        }
+        _ => Err(Error::OauthInvalidRedirectUri),
     }
 }

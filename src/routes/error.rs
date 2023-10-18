@@ -21,6 +21,8 @@ pub enum Error {
     CreateJWT,
     LockPoison,
     Internal(String),
+    VerifyJWT,
+    InvalidDidSignature,
 }
 
 impl std::error::Error for Error {}
@@ -47,6 +49,8 @@ impl std::fmt::Display for Error {
             Error::OauthNoSession => write!(f, "No session"),
             Error::LockPoison => write!(f, "Lock poison"),
             Error::Internal(ref s) => write!(f, "Internal error: {}", s),
+            Error::VerifyJWT => write!(f, "Failed to verify JWT"),
+            Error::InvalidDidSignature => write!(f, "Failed to verify DID Signature"),
         }
     }
 }
@@ -77,6 +81,10 @@ impl From<Error> for actix_web::Error {
             Error::InvalidChallenge => actix_web::error::ErrorUnauthorized("Invalid challenge"),
             Error::InvalidNonce => actix_web::error::ErrorUnauthorized("Invalid nonce"),
             Error::OauthNoSession => actix_web::error::ErrorUnauthorized("No session"),
+            Error::VerifyJWT => actix_web::error::ErrorUnauthorized("Failed to verify JWT"),
+            Error::InvalidDidSignature => {
+                actix_web::error::ErrorUnauthorized("Failed to verify DID signature")
+            }
             // default internal server error
             _ => actix_web::error::ErrorInternalServerError(e),
         }

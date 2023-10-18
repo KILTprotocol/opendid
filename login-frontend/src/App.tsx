@@ -1,11 +1,13 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import './App.css';
+import React from 'react';
+import * as Jose from "jose"
 
+
+import './App.css';
 // remove this stylesheet if you want to add your own custom styles
 import './kilt/styles.css';
-
 import { apiWindow, getCompatibleExtensions, getSession } from './session';
-import React from 'react';
+
 
 function useCompatibleExtensions() {
   const [extensions, setExtensions] = useState(getCompatibleExtensions());
@@ -29,61 +31,118 @@ export function App() {
 
   const [error, setError] = useState(false);
 
+  const handleCredentialLogin = async (event: FormEvent<HTMLFormElement>) => {
+
+    const form = event.currentTarget;
+    const extension = new FormData(form).get('extension') as string;
+
+    const session = await getSession(kilt[extension]);
+
+    const credentialRequirements = await (
+      await fetch('/api/v1/credentials', {
+        credentials: 'include',
+      })
+    ).json();
+    const credentialResponse = await new Promise(async (resolve, reject) => {
+      try {
+        await session.listen(async (credentialResponse) => {
+          resolve(credentialResponse);
+        });
+        await session.send(credentialRequirements);
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    let url = '/api/v1/credentials';
+    // get redirect uri query
+    const redirectUri = new URLSearchParams(window.location.search).get('redirect');
+    url = `${url}?redirect=${redirectUri}`;
+
+
+    const credentialResponseResponse = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(credentialResponse),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    });
+
+    if (credentialResponseResponse.status >= 400) {
+      const credentialResponseData = await credentialResponseResponse.text();
+      throw new Error(credentialResponseData);
+    }
+
+    if (credentialResponseResponse.status === 204) {
+      const uri = credentialResponseResponse.headers.get('Location');
+      if (uri !== null) {
+        window.location.href = uri;
+        return;
+      }
+    }
+
+  }
+
+
+
+  const handleSIOPV2Login = async (nonce: string, event: FormEvent<HTMLFormElement>) => {
+    const form = event.currentTarget;
+    const extension = new FormData(form).get('extension') as string;
+
+    let { didKeyUri, signature } = await kilt[extension].signWithDid(nonce);
+
+    let [did, keyURI] = didKeyUri.split("#");
+
+    const secret = new TextEncoder().encode(
+      nonce
+    );
+
+    const token = await new Jose.SignJWT({ signature, keyURI })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setIssuer(did)
+      .setSubject(did)
+      .setExpirationTime("1h")
+      .sign(secret)
+
+    const url = `/api/v1/did/${token}`;
+
+    const didLoginResponse = await fetch(url, {
+      method: 'POST',
+    });
+
+    if (didLoginResponse.status >= 400) {
+      const credentialResponseData = await didLoginResponse.text();
+      throw new Error(credentialResponseData);
+    }
+
+    if (didLoginResponse.status === 204) {
+      const uri = didLoginResponse.headers.get('Location');
+      if (uri !== null) {
+        window.location.href = uri;
+        return;
+      }
+    }
+
+
+  }
+
+
   const handleLogin = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      setError(false);
-
+      const url = new URL(window.location.href);
+      setError(false)
       try {
-        const form = event.currentTarget;
-        const extension = new FormData(form).get('extension') as string;
-
-        const session = await getSession(kilt[extension]);
-
-        const credentialRequirements = await (
-          await fetch('http://0.0.0.0:3000/api/v1/credentials', {
-            credentials: 'include',
-          })
-        ).json();
-        const credentialResponse = await new Promise(async (resolve, reject) => {
-          try {
-            await session.listen(async (credentialResponse) => {
-              resolve(credentialResponse);
-            });
-            await session.send(credentialRequirements);
-          } catch (e) {
-            reject(e);
-          }
-        });
-
-        let url = '/api/v1/credentials';
-        // get redirect uri query
-        const redirectUri = new URLSearchParams(window.location.search).get('redirect');
-        if (redirectUri) {
-          url = `${url}?redirect=${redirectUri}`;
+        const nonce = url.searchParams.get("nonce");
+        if (nonce) {
+          handleSIOPV2Login(nonce, event)
+        } else {
+          handleCredentialLogin(event);
         }
-        const credentialResponseResponse = await fetch(url, {
-          method: 'POST',
-          body: JSON.stringify(credentialResponse),
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        if (credentialResponseResponse.status >= 400) {
-          const credentialResponseData = await credentialResponseResponse.text();
-          throw new Error(credentialResponseData);
-        }
-
-        if (credentialResponseResponse.status === 204) {
-          const uri = credentialResponseResponse.headers.get('Location');
-          if (uri !== null) {
-            window.location.href = uri;
-            return;
-          }
-        }
-      } catch (e) {
+      }
+      catch (e) {
         console.error(e);
         setError(true);
       }

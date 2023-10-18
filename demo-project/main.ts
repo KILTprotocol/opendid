@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { expressjwt as jwt } from 'express-jwt'
+import * as path from "path"
 
 const app = express()
 const port = 1606
@@ -31,7 +32,7 @@ app.get('/login.html', (req, res) => {
   const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   res.cookie('nonce', nonce, { maxAge: 900000 });
   res.cookie('state', state, { maxAge: 900000 });
-  res.sendFile('/srv/demo-frontend/login.html')
+  res.sendFile('/home/adel/opendid/demo-project/demo-frontend/login.html')
 })
 
 // This is a protected endpoint that requires a valid JWT token

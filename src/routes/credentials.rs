@@ -87,6 +87,7 @@ async fn get_credential_requirements_handler(
         .get::<AuthorizeQueryParameters>(OIDC_SESSION_KEY)
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
+
     let requirements = &app_state
         .client_configs
         .get(&oidc_context.client_id)
