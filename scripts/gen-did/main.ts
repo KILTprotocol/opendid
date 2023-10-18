@@ -39,7 +39,6 @@ async function main() {
     const keypairs = generateKeypairs()
     const didSecrets = exportKeypairs(keypairs)
     await checkAndWriteFile(didSecrets, 'did-secrets.json')
-    console.debug(`Wrote did-secrets.json`)
     const getStoreTxSignCallback: Kilt.Did.GetStoreTxSignCallback = async ({ data }) => ({
         signature: keypairs.authentication.sign(data),
         keyType: keypairs.authentication.type,

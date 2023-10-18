@@ -33,9 +33,10 @@ export interface DidSecrets {
 
 export async function checkAndWriteFile(didSecrets: object, filename: string) {
     if (fs.existsSync(filename)) {
-        console.error(`files ${filename} exist already`)
+        return console.error(`files ${filename} exist already`)
     }
     await fsPromise.writeFile(filename, JSON.stringify(didSecrets, null, 2))
+    return console.debug(`Wrote ${filename}`)
 }
 
 export const signingKeyType = 'sr25519'
