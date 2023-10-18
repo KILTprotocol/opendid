@@ -11,7 +11,7 @@ PAYMENT_ACCOUNT_SEED=$1
 ENDPOINT=${ENDPOINT:-spiritnet}
 
 echo "Generating DID..."
-npx ts-node ./gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"
+npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"
 DID=$(cat did-document.json | jq -r .uri)
 echo "DID: ${DID}"
 KEYAGREEMENT_PRIVKEY=$(cat did-secrets.json | jq -r .keyAgreement.privKey)
