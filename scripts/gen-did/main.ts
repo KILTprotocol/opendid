@@ -29,10 +29,12 @@ interface DidSecrets {
     }
 }
 
+const signingKeyType = 'sr25519'
+
 function generateKeyAgreement(mnemonic: string): Kilt.KiltEncryptionKeypair {
     const secretKeyPair = sr25519PairFromSeed(mnemonicToMiniSecret(mnemonic))
     const { path } = keyExtractPath('//did//keyAgreement//0')
-    const { secretKey } = keyFromPath(secretKeyPair, path, 'sr25519')
+    const { secretKey } = keyFromPath(secretKeyPair, path, signingKeyType)
     return Kilt.Utils.Crypto.makeEncryptionKeypairFromSeed(blake2AsU8a(secretKey))
 }
 
@@ -42,7 +44,8 @@ function generateKeypairs(mnemonic = mnemonicGenerate()): {
     keyAgreement: Kilt.KiltEncryptionKeypair
     assertionMethod: Kilt.KiltKeyringPair
 } {
-    const baseKey = Kilt.Utils.Crypto.makeKeypairFromSeed(mnemonicToMiniSecret(mnemonic), 'sr25519')
+    console.log('2', mnemonic)
+    const baseKey = Kilt.Utils.Crypto.makeKeypairFromSeed(mnemonicToMiniSecret(mnemonic), signingKeyType)
 
     const authentication = baseKey.derive('//did//0') as typeof baseKey
 
@@ -115,15 +118,14 @@ async function main() {
         console.error('Payment seed not found')
         process.exit(1)
     }
-    const didSeed = process.argv[2]
 
-    const paymentKeyPair = Kilt.Utils.Crypto.makeKeypairFromUri(paymentSeed, 'sr25519')
+    const paymentKeyPair = Kilt.Utils.Crypto.makeKeypairFromUri(paymentSeed, signingKeyType)
     console.debug(`Payment account address: ${paymentKeyPair.address}`)
     // get the balance of the payment account
     const accountInfo = await api.query.system.account(paymentKeyPair.address)
     console.debug(`Payment account balance: ${accountInfo.data.free}`)
 
-    const keypairs = generateKeypairs(didSeed)
+    const keypairs = generateKeypairs()
     const didSecrets = exportKeypairs(keypairs)
     await writeDidSecretsFile(didSecrets, 'did-secrets.json')
     console.debug(`Wrote did-secrets.json`)
@@ -138,8 +140,8 @@ async function main() {
         console.debug(`Registering DID ${keypairs.authentication.address} on chain`)
         const fullDidCreationTx = await Kilt.Did.getStoreTx(
             {
-                authentication: [{ publicKey: keypairs.authentication.publicKey, type: 'sr25519' }],
-                assertionMethod: [{ publicKey: keypairs.assertionMethod.publicKey, type: 'sr25519' }],
+                authentication: [{ publicKey: keypairs.authentication.publicKey, type: signingKeyType }],
+                assertionMethod: [{ publicKey: keypairs.assertionMethod.publicKey, type: signingKeyType }],
                 keyAgreement: [{ publicKey: keypairs.keyAgreement.publicKey, type: 'x25519' }],
             },
             paymentKeyPair.address,
