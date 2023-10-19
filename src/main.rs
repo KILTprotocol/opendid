@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::RwLock};
 
+use actix_cors::Cors;
 use actix_session::{
     config::{CookieContentSecurity, PersistentSession},
     storage::CookieSessionStore,
@@ -93,9 +94,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Starting server at {}:{}", host, port);
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();
+
         App::new()
             .app_data(state.clone())
             .wrap(Logger::default())
+            .wrap(cors)
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), config.get_session_key())
                     .cookie_content_security(CookieContentSecurity::Private)
