@@ -10,7 +10,7 @@ pub enum Error {
     SessionGet,
     InvalidChallenge(&'static str),
     InvalidNonce,
-    InvalidLightDid,
+    InvalidLightDid(&'static str),
     InvalidPrivateKey,
     CantConnectToBlockchain,
     InvalidDid(&'static str),
@@ -35,7 +35,7 @@ impl std::fmt::Display for Error {
             Error::SessionGet => write!(f, "Failed to get session"),
             Error::InvalidChallenge(s) => write!(f, "Invalid challenge: {}", s),
             Error::InvalidNonce => write!(f, "Invalid nonce"),
-            Error::InvalidLightDid => write!(f, "Invalid light DID"),
+            Error::InvalidLightDid(s) => write!(f, "Invalid light DID: {}", s),
             Error::InvalidPrivateKey => write!(f, "Invalid private key"),
             Error::CantConnectToBlockchain => write!(f, "Can't connect to KILT blockchain"),
             Error::InvalidDid(s) => write!(f, "Invalid DID: {}", s),
@@ -58,7 +58,7 @@ impl From<Error> for actix_web::Error {
             Error::OauthNotConfigured
             | Error::OauthInvalidClientId
             | Error::OauthInvalidRedirectUri
-            | Error::InvalidLightDid
+            | Error::InvalidLightDid(_)
             | Error::InvalidDid(_)
             | Error::FailedToDecrypt
             | Error::FailedToParseMessage
@@ -69,9 +69,13 @@ impl From<Error> for actix_web::Error {
             | Error::InvalidChallenge(_)
             | Error::InvalidNonce
             | Error::OauthNoSession => actix_web::error::ErrorUnauthorized(e),
-            // default internal server error, we don't pass the error message to the frontend to not
-            // leak information
-            _ => {
+            // Internal errors. we don't pass the error message to the frontend to not leak information.
+            Error::SessionInsert
+            | Error::InvalidPrivateKey
+            | Error::CantConnectToBlockchain
+            | Error::CreateJWT
+            | Error::Internal(_)
+            | Error::LockPoison => {
                 log::error!("Internal Error: {}", e);
                 actix_web::error::ErrorInternalServerError("Internal Error")
             }

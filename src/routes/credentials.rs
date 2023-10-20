@@ -115,11 +115,10 @@ async fn get_credential_requirements_handler(
     let msg_bytes = msg_json.as_bytes();
     let our_secretkey = app_state.session_secret_key.clone();
     let others_pubkey =
-        parse_encryption_key_from_lightdid(key_uri.as_str()).map_err(|_| Error::InvalidLightDid)?;
+        parse_encryption_key_from_lightdid(key_uri.as_str())?;
     let nonce = box_::gen_nonce();
-    let pk = box_::PublicKey::from_slice(&others_pubkey).ok_or(Error::InvalidLightDid)?;
     let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
-    let encrypted_msg = box_::seal(msg_bytes, &nonce, &pk, &sk);
+    let encrypted_msg = box_::seal(msg_bytes, &nonce, &others_pubkey, &sk);
     let encrypted_msg_hex = format!("0x{}", hex::encode(encrypted_msg));
     let nonce_hex = format!("0x{}", hex::encode(nonce));
     let response = EncryptedMessage {
