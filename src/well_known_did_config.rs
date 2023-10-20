@@ -93,15 +93,16 @@ impl WellKnownDidConfig {
         origin: &str,
         verification_method: &str,
         signer: &P,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    ) -> anyhow::Result<Self> {
         let normalized = [
-            serde_json::to_string(&json!({"@id": id}))?,
-            serde_json::to_string(
-                &json!({"kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#id": id}),
-            )?,
-            serde_json::to_string(
-                &json!({"kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#origin": origin}),
-            )?,
+            serde_json::to_string(&json!({ "@id": id }))?,
+            serde_json::to_string(&json!({
+                "kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#id":
+                    id
+            }))?,
+            serde_json::to_string(&json!({
+                "kilt:ctype:0x9d271c790775ee831352291f01c5d04c7979713a5896dcf5e81708184cc5c643#origin": origin
+            }))?,
         ];
         let hashes = normalized
             .iter()
@@ -126,12 +127,11 @@ impl WellKnownDidConfig {
             (nonces, salted_hashes)
         };
         let mut hasher = Blake2b256::new();
-        salted_hashes.iter().try_for_each(
-            |salted_hash| -> Result<(), Box<dyn std::error::Error>> {
-                hasher.update(hex_decode(salted_hash.as_str())?);
-                Ok(())
-            },
-        )?;
+
+        for salted_hash in salted_hashes.iter() {
+            hasher.update(hex_decode(salted_hash.as_str())?);
+        }
+
         let root_hash = hasher.finalize();
         let signature = signer.sign(&root_hash);
         let proof = Proof {
@@ -179,7 +179,7 @@ impl LinkedDid {
 
 pub fn create_well_known_did_config(
     cfg: &config::WellKnownDidConfig,
-) -> Result<WellKnownDidConfig, Box<dyn std::error::Error>> {
+) -> anyhow::Result<WellKnownDidConfig> {
     let (pair, _) = sp_core::sr25519::Pair::from_string_with_seed(&cfg.seed, None)?;
     let doc = WellKnownDidConfig::new(&cfg.did, &cfg.origin, &cfg.key_uri, &pair)?;
     Ok(doc)
