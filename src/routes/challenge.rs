@@ -70,7 +70,7 @@ async fn challenge_response_handler(
         None => return Err(Error::SessionGet),
     };
     let session_challenge_bytes = hex::decode(session_challenge.trim_start_matches("0x"))
-        .map_err(|_| Error::InvalidChallenge)?;
+        .map_err(|_| Error::InvalidChallenge("Challenge: Invalid Hex"))?;
     let nonce = hex::decode(challenge_response.nonce.trim_start_matches("0x"))
         .map_err(|_| Error::InvalidNonce)?;
     let encrypted_challenge = hex::decode(
@@ -78,7 +78,7 @@ async fn challenge_response_handler(
             .encrypted_challenge
             .trim_start_matches("0x"),
     )
-    .map_err(|_| Error::InvalidChallenge)?;
+    .map_err(|_| Error::InvalidChallenge("Encrypted Challenge: Invalid Hex"))?;
     let others_pubkey = crate::kilt::parse_encryption_key_from_lightdid(
         challenge_response.encryption_key_uri.as_str(),
     )
@@ -87,14 +87,14 @@ async fn challenge_response_handler(
     let nonce = box_::Nonce::from_slice(&nonce).ok_or(Error::InvalidNonce)?;
     let pk = box_::PublicKey::from_slice(&others_pubkey).ok_or(Error::InvalidLightDid)?;
     let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
-    let decrypted_challenge =
-        box_::open(&encrypted_challenge, &nonce, &pk, &sk).map_err(|_| Error::InvalidChallenge)?;
+    let decrypted_challenge = box_::open(&encrypted_challenge, &nonce, &pk, &sk)
+        .map_err(|_| Error::InvalidChallenge("Unable to decrypt"))?;
     if session_challenge_bytes == decrypted_challenge {
         session
             .insert("key_uri", challenge_response.encryption_key_uri.clone())
             .map_err(|_| Error::SessionInsert)?;
         Ok(HttpResponse::Ok().body("Challenge accepted"))
     } else {
-        Err(Error::InvalidChallenge)
+        Err(Error::InvalidChallenge("Challenge doesn't match"))
     }
 }

@@ -8,12 +8,12 @@ pub enum Error {
     OauthNoSession,
     SessionInsert,
     SessionGet,
-    InvalidChallenge,
+    InvalidChallenge(&'static str),
     InvalidNonce,
     InvalidLightDid,
     InvalidPrivateKey,
     CantConnectToBlockchain,
-    InvalidFullDid,
+    InvalidDid(&'static str),
     FailedToDecrypt,
     FailedToParseMessage,
     GetChallenge,
@@ -27,26 +27,26 @@ impl std::error::Error for Error {}
 
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
+        match self {
             Error::OauthNotConfigured => write!(f, "OAuth is not configured"),
             Error::OauthInvalidClientId => write!(f, "Invalid client_id"),
             Error::OauthInvalidRedirectUri => write!(f, "Invalid redirect_uri"),
             Error::SessionInsert => write!(f, "Failed to insert session"),
             Error::SessionGet => write!(f, "Failed to get session"),
-            Error::InvalidChallenge => write!(f, "Invalid challenge"),
+            Error::InvalidChallenge(s) => write!(f, "Invalid challenge: {}", s),
             Error::InvalidNonce => write!(f, "Invalid nonce"),
             Error::InvalidLightDid => write!(f, "Invalid light DID"),
             Error::InvalidPrivateKey => write!(f, "Invalid private key"),
             Error::CantConnectToBlockchain => write!(f, "Can't connect to KILT blockchain"),
-            Error::InvalidFullDid => write!(f, "Invalid full DID"),
+            Error::InvalidDid(s) => write!(f, "Invalid DID: {}", s),
             Error::FailedToDecrypt => write!(f, "Failed to decrypt"),
             Error::FailedToParseMessage => write!(f, "Failed to parse message"),
             Error::GetChallenge => write!(f, "Failed to get challenge"),
-            Error::VerifyCredential(ref s) => write!(f, "Failed to verify credential: {}", s),
+            Error::VerifyCredential(s) => write!(f, "Failed to verify credential: {}", s),
             Error::CreateJWT => write!(f, "Failed to create JWT"),
             Error::OauthNoSession => write!(f, "No session"),
             Error::LockPoison => write!(f, "Lock poison"),
-            Error::Internal(ref s) => write!(f, "Internal error: {}", s),
+            Error::Internal(s) => write!(f, "Internal error: {}", s),
         }
     }
 }
@@ -59,14 +59,14 @@ impl From<Error> for actix_web::Error {
             | Error::OauthInvalidClientId
             | Error::OauthInvalidRedirectUri
             | Error::InvalidLightDid
-            | Error::InvalidFullDid
+            | Error::InvalidDid(_)
             | Error::FailedToDecrypt
             | Error::FailedToParseMessage
             | Error::VerifyCredential(_)
             | Error::GetChallenge => actix_web::error::ErrorBadRequest(e),
             // unauthorized
             Error::SessionGet
-            | Error::InvalidChallenge
+            | Error::InvalidChallenge(_)
             | Error::InvalidNonce
             | Error::OauthNoSession => actix_web::error::ErrorUnauthorized(e),
             // default internal server error, we don't pass the error message to the frontend to not
@@ -99,6 +99,12 @@ impl<T> From<std::sync::PoisonError<T>> for Error {
 
 impl From<Box<dyn std::error::Error>> for Error {
     fn from(e: Box<dyn std::error::Error>) -> Self {
+        Error::Internal(e.to_string())
+    }
+}
+
+impl From<subxt::Error> for Error {
+    fn from(e: subxt::Error) -> Self {
         Error::Internal(e.to_string())
     }
 }

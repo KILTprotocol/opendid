@@ -150,8 +150,7 @@ async fn post_credential_handler(
 
     // get the sender's public key from the encryption key URI
     let pk = kilt::get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli)
-        .await
-        .map_err(|_| Error::InvalidFullDid)?;
+        .await?;
 
     // decrypt the message
     let nonce_bytes =
