@@ -51,11 +51,8 @@ pub async fn get_encryption_key_from_fulldid_key_uri(
 }
 
 pub async fn get_w3n(did: &str, cli: &OnlineClient<KiltConfig>) -> Result<String, Error> {
-    let account_id = match subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:"))
-    {
-        Ok(id) => id,
-        _ => return Err(Error::InvalidDid("Invalid DID")),
-    };
+    let account_id = subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:"))
+        .map_err(|_| Error::InvalidDid("Invalid DID"))?;
     let storage_key = kilt::storage().web3_names().names(account_id);
     let name = cli.storage().at_latest().await?.fetch(&storage_key).await?;
     if let Some(name) = name {

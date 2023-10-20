@@ -216,10 +216,15 @@ async fn post_credential_handler(
                 continue;
             }
             let mut properties_fulfilled = true;
-            let content_object = match content.claim.contents.as_object() {
-                Some(data) => data,
-                _ => return Ok(HttpResponse::BadRequest().body("Could not get claim contents")),
-            };
+            let content_object =
+                content
+                    .claim
+                    .contents
+                    .as_object()
+                    .ok_or(Error::VerifyCredential(
+                        "Could not get claim contents".into(),
+                    ))?;
+
             for property in &requirement.required_properties {
                 if !content_object.contains_key(property) {
                     log::info!("Requirement property '{}' not found", property);

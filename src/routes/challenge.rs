@@ -65,10 +65,11 @@ async fn challenge_response_handler(
 ) -> Result<HttpResponse, Error> {
     log::info!("POST challenge handler");
     let app_state = app_state.read()?;
-    let session_challenge = match session.get::<ChallengeData>("challenge")? {
-        Some(data) => data.challenge,
-        None => return Err(Error::SessionGet),
-    };
+    let session_challenge = session
+        .get::<ChallengeData>("challenge")?
+        .ok_or(Error::SessionGet)?
+        .challenge;
+
     let session_challenge_bytes = hex::decode(session_challenge.trim_start_matches("0x"))
         .map_err(|_| Error::InvalidChallenge("Challenge: Invalid Hex"))?;
     let nonce = hex::decode(challenge_response.nonce.trim_start_matches("0x"))
