@@ -69,8 +69,12 @@ impl From<Error> for actix_web::Error {
             | Error::InvalidChallenge
             | Error::InvalidNonce
             | Error::OauthNoSession => actix_web::error::ErrorUnauthorized(e),
-            // default internal server error
-            _ => actix_web::error::ErrorInternalServerError(e),
+            // default internal server error, we don't pass the error message to the frontend to not
+            // leak information
+            _ => {
+                log::error!("Internal Error: {}", e);
+                actix_web::error::ErrorInternalServerError("Internal Error")
+            }
         }
     }
 }
