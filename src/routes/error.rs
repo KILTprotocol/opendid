@@ -55,28 +55,20 @@ impl From<Error> for actix_web::Error {
     fn from(e: Error) -> Self {
         match e {
             // bad request
-            Error::OauthNotConfigured => {
-                actix_web::error::ErrorBadRequest("OAuth is not configured")
-            }
-            Error::OauthInvalidClientId => actix_web::error::ErrorBadRequest("Invalid client_id"),
-            Error::OauthInvalidRedirectUri => {
-                actix_web::error::ErrorBadRequest("Invalid redirect_uri")
-            }
-            Error::InvalidLightDid => actix_web::error::ErrorBadRequest("Invalid light DID"),
-            Error::InvalidFullDid => actix_web::error::ErrorBadRequest("Invalid full DID"),
-            Error::FailedToDecrypt => actix_web::error::ErrorBadRequest("Failed to decrypt"),
-            Error::FailedToParseMessage => {
-                actix_web::error::ErrorBadRequest("Failed to parse message")
-            }
-            Error::GetChallenge => actix_web::error::ErrorBadRequest("Failed to get challenge"),
-            Error::VerifyCredential(e) => {
-                actix_web::error::ErrorBadRequest(format!("Failed to verify credential: {}", e))
-            }
+            Error::OauthNotConfigured
+            | Error::OauthInvalidClientId
+            | Error::OauthInvalidRedirectUri
+            | Error::InvalidLightDid
+            | Error::InvalidFullDid
+            | Error::FailedToDecrypt
+            | Error::FailedToParseMessage
+            | Error::VerifyCredential(_)
+            | Error::GetChallenge => actix_web::error::ErrorBadRequest(e),
             // unauthorized
-            Error::SessionGet => actix_web::error::ErrorUnauthorized("Failed to get session"),
-            Error::InvalidChallenge => actix_web::error::ErrorUnauthorized("Invalid challenge"),
-            Error::InvalidNonce => actix_web::error::ErrorUnauthorized("Invalid nonce"),
-            Error::OauthNoSession => actix_web::error::ErrorUnauthorized("No session"),
+            Error::SessionGet
+            | Error::InvalidChallenge
+            | Error::InvalidNonce
+            | Error::OauthNoSession => actix_web::error::ErrorUnauthorized(e),
             // default internal server error
             _ => actix_web::error::ErrorInternalServerError(e),
         }
