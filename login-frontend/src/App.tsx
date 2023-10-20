@@ -91,7 +91,7 @@ export function App() {
         setError(true);
       }
     },
-    [kilt],
+    [kilt, fetchedUri],
   );
 
   return (
