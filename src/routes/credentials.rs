@@ -114,8 +114,7 @@ async fn get_credential_requirements_handler(
     let msg_json = serde_json::to_string(&msg).unwrap();
     let msg_bytes = msg_json.as_bytes();
     let our_secretkey = app_state.session_secret_key.clone();
-    let others_pubkey =
-        parse_encryption_key_from_lightdid(key_uri.as_str())?;
+    let others_pubkey = parse_encryption_key_from_lightdid(key_uri.as_str())?;
     let nonce = box_::gen_nonce();
     let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
     let encrypted_msg = box_::seal(msg_bytes, &nonce, &others_pubkey, &sk);
