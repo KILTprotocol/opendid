@@ -15,6 +15,7 @@ use anyhow::Context;
 use clap::Parser;
 
 use rhai_checker::RhaiCheckerMap;
+use sodiumoxide::crypto::box_;
 use well_known_did_config::create_well_known_did_config;
 
 mod cli;
@@ -26,9 +27,9 @@ mod kilt;
 mod messages;
 mod rhai_checker;
 mod routes;
+pub mod serialize;
 mod verify;
 mod well_known_did_config;
-pub mod serialize;
 
 use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
@@ -37,7 +38,7 @@ use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 pub struct AppState {
     app_name: String,
     encryption_key_uri: String,
-    session_secret_key: Vec<u8>,
+    session_secret_key: box_::SecretKey,
     jwt_builder: TokenFactory,
     jwt_secret_key: String,
     jwt_public_key: Option<String>,

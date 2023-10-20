@@ -11,7 +11,6 @@ pub enum Error {
     InvalidChallenge(&'static str),
     InvalidNonce,
     InvalidLightDid(&'static str),
-    InvalidPrivateKey,
     CantConnectToBlockchain,
     InvalidDid(&'static str),
     FailedToDecrypt,
@@ -36,7 +35,6 @@ impl std::fmt::Display for Error {
             Error::InvalidChallenge(s) => write!(f, "Invalid challenge: {}", s),
             Error::InvalidNonce => write!(f, "Invalid nonce"),
             Error::InvalidLightDid(s) => write!(f, "Invalid light DID: {}", s),
-            Error::InvalidPrivateKey => write!(f, "Invalid private key"),
             Error::CantConnectToBlockchain => write!(f, "Can't connect to KILT blockchain"),
             Error::InvalidDid(s) => write!(f, "Invalid DID: {}", s),
             Error::FailedToDecrypt => write!(f, "Failed to decrypt"),
@@ -71,7 +69,6 @@ impl From<Error> for actix_web::Error {
             | Error::OauthNoSession => actix_web::error::ErrorUnauthorized(e),
             // Internal errors. we don't pass the error message to the frontend to not leak information.
             Error::SessionInsert
-            | Error::InvalidPrivateKey
             | Error::CantConnectToBlockchain
             | Error::CreateJWT
             | Error::Internal(_)

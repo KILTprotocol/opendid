@@ -79,14 +79,11 @@ async fn challenge_response_handler(
         challenge_response.encryption_key_uri.as_str(),
     )?;
 
-    let our_secretkey = box_::SecretKey::from_slice(&app_state.session_secret_key)
-        .ok_or(Error::InvalidPrivateKey)?;
-
     let decrypted_challenge = box_::open(
         &challenge_response.encrypted_challenge,
         &challenge_response.nonce,
         &others_pubkey,
-        &our_secretkey,
+        &app_state.session_secret_key,
     )
     .map_err(|_| Error::InvalidChallenge("Unable to decrypt"))?;
 
