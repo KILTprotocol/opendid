@@ -34,7 +34,7 @@ pub async fn get_encryption_key_from_fulldid_key_uri(
     cli: &OnlineClient<KiltConfig>,
 ) -> Result<box_::PublicKey, Error> {
     let (did, kid) = parse_key_uri(key_uri)?;
-    let doc = get_did_doc(&did, cli).await?;
+    let doc = get_did_doc(did, cli).await?;
 
     let (_, details) = doc
         .public_keys
