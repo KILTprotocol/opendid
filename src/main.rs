@@ -11,6 +11,7 @@ use actix_web::{
     middleware::Logger,
     web, App, HttpServer,
 };
+use anyhow::Context;
 use clap::Parser;
 
 use rhai_checker::RhaiCheckerMap;
@@ -63,7 +64,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         jwt_secret_key: config.jwt.secret_key.to_string(),
         jwt_public_key: config.jwt.public_key.clone(),
         jwt_algorithm: config.jwt.algorithm.to_string(),
-        well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
+        well_known_did_config: create_well_known_did_config(&config.well_known_did_config)
+            .context("Error creating well-known DID configuration")?,
         kilt_endpoint: config
             .kilt_endpoint
             .clone()
