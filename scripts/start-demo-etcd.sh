@@ -42,7 +42,7 @@ CLIENT_SPEC=$(cat <<EOF
 {
   "requirements": [{
     "cTypeHash":"0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac",
-    "trustedAttesters":["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"],
+    "trustedAttesters":["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY"],
     "requiredProperties": ["Email"]
   }],
   "redirectUrls": ["http://localhost:1606/callback.html"]
