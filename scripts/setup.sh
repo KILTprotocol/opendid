@@ -8,7 +8,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 PAYMENT_ACCOUNT_SEED=$1
-ENDPOINT=${ENDPOINT:-spiritnet}
+ENDPOINT=${ENDPOINT:-peregrine}
 
 echo "Generating DID..."
 npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"

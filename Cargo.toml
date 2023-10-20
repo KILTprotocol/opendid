@@ -37,3 +37,4 @@ openssl = "0.10.57"
 rhai = { version = "1.15.1", features = ["serde", "sync"] }
 once_cell = "1.18.0"
 base64 = "0.21.2"
+anyhow = "1.0.75"
