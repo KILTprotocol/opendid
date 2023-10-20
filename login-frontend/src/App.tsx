@@ -22,7 +22,7 @@ function useCompatibleExtensions() {
 
 export function App() {
   const { kilt } = apiWindow;
-
+  const [fetchedUri, setFetchedUri] = useState('');
   const { extensions } = useCompatibleExtensions();
   const hasExtension = extensions.length > 0;
 
@@ -55,13 +55,17 @@ export function App() {
           }
         });
 
-        let url = '/api/v1/credentials';
         // get redirect uri query
-        const redirectUri = new URLSearchParams(window.location.search).get('redirect');
-        if (redirectUri) {
-          url = `${url}?redirect=${redirectUri}`;
+        if (!fetchedUri) {
+          const redirectUri = new URLSearchParams(window.location.search).get('redirect');
+          if (redirectUri) {
+            setFetchedUri(`/api/v1/credentials?redirect=${redirectUri}`);
+          } else {
+            console.error('Redirect URI is not present, please go back to original URL');
+            setError(true);
+          }
         }
-        const credentialResponseResponse = await fetch(url, {
+        const credentialResponseResponse = await fetch(fetchedUri, {
           method: 'POST',
           body: JSON.stringify(credentialResponse),
           headers: {
