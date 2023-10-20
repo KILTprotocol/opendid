@@ -4,7 +4,7 @@ import { checkAndWriteFile, exportKeypairs, generateKeypairs, signingKeyType } f
 
 async function main() {
     // connect to kilt node
-    let endpoint = 'wss://spiritnet.kilt.io/'
+    let endpoint = 'wss://peregrine.kilt.io/'
     if (process.env.ENDPOINT) {
         switch (process.env.ENDPOINT) {
             case 'spiritnet':
@@ -37,6 +37,7 @@ async function main() {
 
     const keypairs = generateKeypairs()
     const didSecrets = exportKeypairs(keypairs)
+    await checkAndWriteFile(didSecrets, 'did-secrets.json')
     const getStoreTxSignCallback: Kilt.Did.GetStoreTxSignCallback = async ({ data }) => ({
         signature: keypairs.authentication.sign(data),
         keyType: keypairs.authentication.type,
@@ -68,7 +69,6 @@ async function main() {
     }
     // write the DID document to a file
     await checkAndWriteFile(result.document, 'did-document.json')
-    await checkAndWriteFile(didSecrets, 'did-secrets.json')
 
     await Kilt.disconnect()
 }
