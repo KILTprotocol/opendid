@@ -8,7 +8,11 @@ use serde::{Deserialize, Serialize};
 
 use sodiumoxide::crypto::box_;
 
-use crate::{routes::error::Error, serialize::prefixed_hex, AppState};
+use crate::{
+    routes::error::Error,
+    serialize::{hex_nonce, prefixed_hex},
+    AppState,
+};
 
 /// Data that the user receives when starting a session
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -40,8 +44,8 @@ struct ChallengeResponse {
     encryption_key_uri: String,
     #[serde(with = "prefixed_hex")]
     encrypted_challenge: Vec<u8>,
-    #[serde(with = "prefixed_hex")]
-    nonce: Vec<u8>,
+    #[serde(with = "hex_nonce")]
+    nonce: box_::Nonce,
 }
 
 /// GET /api/v1/challenge -> create a new challenge, store it in the cookies and send it to the user
@@ -77,15 +81,15 @@ async fn challenge_response_handler(
 
     let our_secretkey = box_::SecretKey::from_slice(&app_state.session_secret_key)
         .ok_or(Error::InvalidPrivateKey)?;
-    let nonce = box_::Nonce::from_slice(&challenge_response.nonce).ok_or(Error::InvalidNonce)?;
 
     let decrypted_challenge = box_::open(
         &challenge_response.encrypted_challenge,
-        &nonce,
+        &challenge_response.nonce,
         &others_pubkey,
         &our_secretkey,
     )
     .map_err(|_| Error::InvalidChallenge("Unable to decrypt"))?;
+
     if session_challenge_bytes == decrypted_challenge {
         session
             .insert("key_uri", challenge_response.encryption_key_uri.clone())

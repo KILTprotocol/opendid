@@ -120,7 +120,7 @@ async fn get_credential_requirements_handler(
     let encrypted_msg = box_::seal(msg_bytes, &nonce, &others_pubkey, &sk);
     let response = EncryptedMessage {
         cipher_text: encrypted_msg,
-        nonce: nonce[..].into(),
+        nonce,
         sender_key_uri: app_state.encryption_key_uri.clone(),
         receiver_key_uri: key_uri,
     };
@@ -148,14 +148,13 @@ async fn post_credential_handler(
     let pk = kilt::get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli).await?;
 
     // decrypt the message
-    let nonce = box_::Nonce::from_slice(&body.nonce).ok_or(Error::InvalidNonce)?;
     let secret_key = {
         let app_state = app_state.read()?;
         app_state.session_secret_key.clone()
     };
     let sk = box_::SecretKey::from_slice(&secret_key).ok_or(Error::InvalidPrivateKey)?;
     let decrypted_msg =
-        box_::open(&body.cipher_text, &nonce, &pk, &sk).map_err(|_| Error::FailedToDecrypt)?;
+        box_::open(&body.cipher_text, &body.nonce, &pk, &sk).map_err(|_| Error::FailedToDecrypt)?;
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         serde_json::from_slice(&decrypted_msg).map_err(|_| Error::FailedToParseMessage)?;
 
