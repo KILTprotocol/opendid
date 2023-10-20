@@ -10,31 +10,40 @@ use crate::kilt::{self, KiltConfig};
 
 use super::runtime_types::did::did_details::{DidEncryptionKey, DidPublicKey};
 
-pub async fn get_encryption_key_from_fulldid_key_uri(
-    key_uri: &str,
-    cli: &OnlineClient<KiltConfig>,
-) -> Result<box_::PublicKey, Box<dyn std::error::Error>> {
+fn parse_key_uri(key_uri: &str) -> Result<(&str, H256), Box<dyn std::error::Error>> {
     let key_uri_parts: Vec<&str> = key_uri.split('#').collect();
     if key_uri_parts.len() != 2 {
         return Err("Invalid sender key URI".into());
     }
-    let did = key_uri_parts[0].to_string();
-    let key_id = key_uri_parts[1].to_string();
+    let did = key_uri_parts[0];
+    let key_id = key_uri_parts[1];
     let kid_bs: [u8; 32] = hex::decode(key_id.trim_start_matches("0x"))?
         .try_into()
         .map_err(|_| "malformed key id")?;
     let kid = H256::from(kid_bs);
+
+    Ok((did, kid))
+}
+
+pub async fn get_encryption_key_from_fulldid_key_uri(
+    key_uri: &str,
+    cli: &OnlineClient<KiltConfig>,
+) -> Result<box_::PublicKey, Box<dyn std::error::Error>> {
+    let (did, kid) = parse_key_uri(key_uri)?;
     let doc = get_did_doc(&did, cli).await?;
-    match doc.public_keys.0.iter().find(|&(k, _v)| *k == kid) {
-        Some((_, details)) => {
-            let pk = match details.key {
-                DidPublicKey::PublicEncryptionKey(DidEncryptionKey::X25519(pk)) => pk,
-                _ => return Err("Invalid sender public key".into()),
-            };
-            box_::PublicKey::from_slice(&pk).ok_or("Invalid sender public key".into())
-        }
-        _ => Err("Could not get sender public key".into()),
-    }
+
+    let (_, details) = doc
+        .public_keys
+        .0
+        .iter()
+        .find(|&(k, _v)| *k == kid)
+        .ok_or("Could not get sender public key")?;
+    let pk = if let DidPublicKey::PublicEncryptionKey(DidEncryptionKey::X25519(pk)) = details.key {
+        pk
+    } else {
+        return Err("Invalid sender public key".into());
+    };
+    box_::PublicKey::from_slice(&pk).ok_or_else(|| "Invalid sender public key".into())
 }
 
 pub async fn get_w3n(
