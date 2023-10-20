@@ -118,11 +118,9 @@ async fn get_credential_requirements_handler(
     let nonce = box_::gen_nonce();
     let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
     let encrypted_msg = box_::seal(msg_bytes, &nonce, &others_pubkey, &sk);
-    let encrypted_msg_hex = format!("0x{}", hex::encode(encrypted_msg));
-    let nonce_hex = format!("0x{}", hex::encode(nonce));
     let response = EncryptedMessage {
-        cipher_text: encrypted_msg_hex,
-        nonce: nonce_hex,
+        cipher_text: encrypted_msg,
+        nonce: nonce[..].into(),
         sender_key_uri: app_state.encryption_key_uri.clone(),
         receiver_key_uri: key_uri,
     };
@@ -150,18 +148,14 @@ async fn post_credential_handler(
     let pk = kilt::get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli).await?;
 
     // decrypt the message
-    let nonce_bytes =
-        hex::decode(body.nonce.trim_start_matches("0x")).map_err(|_| Error::InvalidNonce)?;
-    let nonce = box_::Nonce::from_slice(&nonce_bytes).ok_or(Error::InvalidNonce)?;
-    let cipher_text = hex::decode(body.cipher_text.trim_start_matches("0x"))
-        .map_err(|_| Error::FailedToDecrypt)?;
+    let nonce = box_::Nonce::from_slice(&body.nonce).ok_or(Error::InvalidNonce)?;
     let secret_key = {
         let app_state = app_state.read()?;
         app_state.session_secret_key.clone()
     };
     let sk = box_::SecretKey::from_slice(&secret_key).ok_or(Error::InvalidPrivateKey)?;
     let decrypted_msg =
-        box_::open(&cipher_text, &nonce, &pk, &sk).map_err(|_| Error::FailedToDecrypt)?;
+        box_::open(&body.cipher_text, &nonce, &pk, &sk).map_err(|_| Error::FailedToDecrypt)?;
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         serde_json::from_slice(&decrypted_msg).map_err(|_| Error::FailedToParseMessage)?;
 

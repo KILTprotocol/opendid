@@ -28,6 +28,7 @@ mod rhai_checker;
 mod routes;
 mod verify;
 mod well_known_did_config;
+pub mod serialize;
 
 use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
