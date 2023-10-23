@@ -1,9 +1,8 @@
 use actix_session::Session;
 use actix_web::{post, web, HttpResponse};
-use hmac::{Hmac, Mac};
-use jwt::VerifyWithKey;
-use sha2::Sha256;
+use sha2::{Sha512, Digest};
 use sp_runtime::traits::Verify;
+use base64::{Engine, engine::general_purpose};
 use std::sync::RwLock;
 use subxt::ext::codec::{Decode, IoReader};
 
@@ -14,36 +13,31 @@ use crate::{
         runtime_types::did::did_details::{DidPublicKey, DidVerificationKey},
     },
     routes::error::Error,
-    verify::hex_decode,
-    AppState, AuthorizeQueryParameters,
+    verify::{hex_decode, hex_encode},
+    AppState, AuthorizeQueryParameters
 };
 
+
 #[derive(serde::Deserialize)]
-struct JWTPayload {
-    pub signature: String,
+#[allow(dead_code)]
+struct JWTHeader {
+    alg: String,
+    typ: String,
     #[serde(rename = "keyURI")]
     pub key_uri: String,
+
+}
+
+#[derive(serde::Deserialize)]
+#[allow(dead_code)]
+struct JWTPayload {
+    
     pub iss: String,
     pub sub: String,
-    pub exp: i64,
+    
 }
 
-impl JWTPayload {
-    pub fn check_is_expired(&self) -> Result<(), Error> {
-        let now = chrono::Utc::now().timestamp();
-        if self.exp < now {
-            return Err(Error::VerifyJWT);
-        }
-        Ok(())
-    }
 
-    pub fn check_iss_and_sub(&self) -> Result<(), Error> {
-        if self.iss != self.sub {
-            return Err(Error::VerifyJWT);
-        }
-        Ok(())
-    }
-}
 
 #[post("/api/v1/did/{token}")]
 async fn post_did_handler(
@@ -63,17 +57,25 @@ async fn post_did_handler(
 
     let nonce = oidc_context.nonce;
 
-    let secret: Hmac<Sha256> =
-        Hmac::new_from_slice(nonce.as_bytes()).map_err(|_| Error::VerifyJWT)?;
+    let mut hasher =  Sha512::new();
 
-    let payload: JWTPayload = jwt_token
-        .verify_with_key(&secret)
-        .map_err(|_| Error::VerifyJWT)?;
+    let parts : Vec<&str> = jwt_token.split('.').collect();
+    let header = parts[0];
+    let body = parts[1];
+    let signature = parts[2];
 
-    payload.check_is_expired()?;
-    payload.check_iss_and_sub()?;
+    hasher.update(format!("{}.{}", header, body));
+    let data_to_verify_hex = hex_encode(hasher.finalize());
+    let data_to_verify = data_to_verify_hex.trim_start_matches("0x").as_bytes();
 
-    let sender = &payload.iss;
+    let decoded_header = general_purpose::STANDARD.decode(header).map_err(|_|  Error::VerifyJWT)?;
+    let decoded_body = general_purpose::STANDARD.decode(body).map_err(|_|  Error::VerifyJWT)?;
+    let decoded_signature = general_purpose::STANDARD.decode(signature).map_err(|_|  Error::VerifyJWT)?;
+
+    let jwt_header: JWTHeader = serde_json::from_slice(&decoded_header).map_err(|_|  Error::VerifyJWT)?;
+    let jwt_payload: JWTPayload = serde_json::from_slice(&decoded_body).map_err(|_|  Error::VerifyJWT)?;
+
+    let sender = &jwt_payload.iss;
 
     let endpoint = {
         let app_state = app_state.read()?;
@@ -85,7 +87,7 @@ async fn post_did_handler(
 
     let did_document = get_did_doc(sender, &cli).await?;
 
-    let signed_key = hex_decode(payload.key_uri.trim_start_matches("0x"))
+    let signed_key = hex_decode(jwt_header.key_uri.trim_start_matches("0x"))
         .map_err(|_| Error::InvalidDidSignature)?;
 
     let (_, target_key) = did_document
@@ -105,27 +107,27 @@ async fn post_did_handler(
         _ => Err(Error::InvalidDidSignature),
     }?;
 
-    // Check the signature
-    let signature = hex_decode(payload.signature.trim_start_matches("0x"))
-        .map_err(|_| Error::InvalidDidSignature)?;
+
+    let signature_string = String::from_utf8(decoded_signature).map_err(|_| Error::VerifyJWT)?;
+    let trimed_signature = hex_decode(signature_string.trim_start_matches("0x")).map_err(|_| Error::VerifyJWT)?;
 
     let valid = {
         if let Ok(signature) =
-            sp_runtime::MultiSignature::decode(&mut IoReader(signature.as_slice()))
+            sp_runtime::MultiSignature::decode(&mut IoReader(trimed_signature.as_slice()))
         {
-            signature.verify(nonce.as_bytes(), &public_key)
+            signature.verify(data_to_verify, &public_key)
         } else if let Ok(signature) =
-            sp_core::sr25519::Signature::decode(&mut IoReader(signature.as_slice()))
+            sp_core::sr25519::Signature::decode(&mut IoReader(trimed_signature.as_slice() ))
         {
             signature.verify(
-                nonce.as_bytes(),
+                data_to_verify,
                 &sp_core::sr25519::Public(public_key.into()),
             )
         } else if let Ok(signature) =
-            sp_core::ed25519::Signature::decode(&mut IoReader(signature.as_slice()))
+            sp_core::ed25519::Signature::decode(&mut IoReader(trimed_signature.as_slice()))
         {
             signature.verify(
-                nonce.as_bytes(),
+                data_to_verify,
                 &sp_core::ed25519::Public(public_key.into()),
             )
         } else {
@@ -137,10 +139,10 @@ async fn post_did_handler(
         return Err(Error::InvalidDidSignature);
     }
 
-    let w3n = kilt::get_w3n(&payload.iss, &cli).await.unwrap_or("".into());
+    let w3n = kilt::get_w3n(&jwt_payload.iss, &cli).await.unwrap_or("".into());
     let props = serde_json::Map::new();
 
-    // construct id_token and refresh_token
+    //construct id_token and refresh_token
 
     let mut app_state = app_state.write()?; // may update the rhai checkers
     let id_token = app_state
