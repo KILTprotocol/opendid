@@ -11,7 +11,6 @@
     "build": "parcel build",
     "lint": "eslint --max-warnings 0 --config ./.eslintrc.json \"src/**/*.ts*\"",
     "fix": "eslint --max-warnings 0 --fix --config ./.eslintrc.json \"src/**/*.ts*\""
-
   },
   "devDependencies": {
     "@types/react": "^18.2.13",
@@ -35,7 +34,8 @@
     "util": "^0.12.3"
   },
   "dependencies": {
-    "jose": "^4.15.4",
+    "dotenv": "^16.3.1",
+    "js-sha512": "^0.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
