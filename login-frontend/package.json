@@ -34,6 +34,7 @@
     "util": "^0.12.3"
   },
   "dependencies": {
+    "@kiltprotocol/sdk-js": "^0.34.0",
     "dotenv": "^16.3.1",
     "js-sha512": "^0.8.0",
     "react": "^18.2.0",

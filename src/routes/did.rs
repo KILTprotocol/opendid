@@ -23,7 +23,6 @@ use crate::{
 struct JWTHeader {
     alg: String,
     typ: String,
-    #[serde(rename = "keyURI")]
     pub key_uri: String,
 
 }
@@ -34,6 +33,7 @@ struct JWTPayload {
     
     pub iss: String,
     pub sub: String,
+    nonce: String,
     
 }
 

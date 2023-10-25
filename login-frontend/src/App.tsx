@@ -1,9 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { Did, connect } from "@kiltprotocol/sdk-js"
+import { Did, connect } from '@kiltprotocol/sdk-js'
 import * as sha512 from 'js-sha512';
 import * as dotenv from 'dotenv';
-
-
 
 import './App.css';
 // remove this stylesheet if you want to add your own custom styles
@@ -87,32 +85,30 @@ export function App() {
 
   const handleSIOPV2Login = useCallback(
     async (nonce: string, event: FormEvent<HTMLFormElement>) => {
-
-      connect(process.env.DATABASE_URL ? process.env.DATABASE_URL : "wss://peregrine.kilt.io")
+      connect(process.env.DATABASE_URL ? process.env.DATABASE_URL : 'wss://peregrine.kilt.io');
 
       const form = event.currentTarget;
       const extension = new FormData(form).get('extension') as string;
       const Dids = await kilt[extension].getDidList();
 
-      let did = Dids[0].did;
+      const did = Dids[0].did;
 
       const didDocument = await Did.resolve(did);
 
       // jwt parts
-      const keyURI = didDocument?.document?.authentication[0].id.replace("#0x", "");
-      const header = { alg: "EdDSA", typ: "JWT", keyURI }
+      const keyURI = didDocument?.document?.authentication[0].id.replace('#0x', '');
+      const header = { alg: 'EdDSA', typ: 'JWT', keyURI };
       const body = { iss: did, sub: did, nonce };
 
       //encoded + signature
-      const headerEncoded = btoa(JSON.stringify(header))
-      const bodyEncoded = btoa(JSON.stringify(body))
-      const dataToSign = headerEncoded + "." + bodyEncoded
+      const headerEncoded = btoa(JSON.stringify(header));
+      const bodyEncoded = btoa(JSON.stringify(body));
+      const dataToSign = headerEncoded + '.' + bodyEncoded;
 
       const signData = await kilt[extension].signWithDid(sha512.sha512(dataToSign), did);
 
       // submit token
-      let token = dataToSign + "." + btoa(signData.signature)
-
+      const token = dataToSign + '.' + btoa(signData.signature);
 
       const url = `/api/v1/did/${token}`;
 
