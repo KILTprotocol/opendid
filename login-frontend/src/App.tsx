@@ -85,7 +85,7 @@ export function App() {
 
   const handleSIOPV2Login = useCallback(
     async (nonce: string, event: FormEvent<HTMLFormElement>) => {
-      connect(process.env.DATABASE_URL ? process.env.DATABASE_URL : 'wss://peregrine.kilt.io');
+      connect(process.env.WSS_ENDPOINT ? process.env.WSS_ENDPOINT : 'wss://peregrine.kilt.io');
 
       const form = event.currentTarget;
       const extension = new FormData(form).get('extension') as string;
