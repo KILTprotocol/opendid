@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { Did, connect } from '@kiltprotocol/sdk-js'
+import { Did, connect } from '@kiltprotocol/sdk-js';
 import * as sha512 from 'js-sha512';
 import * as dotenv from 'dotenv';
 
@@ -87,8 +87,6 @@ export function App() {
     async (nonce: string, event: FormEvent<HTMLFormElement>) => {
       connect(process.env.WSS_ENDPOINT ? process.env.WSS_ENDPOINT : 'wss://peregrine.kilt.io');
 
-
-
       const form = event.currentTarget;
       const extension = new FormData(form).get('extension') as string;
       const Dids = await kilt[extension].getDidList();
@@ -103,7 +101,7 @@ export function App() {
       const kid = didDocument?.document?.authentication[0].id.replace('#0x', '');
       const kty = didDocument?.document?.authentication[0].type;
       // Not completely standard, but SR25519 is not commonly used for JWTs.
-      const header = { alg: 'EdDSA', typ: 'JWT', crv: "Ed25519", kid, kty };
+      const header = { alg: 'EdDSA', typ: 'JWT', crv: 'Ed25519', kid, kty };
       const body = { iss: did, sub: did, nonce, exp, nbf };
 
       //encoded + signature
@@ -160,7 +158,7 @@ export function App() {
 
   useEffect(() => {
     dotenv.config();
-  }, [])
+  }, []);
 
   return (
     <div className="app">

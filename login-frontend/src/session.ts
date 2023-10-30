@@ -1,4 +1,4 @@
-import { DidUri } from "@kiltprotocol/sdk-js"
+import { DidUri } from '@kiltprotocol/sdk-js';
 
 interface EncryptedMessage {
   receiverKeyUri: string;
