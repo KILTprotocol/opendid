@@ -87,6 +87,8 @@ export function App() {
     async (nonce: string, event: FormEvent<HTMLFormElement>) => {
       connect(process.env.WSS_ENDPOINT ? process.env.WSS_ENDPOINT : 'wss://peregrine.kilt.io');
 
+
+
       const form = event.currentTarget;
       const extension = new FormData(form).get('extension') as string;
       const Dids = await kilt[extension].getDidList();
@@ -96,9 +98,13 @@ export function App() {
       const didDocument = await Did.resolve(did);
 
       // jwt parts
+      const nbf = Math.floor(Date.now() / 1000);
+      const exp = nbf + 60;
       const keyURI = didDocument?.document?.authentication[0].id.replace('#0x', '');
-      const header = { alg: 'EdDSA', typ: 'JWT', keyURI };
-      const body = { iss: did, sub: did, nonce };
+      const kty = didDocument?.document?.authentication[0].type;
+      // Not completely standard, but SR25519 is not commonly used for JWTs.
+      const header = { alg: 'EdDSA', typ: 'JWT', kid: keyURI, crv: "Ed25519", kty };
+      const body = { iss: did, sub: did, nonce, exp, nbf };
 
       //encoded + signature
       const headerEncoded = btoa(JSON.stringify(header));
