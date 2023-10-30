@@ -40,7 +40,7 @@ struct JWTPayload {
 
 
 #[post("/api/v1/did/{token}")]
-async fn post_did_handler(
+async fn login_with_did(
     app_state: web::Data<RwLock<AppState>>,
     session: Session,
     path: web::Path<String>,

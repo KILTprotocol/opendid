@@ -114,7 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(post_credential_handler)
             .service(refresh_handler)
             .service(well_known_did_config_handler)
-            .service(post_did_handler)
+            .service(login_with_did)
             .service(authorize_handler)
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })
