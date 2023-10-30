@@ -100,10 +100,10 @@ export function App() {
       // jwt parts
       const nbf = Math.floor(Date.now() / 1000);
       const exp = nbf + 60;
-      const keyURI = didDocument?.document?.authentication[0].id.replace('#0x', '');
+      const kid = didDocument?.document?.authentication[0].id.replace('#0x', '');
       const kty = didDocument?.document?.authentication[0].type;
       // Not completely standard, but SR25519 is not commonly used for JWTs.
-      const header = { alg: 'EdDSA', typ: 'JWT', kid: keyURI, crv: "Ed25519", kty };
+      const header = { alg: 'EdDSA', typ: 'JWT', crv: "Ed25519", kid, kty };
       const body = { iss: did, sub: did, nonce, exp, nbf };
 
       //encoded + signature
