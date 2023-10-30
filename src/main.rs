@@ -1,5 +1,6 @@
 use std::{collections::HashMap, sync::RwLock};
 
+use actix_cors::Cors;
 use actix_session::{
     config::{CookieContentSecurity, PersistentSession},
     storage::CookieSessionStore,
@@ -10,6 +11,7 @@ use actix_web::{
     middleware::Logger,
     web, App, HttpServer,
 };
+use anyhow::Context;
 use clap::Parser;
 
 use rhai_checker::RhaiCheckerMap;
@@ -62,7 +64,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         jwt_secret_key: config.jwt.secret_key.to_string(),
         jwt_public_key: config.jwt.public_key.clone(),
         jwt_algorithm: config.jwt.algorithm.to_string(),
-        well_known_did_config: create_well_known_did_config(&config.well_known_did_config)?,
+        well_known_did_config: create_well_known_did_config(&config.well_known_did_config)
+            .context("Error creating well-known DID configuration")?,
         kilt_endpoint: config
             .kilt_endpoint
             .clone()
@@ -93,9 +96,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::info!("Starting server at {}:{}", host, port);
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();
+
         App::new()
             .app_data(state.clone())
             .wrap(Logger::default())
+            .wrap(cors)
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), config.get_session_key())
                     .cookie_content_security(CookieContentSecurity::Private)

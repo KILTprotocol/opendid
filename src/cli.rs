@@ -1,3 +1,4 @@
+use anyhow::Context;
 use clap::Parser;
 use clap_verbosity_flag::{InfoLevel, Verbosity};
 use std::path::PathBuf;
@@ -15,9 +16,11 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub fn get_config(&self) -> Result<Config, Box<dyn std::error::Error>> {
-        let config_file = std::fs::File::open(&self.config)?;
-        let config: Config = serde_yaml::from_reader(config_file)?;
+    pub fn get_config(&self) -> anyhow::Result<Config> {
+        let config_file =
+            std::fs::File::open(&self.config).context("Error opening the config file")?;
+        let config: Config =
+            serde_yaml::from_reader(config_file).context("Error parsing the config file")?;
         Ok(config)
     }
 }
