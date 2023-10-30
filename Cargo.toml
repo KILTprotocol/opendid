@@ -18,15 +18,11 @@ sp-runtime = "24.0.0"
 serde_cbor = "0.11.2"
 base58 = "0.2.0"
 sodiumoxide = "0.2.7"
-<<<<<<< HEAD
 clap = { version = "4.3.5", features = ["derive", "env"] }
 schnorrkel = { version = "0.10.2", features = [
     "preaudit_deprecated",
     "u64_backend",
 ], default-features = false }
-=======
-clap = { version = "4.3.5", features = ["derive"] }
->>>>>>> main
 env_logger = "0.10.0"
 log = "0.4.19"
 serde_with = "3.0.0"
