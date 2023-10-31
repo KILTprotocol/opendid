@@ -132,6 +132,9 @@ export function App() {
           return;
         }
       }
+
+      const response = await didLoginResponse.text();
+      throw new Error(response)
     },
     [kilt],
   );
