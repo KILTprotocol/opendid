@@ -60,9 +60,9 @@ async fn login_with_did(
     let mut hasher =  Sha512::new();
 
     let parts : Vec<&str> = jwt_token.split('.').collect();
-    let header = parts[0];
-    let body = parts[1];
-    let signature = parts[2];
+    let header = parts.get(0).ok_or(Error::VerifyJWT)?; 
+    let body = parts.get(1).ok_or(Error::VerifyJWT)?;
+    let signature = parts.get(2).ok_or(Error::VerifyJWT)?;
 
     hasher.update(format!("{}.{}", header, body));
     let data_to_verify_hex = hex_encode(hasher.finalize());
