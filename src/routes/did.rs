@@ -78,7 +78,7 @@ async fn login_with_did(
 
     let parts: Vec<&str> = jwt_token.split('.').collect();
     let header = parts
-        .get(0)
+        .first()
         .ok_or(Error::VerifyJWT("JWT header is missing".to_string()))?;
     let body = parts
         .get(1)
