@@ -168,9 +168,7 @@ async fn login_with_did(
         return Err(Error::InvalidDidSignature);
     }
 
-    let w3n = kilt::get_w3n(&jwt_payload.iss, &cli)
-        .await
-        .unwrap_or("".into());
+    let w3n = kilt::get_w3n(sender, &cli).await.unwrap_or("".into());
     let props = serde_json::Map::new();
 
     //construct id_token and refresh_token
