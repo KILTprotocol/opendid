@@ -1,0 +1,75 @@
+Arguments: 
+  /usr/bin/node /usr/local/bin/yarn
+
+PATH: 
+  /home/adel/.vscode-server/bin/b3e4e68a0bc097f0ae7907b217c1119af9e03435/bin/remote-cli:/home/adel/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  20.9.0
+
+Platform: 
+  linux x64
+
+Trace: 
+  Error: EACCES: permission denied, unlink '/home/adel/opendid/login-frontend/node_modules/@noble/curves/p256.d.ts.map'
+
+npm manifest: 
+  {
+    "name": "login-frontend",
+    "version": "1.0.0",
+    "type": "module",
+    "license": "MIT",
+    "engines": {
+      "node": ">= v18.17.1"
+    },
+    "scripts": {
+      "dev": "parcel --open",
+      "build": "parcel build",
+      "lint": "eslint --max-warnings 0 --config ./.eslintrc.json \"src/**/*.ts*\"",
+      "fix": "eslint --max-warnings 0 --fix --config ./.eslintrc.json \"src/**/*.ts*\""
+    },
+    "devDependencies": {
+      "@types/react": "^18.2.13",
+      "@typescript-eslint/eslint-plugin": "^6.6.0",
+      "@typescript-eslint/parser": "^6.6.0",
+      "buffer": "^5.5.0||^6.0.0",
+      "crypto-browserify": "^3.12.0",
+      "eslint": "^8.48.0",
+      "eslint-config-prettier": "^9.0.0",
+      "eslint-import-resolver-typescript": "^3.6.0",
+      "eslint-plugin-import": "^2.28.1",
+      "eslint-plugin-prettier": "^5.0.0",
+      "eslint-plugin-react": "^7.33.2",
+      "eslint-plugin-react-hooks": "^4.6.0",
+      "events": "^3.1.0",
+      "os-browserify": "^0.3.0",
+      "parcel": "^2.9.2",
+      "path-browserify": "^1.0.0",
+      "prettier": "^3.0.3",
+      "process": "^0.11.10",
+      "stream-browserify": "^3.0.0",
+      "typescript": "^5.2.2",
+      "util": "^0.12.3"
+    },
+    "dependencies": {
+      "@kiltprotocol/sdk-js": "^0.34.0",
+      "js-sha512": "^0.8.0",
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0"
+    },
+    "targets": {
+      "default": {
+        "source": "src/index.html",
+        "context": "browser"
+      }
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
