@@ -48,7 +48,7 @@ impl std::fmt::Display for Error {
             Error::CreateJWT => write!(f, "Failed to create JWT"),
             Error::OauthNoSession => write!(f, "No session"),
             Error::LockPoison => write!(f, "Lock poison"),
-            Error::VerifyJWT(s) => write!(f, "Failed to verify JWT {} " , s ),
+            Error::VerifyJWT(s) => write!(f, "Failed to verify JWT {} ", s),
             Error::InvalidDidSignature => write!(f, "Failed to verify DID Signature"),
             Error::Internal(s) => write!(f, "Internal error: {}", s),
         }
