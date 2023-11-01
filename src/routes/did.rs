@@ -1,8 +1,8 @@
 use actix_session::Session;
 use actix_web::{post, web, HttpResponse};
-use sha2::{Sha512, Digest};
+use base64::{engine::general_purpose, Engine};
+use sha2::{Digest, Sha512};
 use sp_runtime::traits::Verify;
-use base64::{Engine, engine::general_purpose};
 use std::sync::RwLock;
 use subxt::ext::codec::{Decode, IoReader};
 
@@ -14,30 +14,47 @@ use crate::{
     },
     routes::error::Error,
     verify::{hex_decode, hex_encode},
-    AppState, AuthorizeQueryParameters
+    AppState, AuthorizeQueryParameters,
 };
-
 
 #[derive(serde::Deserialize)]
 #[allow(dead_code)]
 struct JWTHeader {
     alg: String,
     typ: String,
-    pub key_uri: String,
-
+    pub kid: String,
+    crv: String,
+    kty: String,
 }
 
 #[derive(serde::Deserialize)]
 #[allow(dead_code)]
 struct JWTPayload {
-    
     pub iss: String,
     pub sub: String,
     nonce: String,
-    
+    exp: i64,
+    nbf: i64,
 }
 
+impl JWTPayload {
+    fn check_is_expired(&self) -> Result<(), Error> {
+        let now = chrono::Utc::now().timestamp();
+        if self.exp < now && self.nbf > now {
+            return Err(Error::VerifyJWT("Token expired".to_string()));
+        }
+        Ok(())
+    }
 
+    fn check_iss_is_sub(&self) -> Result<(), Error> {
+        if self.iss != self.sub {
+            return Err(Error::VerifyJWT(
+                "Identity mismatch: iss is not sub".to_string(),
+            ));
+        }
+        Ok(())
+    }
+}
 
 #[post("/api/v1/did/{token}")]
 async fn login_with_did(
@@ -57,23 +74,40 @@ async fn login_with_did(
 
     let nonce = oidc_context.nonce;
 
-    let mut hasher =  Sha512::new();
+    let mut hasher = Sha512::new();
 
-    let parts : Vec<&str> = jwt_token.split('.').collect();
-    let header = parts.get(0).ok_or(Error::VerifyJWT)?; 
-    let body = parts.get(1).ok_or(Error::VerifyJWT)?;
-    let signature = parts.get(2).ok_or(Error::VerifyJWT)?;
+    let parts: Vec<&str> = jwt_token.split('.').collect();
+    let header = parts
+        .get(0)
+        .ok_or(Error::VerifyJWT("JWT header is missing".to_string()))?;
+    let body = parts
+        .get(1)
+        .ok_or(Error::VerifyJWT("JWT body is missing".to_string()))?;
+    let signature = parts
+        .get(2)
+        .ok_or(Error::VerifyJWT("JWT signature is missing".to_string()))?;
 
     hasher.update(format!("{}.{}", header, body));
     let data_to_verify_hex = hex_encode(hasher.finalize());
     let data_to_verify = data_to_verify_hex.trim_start_matches("0x").as_bytes();
 
-    let decoded_header = general_purpose::STANDARD.decode(header).map_err(|_|  Error::VerifyJWT)?;
-    let decoded_body = general_purpose::STANDARD.decode(body).map_err(|_|  Error::VerifyJWT)?;
-    let decoded_signature = general_purpose::STANDARD.decode(signature).map_err(|_|  Error::VerifyJWT)?;
+    let decoded_header = general_purpose::STANDARD
+        .decode(header)
+        .map_err(|_| Error::VerifyJWT("Failed to decode header".to_string()))?;
+    let decoded_body = general_purpose::STANDARD
+        .decode(body)
+        .map_err(|_| Error::VerifyJWT("Failed to decode body".to_string()))?;
+    let decoded_signature = general_purpose::STANDARD
+        .decode(signature)
+        .map_err(|_| Error::VerifyJWT("Failed to decode signature".to_string()))?;
 
-    let jwt_header: JWTHeader = serde_json::from_slice(&decoded_header).map_err(|_|  Error::VerifyJWT)?;
-    let jwt_payload: JWTPayload = serde_json::from_slice(&decoded_body).map_err(|_|  Error::VerifyJWT)?;
+    let jwt_header: JWTHeader = serde_json::from_slice(&decoded_header)
+        .map_err(|_| Error::VerifyJWT("Failed to parse header".to_string()))?;
+    let jwt_payload: JWTPayload = serde_json::from_slice(&decoded_body)
+        .map_err(|_| Error::VerifyJWT("Failed to parse payload".to_string()))?;
+
+    jwt_payload.check_is_expired()?;
+    jwt_payload.check_iss_is_sub()?;
 
     let sender = &jwt_payload.iss;
 
@@ -87,7 +121,7 @@ async fn login_with_did(
 
     let did_document = get_did_doc(sender, &cli).await?;
 
-    let signed_key = hex_decode(jwt_header.key_uri.trim_start_matches("0x"))
+    let signed_key = hex_decode(jwt_header.kid.trim_start_matches("0x"))
         .map_err(|_| Error::InvalidDidSignature)?;
 
     let (_, target_key) = did_document
@@ -107,9 +141,10 @@ async fn login_with_did(
         _ => Err(Error::InvalidDidSignature),
     }?;
 
-
-    let signature_string = String::from_utf8(decoded_signature).map_err(|_| Error::VerifyJWT)?;
-    let trimed_signature = hex_decode(signature_string.trim_start_matches("0x")).map_err(|_| Error::VerifyJWT)?;
+    let signature_string = String::from_utf8(decoded_signature)
+        .map_err(|_| Error::VerifyJWT("Failed to decode signature".to_string()))?;
+    let trimed_signature = hex_decode(signature_string.trim_start_matches("0x"))
+        .map_err(|_| Error::VerifyJWT("Failed to hex decode signature".to_string()))?;
 
     let valid = {
         if let Ok(signature) =
@@ -117,19 +152,13 @@ async fn login_with_did(
         {
             signature.verify(data_to_verify, &public_key)
         } else if let Ok(signature) =
-            sp_core::sr25519::Signature::decode(&mut IoReader(trimed_signature.as_slice() ))
+            sp_core::sr25519::Signature::decode(&mut IoReader(trimed_signature.as_slice()))
         {
-            signature.verify(
-                data_to_verify,
-                &sp_core::sr25519::Public(public_key.into()),
-            )
+            signature.verify(data_to_verify, &sp_core::sr25519::Public(public_key.into()))
         } else if let Ok(signature) =
             sp_core::ed25519::Signature::decode(&mut IoReader(trimed_signature.as_slice()))
         {
-            signature.verify(
-                data_to_verify,
-                &sp_core::ed25519::Public(public_key.into()),
-            )
+            signature.verify(data_to_verify, &sp_core::ed25519::Public(public_key.into()))
         } else {
             false
         }
@@ -139,7 +168,9 @@ async fn login_with_did(
         return Err(Error::InvalidDidSignature);
     }
 
-    let w3n = kilt::get_w3n(&jwt_payload.iss, &cli).await.unwrap_or("".into());
+    let w3n = kilt::get_w3n(&jwt_payload.iss, &cli)
+        .await
+        .unwrap_or("".into());
     let props = serde_json::Map::new();
 
     //construct id_token and refresh_token

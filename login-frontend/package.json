@@ -26,7 +26,9 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "events": "^3.1.0",
+    "os-browserify": "^0.3.0",
     "parcel": "^2.9.2",
+    "path-browserify": "^1.0.0",
     "prettier": "^3.0.3",
     "process": "^0.11.10",
     "stream-browserify": "^3.0.0",
@@ -35,7 +37,6 @@
   },
   "dependencies": {
     "@kiltprotocol/sdk-js": "^0.34.0",
-    "dotenv": "^16.3.1",
     "js-sha512": "^0.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

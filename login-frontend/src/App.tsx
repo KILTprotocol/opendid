@@ -1,7 +1,6 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Did, connect } from '@kiltprotocol/sdk-js';
 import * as sha512 from 'js-sha512';
-import * as dotenv from 'dotenv';
 
 import './App.css';
 // remove this stylesheet if you want to add your own custom styles
@@ -159,9 +158,6 @@ export function App() {
     [handleCredentialLogin, handleSIOPV2Login],
   );
 
-  useEffect(() => {
-    dotenv.config();
-  }, []);
 
   return (
     <div className="app">
