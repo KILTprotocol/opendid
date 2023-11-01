@@ -133,7 +133,7 @@ export function App() {
       }
 
       const response = await didLoginResponse.text();
-      throw new Error(response)
+      throw new Error(response);
     },
     [kilt],
   );
@@ -157,7 +157,6 @@ export function App() {
     },
     [handleCredentialLogin, handleSIOPV2Login],
   );
-
 
   return (
     <div className="app">
