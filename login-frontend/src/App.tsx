@@ -22,7 +22,6 @@ function useCompatibleExtensions() {
 
 export function App() {
   const { kilt } = apiWindow;
-  const [fetchedUri, setFetchedUri] = useState('');
   const { extensions } = useCompatibleExtensions();
   const hasExtension = extensions.length > 0;
 
@@ -44,10 +43,11 @@ export function App() {
             credentials: 'include',
           })
         ).json();
-        const credentialResponse = await new Promise(async (resolve, reject) => {
+
+        const getCredentialFromExtension = await new Promise(async (resolve, reject) => {
           try {
-            await session.listen(async (credentialResponse) => {
-              resolve(credentialResponse);
+            await session.listen(async (credential) => {
+              resolve(credential);
             });
             await session.send(credentialRequirements);
           } catch (e) {
@@ -55,32 +55,22 @@ export function App() {
           }
         });
 
-        // get redirect uri query
-        if (!fetchedUri) {
-          const redirectUri = new URLSearchParams(window.location.search).get('redirect');
-          if (redirectUri) {
-            setFetchedUri(`/api/v1/credentials?redirect=${redirectUri}`);
-          } else {
-            console.error('Redirect URI is not present, please go back to original URL');
-            setError(true);
-          }
-        }
-        const credentialResponseResponse = await fetch(fetchedUri, {
+        const fetchCredential = await fetch(`/api/v1/credentials`, {
           method: 'POST',
-          body: JSON.stringify(credentialResponse),
+          body: JSON.stringify(getCredentialFromExtension),
           headers: {
             'Content-Type': 'application/json',
           },
           credentials: 'include',
         });
 
-        if (credentialResponseResponse.status >= 400) {
-          const credentialResponseData = await credentialResponseResponse.text();
+        if (fetchCredential.status >= 400) {
+          const credentialResponseData = await fetchCredential.text();
           throw new Error(credentialResponseData);
         }
 
-        if (credentialResponseResponse.status === 204) {
-          const uri = credentialResponseResponse.headers.get('Location');
+        if (fetchCredential.status === 204) {
+          const uri = fetchCredential.headers.get('Location');
           if (uri !== null) {
             window.location.href = uri;
             return;
@@ -91,7 +81,7 @@ export function App() {
         setError(true);
       }
     },
-    [kilt, fetchedUri],
+    [kilt],
   );
 
   return (

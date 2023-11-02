@@ -47,7 +47,7 @@ podman run -d --rm \
     docker.io/kiltprotocol/opendid:latest
 ```
 
-Now you can visit http://localhost:3001/ and see the login page.
+Now you can visit `http://localhost:3001` and see the login page.
 You can use the DID from your wallet to login.
 If you don't have a DID yet, you can create one with [Sporran](https://www.sporran.org/).
 
@@ -63,9 +63,9 @@ You can use this information to check if the user is allowed to access your appl
 
 The example code at [demo-project](./demo-project/) contains a minimal application which uses login via the opendid. It is a simple [express](https://expressjs.com) application which exposes three things:
 
-* a login page which handles the dispatching of the user to the opendid
-* a callback page for the openid connect flow to accept the token
-* a protected resource which can only be accessed by authenticated users
+- a login page which handles the dispatching of the user to the opendid
+- a callback page for the openid connect flow to accept the token
+- a protected resource which can only be accessed by authenticated users
 
 If you wish to run this preconfigured demo application you can do it like this:
 
@@ -132,7 +132,10 @@ CLIENT_SPEC=$(cat <<EOF
 {
   "requirements": [{
     "cTypeHash":"0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac",
-    "trustedAttesters":["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY"],
+    "trustedAttesters": [
+    "did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY",
+    "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"
+    ],
     "requiredProperties": ["Email"]
   }],
   "redirectUrls": ["http://localhost:1606/callback.html"]
@@ -151,13 +154,14 @@ To add custom checks that are executed on the claims of the Verifiable Credentia
 To try it out you only have to add a `checksDirectory` entry to the client configuration in the `config.yaml` file.
 
 Example:
+
 ```yaml
 ...
 clients:
   example-client:
     requirements:
       - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-        trustedAttesters: ["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY"]
+        trustedAttesters: ["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY", "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
         requiredProperties: ["Email"]
     redirectUrls:
       - http://localhost:1606/callback.html
