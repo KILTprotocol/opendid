@@ -121,7 +121,7 @@ async fn login_with_did(
 
     let did_document = get_did_doc(sender, &cli).await?;
 
-    let key_parts: Vec<&str> = jwt_header.kid.split("#").collect();
+    let key_parts: Vec<&str> = jwt_header.kid.split('#').collect();
 
     let key_id = key_parts
         .get(1)
