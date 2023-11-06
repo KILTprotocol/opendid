@@ -121,8 +121,14 @@ async fn login_with_did(
 
     let did_document = get_did_doc(sender, &cli).await?;
 
-    let signed_key = hex_decode(jwt_header.kid.trim_start_matches("0x"))
-        .map_err(|_| Error::InvalidDidSignature)?;
+    let key_parts: Vec<&str> = jwt_header.kid.split("#").collect();
+
+    let key_id = key_parts
+        .get(1)
+        .ok_or(Error::VerifyJWT("Key ID is missing".to_string()))?;
+
+    let signed_key =
+        hex_decode(key_id.trim_start_matches("0x")).map_err(|_| Error::InvalidDidSignature)?;
 
     let (_, target_key) = did_document
         .public_keys

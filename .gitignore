@@ -17,3 +17,4 @@ did-document.json
 /.vscode
 package-lock.json
 **/.env
+nohup.out
