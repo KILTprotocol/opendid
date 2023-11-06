@@ -22,7 +22,6 @@ async function main() {
     console.debug(`Connected to ${endpoint}`)
     // get first command line argument as seed for the payment account and fail if not provided
     const paymentSeed = process.argv[2]
-    console.debug(paymentSeed)
     if (!paymentSeed) {
         // console.error('Please provide a seed for the payment account as first command line argument.');
         console.error('Payment seed not found')
