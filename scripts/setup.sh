@@ -2,13 +2,20 @@
 
 set -e
 
+ENDPOINT=${ENDPOINT:-peregrine}
+
 # get payment account address and seed from command line arguments
 if [ $# -ne 1 ]; then
+  if [[ "${ENDPOINT}" == *"peregrine"* ]]; then
+    echo "No seed provided, but we are on the testnet, so we will generate a new account."
+    PAYMENT_ACCOUNT_SEED=$(node scripts/gen-test-account/dist/main.js)
+  else
     echo "Usage: $0 \"<PAYMENT_ACCOUNT_SEED>\""
     exit 1
+  fi
+else
+  PAYMENT_ACCOUNT_SEED=$1
 fi
-PAYMENT_ACCOUNT_SEED=$1
-ENDPOINT=${ENDPOINT:-peregrine}
 
 echo "Generating DID..."
 node scripts/gen-did/dist/main.js "${PAYMENT_ACCOUNT_SEED}"
