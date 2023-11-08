@@ -20,10 +20,9 @@ main-image: .main-image
 	touch .main-image
 
 setup-image: .setup-image
-.setup-image: scripts/setup.Containerfile scripts/setup.sh
+.setup-image: scripts/setup.Containerfile scripts/setup.sh $(shell find ./scripts -name "*.ts" -not -path "*/node_modules/*")
 	podman build -t $(SETUP_IMAGE):latest -f scripts/setup.Containerfile .
 	touch .setup-image
-
 
 demo-image: .demo-image
 .demo-image: scripts/demo.Containerfile

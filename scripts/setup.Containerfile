@@ -3,6 +3,7 @@ WORKDIR /app
 RUN apt update && apt install -y openssl jq
 COPY scripts ./scripts
 RUN cd /app/scripts/gen-did && npm install && npm run build
+RUN cd /app/scripts/gen-test-account && npm install && npm run build
 
 FROM docker.io/library/node
 WORKDIR /app
