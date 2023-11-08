@@ -1,0 +1,25 @@
+name: Check frontend
+on: [pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: login-frontend
+
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Configure Node and package manager
+        uses: actions/setup-node@v3.6.0
+        with:
+          node-version-file: "login-frontend/package.json"
+          cache: "yarn"
+          cache-dependency-path: "login-frontend/yarn.lock"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build code
+        run: yarn build
