@@ -14,7 +14,6 @@ demo-project/.parcel-cache
 .main-image
 .setup-image
 did-document.json
-yarn.lock
 package-lock.json
 scripts/gen-did/.parcel-cache
 scripts/gen-did/dist
