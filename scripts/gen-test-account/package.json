@@ -2,7 +2,10 @@
   "name": "gen-test-account",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",  
+  "license": "MIT",
+  "engines": {
+    "node": ">= v18.17.1"
+  },
   "scripts": {
     "start": "ts-node index.ts",
     "build": "tsc --outDir ./dist"

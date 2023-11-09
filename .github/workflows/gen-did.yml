@@ -1,11 +1,11 @@
-name: Check frontend
+name: Check gen-did script
 on: [pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: login-frontend
+        working-directory: scripts/gen-did
 
     steps:
       - name: Checkout the code
@@ -14,9 +14,9 @@ jobs:
       - name: Configure Node and package manager
         uses: actions/setup-node@v3.6.0
         with:
-          node-version-file: "login-frontend/package.json"
+          node-version-file: "scripts/gen-did/package.json"
           cache: "yarn"
-          cache-dependency-path: "login-frontend/yarn.lock"
+          cache-dependency-path: "scripts/gen-did/yarn.lock"
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile

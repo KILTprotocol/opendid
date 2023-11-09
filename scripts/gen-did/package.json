@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "engines": {
+    "node": ">= v18.17.1"
+  },
   "dependencies": {
     "@kiltprotocol/sdk-js": "^0.34.0",
     "@kiltprotocol/types": "^0.34.0",

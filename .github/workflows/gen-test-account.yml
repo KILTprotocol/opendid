@@ -1,4 +1,4 @@
-name: Check frontend
+name: Check gen-test-account script
 on: [pull_request]
 jobs:
   build:
