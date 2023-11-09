@@ -2,16 +2,25 @@
 
 set -e
 
-# get payment account address and seed from command line arguments
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 \"<PAYMENT_ACCOUNT_SEED>\""
-    exit 1
-fi
-PAYMENT_ACCOUNT_SEED=$1
 ENDPOINT=${ENDPOINT:-peregrine}
 
+# get payment account address and seed from command line arguments
+if [ $# -ne 1 ]; then
+  if [[ "${ENDPOINT}" == *"peregrine"* ]]; then
+    echo "No seed provided, but we are on the testnet, so we will generate a new account and fund it from the faucet."
+    echo "This will take some time..."
+    PAYMENT_ACCOUNT_SEED=$(node scripts/gen-test-account/dist/main.js)
+    echo "Finished generating and funding test payment account."
+  else
+    echo "Usage: $0 \"<PAYMENT_ACCOUNT_SEED>\""
+    exit 1
+  fi
+else
+  PAYMENT_ACCOUNT_SEED=$1
+fi
+
 echo "Generating DID..."
-npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"
+node scripts/gen-did/dist/main.js "${PAYMENT_ACCOUNT_SEED}"
 DID=$(cat did-document.json | jq -r .uri)
 echo "DID: ${DID}"
 KEYAGREEMENT_PRIVKEY=$(cat did-secrets.json | jq -r .keyAgreement.privKey)
@@ -23,6 +32,13 @@ KEYAGREEMENT_KEY_ID=${DID}$(cat did-document.json | jq -r .keyAgreement[0].id)
 ATTESTATION_KEY_ID=${DID}$(cat did-document.json | jq -r .assertionMethod[0].id)
 SESSION_SECRET=$(openssl rand -hex 64)
 JWT_SECRET='super-secret-jwt-secret'
+
+echo "Choosing the right default attester requirements..."
+TRUSTED_ATTESTER="did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare" # Spiritnet SKYC
+CTYPE_HASH="0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac" # Email
+if [[ "${ENDPOINT}" == *"peregrine"* ]]; then
+  TRUSTED_ATTESTER="did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY" # Peregrine SKYC
+fi
 
 echo "Writing login config file to config.yaml..."
 
@@ -74,8 +90,8 @@ clients:
     # contains the credential requirements for the verifiers DID
     # if the user provides ANY of the listed credentials, the login is successful
     requirements:
-      - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-        trustedAttesters: ["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
+      - cTypeHash: "${CTYPE_HASH}"
+        trustedAttesters: ["${TRUSTED_ATTESTER}"]
         requiredProperties: ["Email"]
     # valid redirect urls for this client
     redirectUrls:
