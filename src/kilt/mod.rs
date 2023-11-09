@@ -2,8 +2,14 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use subxt::{config::polkadot::PolkadotExtrinsicParams, config::Config, OnlineClient};
 
-#[subxt::subxt(runtime_metadata_path = "./metadata.scale")]
+#[cfg(feature = "peregrine")]
+#[subxt::subxt(runtime_metadata_path = "./metadata-peregrine.scale")]
 pub mod kilt {}
+
+#[cfg(not(feature = "peregrine"))]
+#[subxt::subxt(runtime_metadata_path = "./metadata-spiritnet.scale")]
+pub mod kilt {}
+
 pub use kilt::*;
 
 pub mod did_helper;

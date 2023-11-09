@@ -5,10 +5,12 @@ use serde_json::json;
 use sp_core::{Decode, H256};
 use sp_runtime::codec::IoReader;
 use sp_runtime::traits::Verify;
+use subxt::utils::AccountId32;
 use subxt::OnlineClient;
 
 use crate::kilt::runtime_types::attestation::attestations::AttestationDetails;
 use crate::kilt::runtime_types::did::did_details::{DidPublicKey, DidVerificationKey};
+use crate::kilt::runtime_types::runtime_common::authorization::AuthorizationId;
 use crate::kilt::{self, get_did_doc, KiltConfig};
 use crate::messages::Message;
 use crate::routes::{Claim, SubmitCredentialMessageBodyContent};
@@ -166,7 +168,10 @@ pub async fn check_signature(
 async fn check_attestation(
     msg: &Message<Vec<SubmitCredentialMessageBodyContent>>,
     cli: &OnlineClient<KiltConfig>,
-) -> Result<Vec<AttestationDetails>, Box<dyn std::error::Error>> {
+) -> Result<
+    Vec<AttestationDetails<H256, AccountId32, AuthorizationId<H256>, AccountId32, u128>>,
+    Box<dyn std::error::Error>,
+> {
     let mut attestations = Vec::new();
     for content in msg.body.content.iter() {
         let attestation = get_attestation(&content.root_hash, cli).await?;
@@ -186,7 +191,10 @@ pub async fn verify_credential_message(
     msg: &Message<Vec<SubmitCredentialMessageBodyContent>>,
     challenge: Vec<u8>,
     cli: &OnlineClient<KiltConfig>,
-) -> Result<Vec<AttestationDetails>, Box<dyn std::error::Error>> {
+) -> Result<
+    Vec<AttestationDetails<H256, AccountId32, AuthorizationId<H256>, AccountId32, u128>>,
+    Box<dyn std::error::Error>,
+> {
     check_claim_contents(msg)?;
     log::info!("Claim contents verified");
     check_root_hash(msg)?;
@@ -225,7 +233,10 @@ async fn get_auth_pubkey(
 async fn get_attestation(
     hash: &str,
     cli: &OnlineClient<KiltConfig>,
-) -> Result<AttestationDetails, Box<dyn std::error::Error>> {
+) -> Result<
+    AttestationDetails<H256, AccountId32, AuthorizationId<H256>, AccountId32, u128>,
+    Box<dyn std::error::Error>,
+> {
     let hash = match H256::from_str(hash.trim_start_matches("0x")) {
         Ok(hash) => hash,
         _ => return Err("Invalid hash".into()),
