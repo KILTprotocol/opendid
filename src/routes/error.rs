@@ -21,6 +21,8 @@ pub enum Error {
     CreateJWT,
     LockPoison,
     Internal(String),
+    VerifyJWT(String),
+    InvalidDidSignature,
 }
 
 impl std::error::Error for Error {}
@@ -46,6 +48,8 @@ impl std::fmt::Display for Error {
             Error::CreateJWT => write!(f, "Failed to create JWT"),
             Error::OauthNoSession => write!(f, "No session"),
             Error::LockPoison => write!(f, "Lock poison"),
+            Error::VerifyJWT(s) => write!(f, "Failed to verify JWT {} ", s),
+            Error::InvalidDidSignature => write!(f, "Failed to verify DID Signature"),
             Error::Internal(s) => write!(f, "Internal error: {}", s),
         }
     }
@@ -68,6 +72,8 @@ impl From<Error> for actix_web::Error {
             Error::SessionGet
             | Error::InvalidChallenge(_)
             | Error::InvalidNonce
+            | Error::VerifyJWT(_)
+            | Error::InvalidDidSignature
             | Error::OauthNoSession => actix_web::error::ErrorUnauthorized(e),
             // default internal server error, we don't pass the error message to the frontend to not
             // leak information
