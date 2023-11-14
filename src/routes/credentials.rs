@@ -79,7 +79,7 @@ async fn get_credential_requirements_handler(
         .split('#')
         .collect::<Vec<&str>>()
         .first()
-        .ok_or(Error::InvalidPrivateKey)?
+        .ok_or_else(|| Error::Internal("Invalid Key URI".into()))?
         .to_owned();
 
     // get the credential requirements for this specific client. The client ID comes from the session
@@ -115,17 +115,12 @@ async fn get_credential_requirements_handler(
     let msg_json = serde_json::to_string(&msg).unwrap();
     let msg_bytes = msg_json.as_bytes();
     let our_secretkey = app_state.session_secret_key.clone();
-    let others_pubkey =
-        parse_encryption_key_from_lightdid(key_uri.as_str()).map_err(|_| Error::InvalidLightDid)?;
+    let others_pubkey = parse_encryption_key_from_lightdid(key_uri.as_str())?;
     let nonce = box_::gen_nonce();
-    let pk = box_::PublicKey::from_slice(&others_pubkey).ok_or(Error::InvalidLightDid)?;
-    let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
-    let encrypted_msg = box_::seal(msg_bytes, &nonce, &pk, &sk);
-    let encrypted_msg_hex = format!("0x{}", hex::encode(encrypted_msg));
-    let nonce_hex = format!("0x{}", hex::encode(nonce));
+    let encrypted_msg = box_::seal(msg_bytes, &nonce, &others_pubkey, &our_secretkey);
     let response = EncryptedMessage {
-        cipher_text: encrypted_msg_hex,
-        nonce: nonce_hex,
+        cipher_text: encrypted_msg,
+        nonce,
         sender_key_uri: app_state.encryption_key_uri.clone(),
         receiver_key_uri: key_uri,
     };
@@ -153,18 +148,12 @@ async fn post_credential_handler(
     let pk = kilt::get_encryption_key_from_fulldid_key_uri(&body.sender_key_uri, &cli).await?;
 
     // decrypt the message
-    let nonce_bytes =
-        hex::decode(body.nonce.trim_start_matches("0x")).map_err(|_| Error::InvalidNonce)?;
-    let nonce = box_::Nonce::from_slice(&nonce_bytes).ok_or(Error::InvalidNonce)?;
-    let cipher_text = hex::decode(body.cipher_text.trim_start_matches("0x"))
-        .map_err(|_| Error::FailedToDecrypt)?;
     let secret_key = {
         let app_state = app_state.read()?;
         app_state.session_secret_key.clone()
     };
-    let sk = box_::SecretKey::from_slice(&secret_key).ok_or(Error::InvalidPrivateKey)?;
-    let decrypted_msg =
-        box_::open(&cipher_text, &nonce, &pk, &sk).map_err(|_| Error::FailedToDecrypt)?;
+    let decrypted_msg = box_::open(&body.cipher_text, &body.nonce, &pk, &secret_key)
+        .map_err(|_| Error::FailedToDecrypt)?;
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         serde_json::from_slice(&decrypted_msg).map_err(|_| Error::FailedToParseMessage)?;
 
@@ -219,10 +208,15 @@ async fn post_credential_handler(
                 continue;
             }
             let mut properties_fulfilled = true;
-            let content_object = match content.claim.contents.as_object() {
-                Some(data) => data,
-                _ => return Ok(HttpResponse::BadRequest().body("Could not get claim contents")),
-            };
+            let content_object =
+                content
+                    .claim
+                    .contents
+                    .as_object()
+                    .ok_or(Error::VerifyCredential(
+                        "Could not get claim contents".into(),
+                    ))?;
+
             for property in &requirement.required_properties {
                 if !content_object.contains_key(property) {
                     log::info!("Requirement property '{}' not found", property);

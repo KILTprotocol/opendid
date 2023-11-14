@@ -51,11 +51,8 @@ pub async fn get_encryption_key_from_fulldid_key_uri(
 }
 
 pub async fn get_w3n(did: &str, cli: &OnlineClient<KiltConfig>) -> Result<String, Error> {
-    let account_id = match subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:"))
-    {
-        Ok(id) => id,
-        _ => return Err(Error::InvalidDid("Invalid DID")),
-    };
+    let account_id = subxt::utils::AccountId32::from_str(did.trim_start_matches("did:kilt:"))
+        .map_err(|_| Error::InvalidDid("Invalid DID"))?;
     let storage_key = kilt::storage().web3_names().names(account_id);
     let name = cli.storage().at_latest().await?.fetch(&storage_key).await?;
     if let Some(name) = name {
@@ -81,21 +78,22 @@ struct LightDidDetails {
     e: LightDidKeyDetails,
 }
 
-pub fn parse_encryption_key_from_lightdid(did: &str) -> Result<Vec<u8>, Error> {
+pub fn parse_encryption_key_from_lightdid(did: &str) -> Result<box_::PublicKey, Error> {
     // example did:kilt:light:00${authAddress}:${details}#encryption
     log::debug!("key uri: {}", did);
     let mut parts = did.split('#');
-    let first = parts.next().ok_or(Error::InvalidDid("malformed"))?;
+    let first = parts.next().ok_or(Error::InvalidLightDid("malformed"))?;
     let mut parts = first.split(':').skip(4);
-    let details = parts.next().ok_or(Error::InvalidDid("malformed"))?;
+    let details = parts.next().ok_or(Error::InvalidLightDid("malformed"))?;
     log::debug!("details: {}", details);
     let mut chars = details.chars();
-    chars.next().ok_or(Error::InvalidDid("malformed"))?;
+    chars.next().ok_or(Error::InvalidLightDid("malformed"))?;
     let bs: Vec<u8> = FromBase58::from_base58(chars.as_str())
-        .map_err(|_| Error::InvalidDid("malformed base58"))?;
+        .map_err(|_| Error::InvalidLightDid("malformed base58"))?;
     let details: LightDidDetails =
-        serde_cbor::from_slice(&bs[1..]).map_err(|_| Error::InvalidDid("malformed cbor"))?;
-    Ok(details.e.public_key.to_vec())
+        serde_cbor::from_slice(&bs[1..]).map_err(|_| Error::InvalidLightDid("malformed cbor"))?;
+    box_::PublicKey::from_slice(&details.e.public_key)
+        .ok_or(Error::InvalidLightDid("Not a valid public key"))
 }
 
 pub async fn get_did_doc(
