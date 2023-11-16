@@ -47,6 +47,8 @@ session:
   naclPublicKey: "${KEYAGREEMENT_PUBKEY}"
   # session key used to encrypt the session data, needs to be the same on all instances
   sessionKey: "0x${SESSION_SECRET}"
+  # time in seconds a session lasts as default of 60 minutes 
+  sessionTtl: 3600
 
 # jwt config
 # contains the jwt config for the access and refresh tokens
