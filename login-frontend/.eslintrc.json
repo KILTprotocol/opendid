@@ -20,7 +20,14 @@
     "react/react-in-jsx-scope": "off",
     "react-hooks/exhaustive-deps": "error",
     "import/no-extraneous-dependencies": "error",
-    "import/no-unresolved": ["error", { "ignore": ["\\.js$"] }],
+    "import/no-unresolved": [
+      "error",
+      {
+        "ignore": [
+          "\\.js$"
+        ]
+      }
+    ],
     "@typescript-eslint/no-unused-vars": "error"
   },
   "settings": {

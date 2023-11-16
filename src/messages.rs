@@ -1,10 +1,15 @@
 use serde::{Deserialize, Serialize};
+use sodiumoxide::crypto::box_::Nonce;
+
+use crate::serialize::{hex_nonce, prefixed_hex};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EncryptedMessage {
     #[serde(rename = "ciphertext")]
-    pub cipher_text: String,
-    pub nonce: String,
+    #[serde(with = "prefixed_hex")]
+    pub cipher_text: Vec<u8>,
+    #[serde(with = "hex_nonce")]
+    pub nonce: Nonce,
     #[serde(rename = "receiverKeyUri")]
     pub receiver_key_uri: String,
     #[serde(rename = "senderKeyUri")]

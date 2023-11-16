@@ -1,3 +1,5 @@
+import { DidUri } from '@kiltprotocol/sdk-js';
+
 interface EncryptedMessage {
   receiverKeyUri: string;
   senderKeyUri: string;
@@ -20,6 +22,8 @@ export interface InjectedWindowProvider {
   name: string;
   version: string;
   specVersion: '3.0';
+  signWithDid: (data: string, didKeyUri: DidUri) => Promise<{ didKeyUri: string; signature: string }>;
+  getDidList: () => Promise<Array<{ did: DidUri }>>;
 }
 
 export const apiWindow = window as unknown as {

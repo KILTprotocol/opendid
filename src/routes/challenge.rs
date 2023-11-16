@@ -8,7 +8,11 @@ use serde::{Deserialize, Serialize};
 
 use sodiumoxide::crypto::box_;
 
-use crate::{routes::error::Error, AppState};
+use crate::{
+    routes::error::Error,
+    serialize::{hex_nonce, prefixed_hex},
+    AppState,
+};
 
 /// Data that the user receives when starting a session
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -17,30 +21,31 @@ struct ChallengeData {
     app_name: String,
     #[serde(rename = "dAppEncryptionKeyUri")]
     encryption_key_uri: String,
-    challenge: String,
+    #[serde(with = "prefixed_hex")]
+    challenge: Vec<u8>,
 }
 
 impl ChallengeData {
     fn new(app_name: &str, encryption_key_uri: &str) -> Self {
         let mut rng = rand::thread_rng();
         let challenge: [u8; 32] = rng.gen();
-        let challenge_hex = format!("0x{}", hex::encode(challenge));
         Self {
             app_name: app_name.to_string(),
             encryption_key_uri: encryption_key_uri.to_string(),
-            challenge: challenge_hex,
+            challenge: challenge.to_vec(),
         }
     }
 }
 
 /// Data that the user passes back to us when starting a session
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ChallengeResponse {
-    #[serde(rename = "encryptionKeyUri")]
     encryption_key_uri: String,
-    #[serde(rename = "encryptedChallenge")]
-    encrypted_challenge: String,
-    nonce: String,
+    #[serde(with = "prefixed_hex")]
+    encrypted_challenge: Vec<u8>,
+    #[serde(with = "hex_nonce")]
+    nonce: box_::Nonce,
 }
 
 /// GET /api/v1/challenge -> create a new challenge, store it in the cookies and send it to the user
@@ -65,30 +70,23 @@ async fn challenge_response_handler(
 ) -> Result<HttpResponse, Error> {
     log::info!("POST challenge handler");
     let app_state = app_state.read()?;
-    let session_challenge = match session.get::<ChallengeData>("challenge")? {
-        Some(data) => data.challenge,
-        None => return Err(Error::SessionGet),
-    };
-    let session_challenge_bytes = hex::decode(session_challenge.trim_start_matches("0x"))
-        .map_err(|_| Error::InvalidChallenge("Challenge: Invalid Hex"))?;
-    let nonce = hex::decode(challenge_response.nonce.trim_start_matches("0x"))
-        .map_err(|_| Error::InvalidNonce)?;
-    let encrypted_challenge = hex::decode(
-        challenge_response
-            .encrypted_challenge
-            .trim_start_matches("0x"),
-    )
-    .map_err(|_| Error::InvalidChallenge("Encrypted Challenge: Invalid Hex"))?;
+    let session_challenge_bytes = session
+        .get::<ChallengeData>("challenge")?
+        .ok_or(Error::SessionGet)?
+        .challenge;
+
     let others_pubkey = crate::kilt::parse_encryption_key_from_lightdid(
         challenge_response.encryption_key_uri.as_str(),
+    )?;
+
+    let decrypted_challenge = box_::open(
+        &challenge_response.encrypted_challenge,
+        &challenge_response.nonce,
+        &others_pubkey,
+        &app_state.session_secret_key,
     )
-    .map_err(|_| Error::InvalidLightDid)?;
-    let our_secretkey = app_state.session_secret_key.clone();
-    let nonce = box_::Nonce::from_slice(&nonce).ok_or(Error::InvalidNonce)?;
-    let pk = box_::PublicKey::from_slice(&others_pubkey).ok_or(Error::InvalidLightDid)?;
-    let sk = box_::SecretKey::from_slice(&our_secretkey).ok_or(Error::InvalidPrivateKey)?;
-    let decrypted_challenge = box_::open(&encrypted_challenge, &nonce, &pk, &sk)
-        .map_err(|_| Error::InvalidChallenge("Unable to decrypt"))?;
+    .map_err(|_| Error::InvalidChallenge("Unable to decrypt"))?;
+
     if session_challenge_bytes == decrypted_challenge {
         session
             .insert("key_uri", challenge_response.encryption_key_uri.clone())
