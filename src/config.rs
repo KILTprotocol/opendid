@@ -29,6 +29,7 @@ pub struct SessionConfig {
     pub key_uri: String,
     pub nacl_public_key: String,
     pub nacl_secret_key: String,
+    pub session_ttl: i64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -129,5 +130,9 @@ impl Config {
             self.jwt.refresh_token_lifetime,
             &self.jwt.refresh_token_audience,
         )
+    }
+
+    pub fn get_session_ttl(&self) -> i64 {
+        self.session.session_ttl
     }
 }

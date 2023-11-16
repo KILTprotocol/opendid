@@ -112,7 +112,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .cookie_secure(config.production)
                     .cookie_name(SESSION_COOKIE_NAME.to_string())
                     .session_lifecycle(
-                        PersistentSession::default().session_ttl(Duration::seconds(60)),
+                        PersistentSession::default()
+                            .session_ttl(Duration::seconds(config.get_session_ttl())),
                     )
                     .build(),
             )
