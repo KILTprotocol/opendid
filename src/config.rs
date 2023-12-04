@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use actix_web::cookie::Key;
-use hex::FromHexError;
 use serde::{Deserialize, Serialize};
+use sodiumoxide::crypto::box_::SecretKey;
 
 use crate::jwt::TokenFactory;
 
@@ -29,6 +29,7 @@ pub struct SessionConfig {
     pub key_uri: String,
     pub nacl_public_key: String,
     pub nacl_secret_key: String,
+    pub session_ttl: i64,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -116,8 +117,9 @@ impl Config {
         }
     }
 
-    pub fn get_nacl_secret_key(&self) -> Result<Vec<u8>, FromHexError> {
-        hex::decode(self.session.nacl_secret_key.trim_start_matches("0x"))
+    pub fn get_nacl_secret_key(&self) -> anyhow::Result<SecretKey> {
+        let raw_key = hex::decode(self.session.nacl_secret_key.trim_start_matches("0x"))?;
+        SecretKey::from_slice(&raw_key).ok_or(anyhow::anyhow!("private key has invalid length"))
     }
 
     pub fn get_token_factory(&self) -> TokenFactory {
@@ -128,5 +130,9 @@ impl Config {
             self.jwt.refresh_token_lifetime,
             &self.jwt.refresh_token_audience,
         )
+    }
+
+    pub fn get_session_ttl(&self) -> i64 {
+        self.session.session_ttl
     }
 }

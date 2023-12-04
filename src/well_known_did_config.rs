@@ -121,7 +121,7 @@ impl WellKnownDidConfig {
                 hasher.update(nonce.as_str());
                 hasher.update(hash.as_str());
                 let salted_hash = hex_encode(hasher.finalize());
-                salted_hashes.push(salted_hash.clone());
+                salted_hashes.push(salted_hash);
                 nonces.insert(hash.clone(), nonce);
             });
             (nonces, salted_hashes)

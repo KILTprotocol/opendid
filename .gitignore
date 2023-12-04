@@ -14,5 +14,7 @@ demo-project/.parcel-cache
 .main-image
 .setup-image
 did-document.json
-yarn.lock
+/.vscode
 package-lock.json
+**/.env
+nohup.out

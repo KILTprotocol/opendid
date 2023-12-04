@@ -1,8 +1,8 @@
 # OpenDID
 
-OpenDID is a service that generates JWT tokens to authenticate users using the user’s DID and Verifiable-Credentials.
-It therefore acts as a bridge between the decentralized identity world and the centralized authentication world.
-The resulting tokens can be used with any service that supports JWT tokens.
+OpenDID is a service that generates JWT tokens to authenticate users using the user’s [Decentralized Identifier (DID)](https://docs.kilt.io/docs/concepts/did) and Verifiable Credentials.
+It acts as a bridge between the decentralized identity world and the centralized authentication world.
+You can use the resulting tokens with any service that supports JWT tokens.
 
 ## Usage
 
@@ -13,28 +13,28 @@ The resulting tokens can be used with any service that supports JWT tokens.
 - a DID with a Verifiable Credential for testing, for example, from [SocialKYC](https://socialkyc.io)
 - a laptop or desktop computer with a container engine like podman or docker installed
 
-If you want to install podman on your machine (which is recommend), you can [follow the instructions](https://podman.io/getting-started/installation).
-If you have docker and want to stick with it, you can just replace every occurrence of `podman` with `docker` in the following instructions.
+  If you want to install podman on your machine (which is recommended), you can [follow the instructions](https://podman.io/getting-started/installation).
+  If you have docker and want to stick with it, replace every occurrence of `podman` with `docker` in the following instructions.
 
 ### Generate the config file
 
-In order to run the service we need to configure it to supply all needed keys and identifiers.
-For this we will first generate a fresh DID for the service deployment and then derive a config file from it.
+To run the service you need to create the configuration that contains all the needed keys and identifiers.
+To do this, generate a fresh DID for the service deployment and then create a config file from it.
 
 ```bash
 SEED="dont try this seed its completely made up for this nice example"
 podman run --rm -it -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
 ```
 
-The command will first generate a set of new mnemonics and then derive a DID from it.
+The command generates a set of new mnemonics and then derives a DID from it.
 The DID requires a deposit of around 2 KILT.
-All public and private keys will be stored in the `did-secrets.json` file.
+All public and private keys are stored in the `did-secrets.json` file.
 Make a backup of this file!
-If you lose it, you will lose access to your DID.
-The `config.yaml` file will contain all the information needed to run the service including the private keys it needs to operate.
+If you lose the file, you will lose access to your DID.
+The `config.yaml` file contains all the information needed to run the service including private keys.
 Note that this doesn't include the authentication key for the DID, so even if someone gets access to the config file, they can't steal your DID.
 However, they could write untrue attestations to the blockchain, so make sure to also keep the config file safe.
-In production you need to place it in a secure location and only give read access to the user running the service.
+In production, you need to place it in a secure location and only give read access to the user running the service.
 
 ### Run the service
 
@@ -47,27 +47,27 @@ podman run -d --rm \
     docker.io/kiltprotocol/opendid:latest
 ```
 
-Now you can visit http://localhost:3001/ and see the login page.
-You can use the DID from your wallet to login.
-If you don't have a DID yet, you can create one with [Sporran](https://www.sporran.org/).
+Now you can open `http://localhost:3001` and see the login page, but don't login yet, there's one more step for the flow to work.
 
 ### Integrate the service into your application
 
-The service implements the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), therefore it is very simple to integrate.
-All you have to do is to redirect the user to the login page and then handle the redirect back to your application.
-The redirect will contain a JWT token in the URL. You can use this token to authenticate the user in your application.
-The token will contain the DID of the user and the claims from the Verifiable Credential that was used to authenticate the user.
-You can use this information to check if the user is allowed to access your application.
+A service needs to implement the [OpenID-Connect implicit [flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), which does the following:
+
+- Redirects the user to the login page and then handle the redirect back to your application.
+- The redirect contains a JWT token in the URL. You can use this token to authenticate the user in your application.
+- The token contains the DID of the user and the claims from the Verifiable Credential used to authenticate the user.
+- You can use this information to check if the user is allowed to access your application.
 
 #### Example
 
-The example code at [demo-project](./demo-project/) contains a minimal application which uses login via the opendid. It is a simple [express](https://expressjs.com) application which exposes three things:
+The example code at [demo-project](./demo-project/) contains a minimal application that follows the flow above using opendid.
+It's an [express](https://expressjs.com) application that exposes three things:
 
-* a login page which handles the dispatching of the user to the opendid
-* a callback page for the openid connect flow to accept the token
-* a protected resource which can only be accessed by authenticated users
+- A login page that handles the dispatching of the user to the opendid
+- A callback page for the openid connect flow to accept the token
+- A protected resource that only authenticated users can access
 
-If you wish to run this preconfigured demo application you can do it like this:
+Run the pre-configured demo application with the following command:
 
 ```bash
 podman run -it -d --rm \
@@ -76,15 +76,17 @@ podman run -it -d --rm \
     docker.io/kiltprotocol/opendid-demo
 ```
 
-You can now go to [http://localhost:1606/login.html](http://localhost:1606/login.html) to see a login page from the demo application.
-When you click on login, you will be redirected to the opendid login screen where you authenticate using your wallet.
-After success you will be redirected back to the application and the token will be used to access a protected resource.
+You can now open [http://localhost:1606/login.html](http://localhost:1606/login.html) to see a login page from the demo application.
+When you click on login, the application redirects you to the opendid login screen where you authenticate using a DID from your wallet.
+After success, the service redirects you back to the application and uses the token to access a protected resource.
+
+If you don't have a DID yet, you can create one with [Sporran](https://www.sporran.org/).
 
 ### Cleanup and delete the DID
 
 If you want to delete the DID you generated earlier, you can use the `opendid-setup` image again.
-This will use the authentication key from the `did-secrets.json` file to delete the DID from the blockchain.
-(If you delete your DID, your deposit will be returned.)
+This uses the authentication key from the `did-secrets.json` file to delete the DID from the blockchain.
+(If you delete your DID, your deposit is returned.)
 
 ```bash
 SEED="dont try this seed its completely made up for this nice example"
@@ -99,8 +101,8 @@ podman run --rm -it \
 
 ### Use dynamic client management
 
-In case you want to dynamically create or remove OpenID Connect clients, you can configure the service to get its configuration from an [etcd cluster](https://etcd.io).
-To do so all you need is to configure the connection parameters for the etcd cluster in the `config.yaml` file.
+If you want to dynamically create or remove OpenID Connect clients, you can configure the service to get its configuration from an [etcd cluster](https://etcd.io).
+To do so, configure the connection parameters for the etcd cluster in the `config.yaml` file.
 
 ```yaml
 ...
@@ -125,14 +127,17 @@ etcd:
 ```
 
 All fields except `endpoints` are optional and depending on your etcd setup you might not need them.
-When everything is setup you can start putting client configurations into the etcd cluster.
+When everything is set up you can start putting client configurations into the etcd cluster.
 
 ```bash
 CLIENT_SPEC=$(cat <<EOF
 {
   "requirements": [{
     "cTypeHash":"0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac",
-    "trustedAttesters":["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"],
+    "trustedAttesters": [
+    "did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY",
+    "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"
+    ],
     "requiredProperties": ["Email"]
   }],
   "redirectUrls": ["http://localhost:1606/callback.html"]
@@ -143,21 +148,22 @@ CLIENT_SPEC=$(echo $CLIENT_SPEC | jq -c)
 etcdctl put /opendid/clients/new-client "${CLIENT_SPEC}"
 ```
 
-If you want to quickly try this out you can first generate a config using the setup image as described above, add the etcd configuration and then start the service using the example script in [./scripts/start-demo-etcd.sh](./scripts/start-demo-etcd.sh).
+If you want to try this out you can first generate a config using the setup image as described above, add the etcd configuration and then start the service using the example script in [./scripts/start-demo-etcd.sh](./scripts/start-demo-etcd.sh).
 
 ### Add advanced claim checks using RHAI scripts
 
 To add custom checks that are executed on the claims of the Verifiable Credential, you can use [Rhai](https://rhai.rs) scripts.
-To try it out you only have to add a `checksDirectory` entry to the client configuration in the `config.yaml` file.
+To try it out you have to add a `checksDirectory` entry to the client configuration in the `config.yaml` file.
 
 Example:
+
 ```yaml
 ...
 clients:
   example-client:
     requirements:
       - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-        trustedAttesters: ["did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
+        trustedAttesters: ["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY", "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
         requiredProperties: ["Email"]
     redirectUrls:
       - http://localhost:1606/callback.html
@@ -195,5 +201,5 @@ podman run -d --rm \
     docker.io/kiltprotocol/opendid:latest
 ```
 
-When you now login with a user that has an email address ending with `kilt.io` you will be allowed to login.
-If you use a different email address, you will be denied access.
+When you now log in with a user that has an email address ending with `kilt.io` the service allows you to log in.
+If you use a different email address, the service denies you access.

@@ -2920,6 +2920,7 @@ dependencies = [
  "openssl",
  "rand 0.8.5",
  "rhai",
+ "schnorrkel 0.10.2",
  "serde",
  "serde_cbor",
  "serde_json",

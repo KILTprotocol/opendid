@@ -122,9 +122,9 @@ pub async fn check_signature(
     challenge: &Vec<u8>,
     cli: &OnlineClient<KiltConfig>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    log::info!("Checking signature");
+    log::trace!("Checking signature");
     for content in msg.body.content.iter() {
-        log::info!("Checking signature for claim: {:#?}", content);
+        log::trace!("Checking signature for claim: {:#?}", content);
         // get the public key from the chain
         let did = content.claim.owner.clone();
         let public_key = get_auth_pubkey(&did, cli).await?;
@@ -175,13 +175,13 @@ async fn check_attestation(
     let mut attestations = Vec::new();
     for content in msg.body.content.iter() {
         let attestation = get_attestation(&content.root_hash, cli).await?;
-        log::info!("Attestation found on chain: {:?}", attestation);
+        log::trace!("Attestation found on chain: {:?}", attestation);
 
         // check if it is  not revoked
         if attestation.revoked {
             return Err("Attestation is revoked".into());
         }
-        log::info!("Attestation not revoked");
+        log::trace!("Attestation not revoked");
         attestations.push(attestation);
     }
     Ok(attestations)
@@ -196,13 +196,13 @@ pub async fn verify_credential_message(
     Box<dyn std::error::Error>,
 > {
     check_claim_contents(msg)?;
-    log::info!("Claim contents verified");
+    log::trace!("Claim contents verified");
     check_root_hash(msg)?;
-    log::info!("Root hash verified");
+    log::trace!("Root hash verified");
     check_signature(msg, &challenge, cli).await?;
-    log::info!("Claimer signature verified");
+    log::trace!("Claimer signature verified");
     let attestations = check_attestation(msg, cli).await?;
-    log::info!("Attestation verified");
+    log::trace!("Attestation verified");
     Ok(attestations)
 }
 

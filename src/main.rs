@@ -15,6 +15,7 @@ use anyhow::Context;
 use clap::Parser;
 
 use rhai_checker::RhaiCheckerMap;
+use sodiumoxide::crypto::box_;
 use well_known_did_config::create_well_known_did_config;
 
 mod cli;
@@ -26,6 +27,7 @@ mod kilt;
 mod messages;
 mod rhai_checker;
 mod routes;
+pub mod serialize;
 mod verify;
 mod well_known_did_config;
 
@@ -36,7 +38,7 @@ use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 pub struct AppState {
     app_name: String,
     encryption_key_uri: String,
-    session_secret_key: Vec<u8>,
+    session_secret_key: box_::SecretKey,
     jwt_builder: TokenFactory,
     jwt_secret_key: String,
     jwt_public_key: Option<String>,
@@ -110,7 +112,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .cookie_secure(config.production)
                     .cookie_name(SESSION_COOKIE_NAME.to_string())
                     .session_lifecycle(
-                        PersistentSession::default().session_ttl(Duration::seconds(60)),
+                        PersistentSession::default()
+                            .session_ttl(Duration::seconds(config.get_session_ttl())),
                     )
                     .build(),
             )
@@ -120,6 +123,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(post_credential_handler)
             .service(refresh_handler)
             .service(well_known_did_config_handler)
+            .service(login_with_did)
             .service(authorize_handler)
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })

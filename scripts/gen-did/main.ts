@@ -1,5 +1,5 @@
 import * as Kilt from '@kiltprotocol/sdk-js'
-
+import { mnemonicValidate } from '@polkadot/util-crypto'
 import { checkAndWriteFile, exportKeypairs, generateKeypairs, signingKeyType } from './utils/utils'
 
 async function main() {
@@ -22,13 +22,17 @@ async function main() {
     console.debug(`Connected to ${endpoint}`)
     // get first command line argument as seed for the payment account and fail if not provided
     const paymentSeed = process.argv[2]
-    console.debug(paymentSeed)
+
     if (!paymentSeed) {
         // console.error('Please provide a seed for the payment account as first command line argument.');
         console.error('Payment seed not found')
         process.exit(1)
     }
 
+    if (!mnemonicValidate(paymentSeed)) {
+        console.error('Mnemonic is not valid', paymentSeed)
+        process.exit()
+    }
     const paymentKeyPair = Kilt.Utils.Crypto.makeKeypairFromUri(paymentSeed, signingKeyType)
     console.debug(`Payment account address: ${paymentKeyPair.address}`)
     // get the balance of the payment account
@@ -36,8 +40,7 @@ async function main() {
     console.debug(`Payment account balance: ${accountInfo.data.free}`)
 
     const keypairs = generateKeypairs()
-    const didSecrets = exportKeypairs(keypairs)
-    await checkAndWriteFile(didSecrets, 'did-secrets.json')
+
     const getStoreTxSignCallback: Kilt.Did.GetStoreTxSignCallback = async ({ data }) => ({
         signature: keypairs.authentication.sign(data),
         keyType: keypairs.authentication.type,
@@ -69,7 +72,8 @@ async function main() {
     }
     // write the DID document to a file
     await checkAndWriteFile(result.document, 'did-document.json')
-
+    const didSecrets = exportKeypairs(keypairs)
+    await checkAndWriteFile(didSecrets, 'did-secrets.json')
     await Kilt.disconnect()
 }
 
