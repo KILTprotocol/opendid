@@ -68,10 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         jwt_algorithm: config.jwt.algorithm.to_string(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)
             .context("Error creating well-known DID configuration")?,
-        kilt_endpoint: config
-            .kilt_endpoint
-            .clone()
-            .unwrap_or("spiritnet".to_string()),
+        kilt_endpoint: config.get_endpoint_url(),
         client_configs: config.clients.clone(),
         rhai_checkers: RhaiCheckerMap::new(),
     }));
@@ -125,6 +122,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(well_known_did_config_handler)
             .service(login_with_did)
             .service(authorize_handler)
+            .service(get_endpoint)
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })
     .bind((host.as_str(), port))?

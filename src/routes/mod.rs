@@ -2,6 +2,7 @@ mod authorize;
 mod challenge;
 mod credentials;
 mod did;
+mod endpoint;
 mod refresh;
 mod well_known_did_config;
 
@@ -10,5 +11,6 @@ pub use authorize::*;
 pub use challenge::*;
 pub use credentials::*;
 pub use did::*;
+pub use endpoint::*;
 pub use refresh::*;
 pub use well_known_did_config::*;

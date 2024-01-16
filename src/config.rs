@@ -12,7 +12,7 @@ pub struct Config {
     pub host: String,
     pub port: u16,
     pub production: bool,
-    pub kilt_endpoint: Option<String>,
+    kilt_endpoint: Option<String>,
     pub base_path: String,
     pub session: SessionConfig,
     pub jwt: JWTConfig,
@@ -134,5 +134,16 @@ impl Config {
 
     pub fn get_session_ttl(&self) -> i64 {
         self.session.session_ttl
+    }
+
+    pub fn get_endpoint_url(&self) -> String {
+        match &self.kilt_endpoint {
+            Some(e) => match e.as_str() {
+                "spiritnet" => "wss://spiritnet.kilt.io:443".to_string(),
+                "peregrine" => "wss://peregrine.kilt.io:443/parachain-public-ws".to_string(),
+                _ => e.clone(),
+            },
+            None => "wss://peregrine.kilt.io:443/parachain-public-ws".to_string(),
+        }
     }
 }

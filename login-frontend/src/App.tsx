@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { Did, connect } from '@kiltprotocol/sdk-js';
+import { Did, DidResolutionResult, DidUri, connect } from '@kiltprotocol/sdk-js';
 import * as sha512 from 'js-sha512';
 
 import './App.css';
@@ -76,62 +76,78 @@ export function App() {
     [kilt],
   );
 
-  const handleSIOPV2Login = useCallback(
-    async (nonce: string, event: FormEvent<HTMLFormElement>) => {
-      connect(process.env.WSS_ENDPOINT ? process.env.WSS_ENDPOINT : 'wss://peregrine.kilt.io');
+  const fetchWssEndpoint = async (): Promise<string> => {
+    const endpointURL = '/api/v1/endpoint';
+    const response = await fetch(endpointURL, { method: 'get' });
 
-      const form = event.currentTarget;
-      const extension = new FormData(form).get('extension') as string;
-      const Dids = await kilt[extension].getDidList();
+    if (response.status !== 200) {
+      const responseData = await response.text();
+      throw new Error(responseData);
+    }
 
-      const did = Dids[0].did;
+    return response.json();
+  };
 
-      const didDocument = await Did.resolve(did);
-
-      // jwt parts
+  const getJwtToken = useCallback(
+    async (did: DidUri, didDocument: DidResolutionResult, nonce: string, extension: string): Promise<string> => {
       const nbf = Math.floor(Date.now() / 1000);
       const exp = nbf + 60;
       const kid = `${did}${didDocument?.document?.authentication[0].id}`;
       const kty = didDocument?.document?.authentication[0].type;
+
       // Not completely standard, but SR25519 is not commonly used for JWTs.
       const header = { alg: 'EdDSA', typ: 'JWT', crv: 'Ed25519', kid, kty };
       const body = { iss: did, sub: did, nonce, exp, nbf };
 
-      //encoded + signature
       const headerEncoded = btoa(JSON.stringify(header));
       const bodyEncoded = btoa(JSON.stringify(body));
       const dataToSign = headerEncoded + '.' + bodyEncoded;
 
       const signData = await kilt[extension].signWithDid(sha512.sha512(dataToSign), did);
 
-      // submit token
-      const token = dataToSign + '.' + btoa(signData.signature);
-
-      const url = `/api/v1/did/${token}`;
-
-      const didLoginResponse = await fetch(url, {
-        method: 'POST',
-      });
-
-      if (didLoginResponse.status >= 400) {
-        const credentialResponseData = await didLoginResponse.text();
-        throw new Error(credentialResponseData);
-      }
-
-      if (didLoginResponse.status === 204) {
-        const uri = didLoginResponse.headers.get('Location');
-        if (uri !== null) {
-          window.location.href = uri;
-          return;
-        }
-      }
-
-      const response = await didLoginResponse.text();
-      throw new Error(response);
+      return dataToSign + '.' + btoa(signData.signature);
     },
     [kilt],
   );
 
+  const submitToken = async (token: string): Promise<void> => {
+    const url = `/api/v1/did/${token}`;
+    const response = await fetch(url, { method: 'POST' });
+
+    if (response.status !== 204) {
+      const responseData = await response.text();
+      throw new Error(responseData);
+    }
+
+    const uri = response.headers.get('Location');
+    if (uri !== null) {
+      window.location.href = uri;
+      return;
+    }
+  };
+
+  const handleSIOPV2Login = useCallback(
+    async (nonce: string, event: FormEvent<HTMLFormElement>) => {
+      const form = event.currentTarget;
+      const extension = new FormData(form).get('extension') as string;
+
+      const wssEndpoint = await fetchWssEndpoint();
+      connect(wssEndpoint);
+
+      const Dids = await kilt[extension].getDidList();
+      const did = Dids[0].did;
+      const didDocument = await Did.resolve(did);
+
+      if (!didDocument) {
+        throw new Error('Did Document is null');
+      }
+
+      const token = await getJwtToken(did, didDocument, nonce, extension);
+
+      await submitToken(token);
+    },
+    [kilt, getJwtToken],
+  );
   const handleLogin = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();

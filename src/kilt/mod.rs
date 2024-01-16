@@ -1,5 +1,4 @@
 use sp_runtime::traits::{IdentifyAccount, Verify};
-
 use subxt::{config::polkadot::PolkadotExtrinsicParams, config::Config, OnlineClient};
 
 #[cfg(feature = "peregrine")]
@@ -30,12 +29,7 @@ impl Config for KiltConfig {
 }
 
 pub async fn connect(
-    endpoint: &str,
+    endpoint_url: &str,
 ) -> Result<OnlineClient<KiltConfig>, Box<dyn std::error::Error>> {
-    let endpoint_url = match endpoint {
-        "spiritnet" => "wss://spiritnet.kilt.io:443",
-        "peregrine" => "wss://peregrine.kilt.io:443/parachain-public-ws",
-        _ => endpoint,
-    };
     Ok(OnlineClient::<KiltConfig>::from_url(endpoint_url).await?)
 }
