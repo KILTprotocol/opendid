@@ -95,6 +95,7 @@ export function App() {
       const kid = `${did}${didDocument?.document?.authentication[0].id}`;
       const kty = didDocument?.document?.authentication[0].type;
 
+      // Not completely standard, but SR25519 is not commonly used for JWTs.
       const header = { alg: 'EdDSA', typ: 'JWT', crv: 'Ed25519', kid, kty };
       const body = { iss: did, sub: did, nonce, exp, nbf };
 
