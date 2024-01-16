@@ -28,6 +28,7 @@ mod messages;
 mod rhai_checker;
 mod routes;
 pub mod serialize;
+pub mod utils;
 mod verify;
 mod well_known_did_config;
 
