@@ -114,21 +114,16 @@ export function App() {
     const url = `/api/v1/did/${token}`;
     const response = await fetch(url, { method: 'POST' });
 
-    if (response.status >= 400) {
+    if (response.status !== 204) {
       const responseData = await response.text();
       throw new Error(responseData);
     }
 
-    if (response.status === 204) {
-      const uri = response.headers.get('Location');
-      if (uri !== null) {
-        window.location.href = uri;
-        return;
-      }
+    const uri = response.headers.get('Location');
+    if (uri !== null) {
+      window.location.href = uri;
+      return;
     }
-
-    const responseData = await response.text();
-    throw new Error(responseData);
   };
 
   const handleSIOPV2Login = useCallback(
