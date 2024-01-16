@@ -28,7 +28,6 @@ mod messages;
 mod rhai_checker;
 mod routes;
 pub mod serialize;
-mod utils;
 mod verify;
 mod well_known_did_config;
 
@@ -69,10 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         jwt_algorithm: config.jwt.algorithm.to_string(),
         well_known_did_config: create_well_known_did_config(&config.well_known_did_config)
             .context("Error creating well-known DID configuration")?,
-        kilt_endpoint: config
-            .kilt_endpoint
-            .clone()
-            .unwrap_or("spiritnet".to_string()),
+        kilt_endpoint: config.get_endpoint_url(),
         client_configs: config.clients.clone(),
         rhai_checkers: RhaiCheckerMap::new(),
     }));
