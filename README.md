@@ -21,7 +21,7 @@ You can use the resulting tokens with any service that supports JWT tokens.
 To run the service you need to create the configuration that contains all the needed keys and identifiers.
 To do this, generate a fresh DID for the service deployment and then create a config file from it.
 
-First assign your KILT account seed to a variable named SEED then run opendid-setup container.
+First assign your KILT account seed to a variable named `SEED` then run `opendid-setup` container.
 
 `SEED="dont try this seed its completely made up for this nice example"`
 
