@@ -21,9 +21,14 @@ You can use the resulting tokens with any service that supports JWT tokens.
 To run the service you need to create the configuration that contains all the needed keys and identifiers.
 To do this, generate a fresh DID for the service deployment and then create a config file from it.
 
+First assign your KILT account seed to a variable named SEED then run opendid-setup container.
+
+`SEED="dont try this seed its completely made up for this nice example"`
+
+If your account is on KILT Spiritnet, ensure that you include `ENDPOINT=spiritnet` environment variable; otherwise, the command will automatically default to Peregrine testnet chain.
+
 ```bash
-SEED="dont try this seed its completely made up for this nice example"
-podman run --rm -it -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
+podman run --rm -it -e "ENDPOINT=spiritnet" -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
 ```
 
 The command generates a set of new mnemonics and then derives a DID from it.
