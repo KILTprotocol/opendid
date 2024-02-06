@@ -51,7 +51,7 @@ Now you can open `http://localhost:3001` and see the login page, but don't login
 
 ### Integrate the service into your application
 
-A service needs to implement the [OpenID-Connect implicit [flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), which does the following:
+A service needs to implement the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), which does the following:
 
 - Redirects the user to the login page and then handle the redirect back to your application.
 - The redirect contains a JWT token in the URL. You can use this token to authenticate the user in your application.
