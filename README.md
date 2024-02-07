@@ -28,7 +28,7 @@ First assign your KILT account seed to a variable named `SEED` then run `opendid
 If your account is on KIILT Spiritnet, set `ENDPOINT="spiritnet"`; alternatively, if it is on the Peregrine Testnet, configure `ENDPOINT="peregrine"`.
 
 ```bash
-docker run --rm -it -e -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
+docker run --rm -it -e "ENDPOINT=spiritnet" -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
 ```
 
 The command generates a set of new mnemonics and then derives a DID from it.
