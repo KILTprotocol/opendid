@@ -9,25 +9,25 @@ images: main-image setup-image demo-image
 
 setup: config.yaml
 config.yaml: setup-image
-	podman run --rm -it -v $(shell pwd):/data $(SETUP_IMAGE) $(PAYMENT_SEED)
+	docker run --rm -it -v $(shell pwd):/data $(SETUP_IMAGE) $(PAYMENT_SEED)
 
 delete-did: opendid-setup-image
-	podman run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash $(SETUP_IMAGE) /app/scripts/delete-did.sh $(PAYMENT_SEED)
+	docker run --rm -it -v $(shell pwd):/data -w /data --entrypoint /bin/bash $(SETUP_IMAGE) /app/scripts/delete-did.sh $(PAYMENT_SEED)
 
 main-image: .main-image
-.main-image: scripts/Containerfile
-	podman build -t $(MAIN_IMAGE):latest -f scripts/Containerfile .
+.main-image: scripts/Dockerfile
+	docker build -t $(MAIN_IMAGE):latest -f scripts/Dockerfile .
 	touch .main-image
 
 setup-image: .setup-image
-.setup-image: scripts/setup.Containerfile scripts/setup.sh
-	podman build -t $(SETUP_IMAGE):latest -f scripts/setup.Containerfile .
+.setup-image: scripts/setup.Dockerfile scripts/setup.sh
+	docker build -t $(SETUP_IMAGE):latest -f scripts/setup.Dockerfile .
 	touch .setup-image
 
 
 demo-image: .demo-image
-.demo-image: scripts/demo.Containerfile
-	podman build -t $(DEMO_IMAGE):latest -f scripts/demo.Containerfile .
+.demo-image: scripts/demo.Dockerfile
+	docker build -t $(DEMO_IMAGE):latest -f scripts/demo.Dockerfile .
 	touch .demo-image
 
 push-dev-images: .main-image .setup-image .demo-image

@@ -15,6 +15,7 @@ async function main() {
                 break
             default:
                 endpoint = process.env.ENDPOINT
+                console.error('unhandled endpoint ${endpoint})
         }
     }
     console.debug(`Connecting to ${endpoint}...`)

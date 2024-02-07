@@ -11,7 +11,7 @@
 podman pod create --replace -p 1606:1606 -p 3001:3001 -p 2379:2379 -n opendid-test
 
 # start single node etcd deployment
-podman run -d --rm --pod opendid-test -v /usr/share/ca-certificates/:/etc/ssl/certs \
+docker run -d --rm --pod opendid-test -v /usr/share/ca-certificates/:/etc/ssl/certs \
   --name etcd quay.io/coreos/etcd \
   etcd \
   -name etcd0 \
@@ -24,13 +24,13 @@ podman run -d --rm --pod opendid-test -v /usr/share/ca-certificates/:/etc/ssl/ce
   -initial-cluster-state new
 
 # start the example client frontend
-podman run -d --rm \
+docker run -d --rm \
   --pod opendid-test \
   --name demo-frontend \
   docker.io/kiltprotocol/opendid-demo
 
 # start the simple auth relay app
-podman run -d --rm \
+docker run -d --rm \
   --pod opendid-test \
   --name opendid-backend \
   -e RUST_LOG=info \

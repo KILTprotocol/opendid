@@ -11,7 +11,7 @@ You can use the resulting tokens with any service that supports JWT tokens.
 - a KILT account with at least 3 KILT Coins
 - an identity wallet like [Sporran](https://www.sporran.org/)
 - a DID with a Verifiable Credential for testing, for example, from [SocialKYC](https://socialkyc.io)
-- a laptop or desktop computer with a container engine like podman or docker installed
+- `podman` or `docker` installed
 
   If you want to install podman on your machine (which is recommended), you can [follow the instructions](https://podman.io/getting-started/installation).
   If you have docker and want to stick with it, replace every occurrence of `podman` with `docker` in the following instructions.
@@ -25,10 +25,10 @@ First assign your KILT account seed to a variable named SEED then run opendid-se
 
 `SEED="dont try this seed its completely made up for this nice example"`
 
-If your account is on KILT Spiritnet, ensure that you include `ENDPOINT=spiritnet` environment variable; otherwise, the command will automatically default to Peregrine testnet chain.
+If your account is on KIILT Spiritnet, set `ENDPOINT="spiritnet"`; alternatively, if it is on the Peregrine Testnet, configure `ENDPOINT="peregrine"`.
 
 ```bash
-podman run --rm -it -e "ENDPOINT=spiritnet" -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
+docker run --rm -it -e -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
 ```
 
 The command generates a set of new mnemonics and then derives a DID from it.
@@ -46,7 +46,7 @@ In production, you need to place it in a secure location and only give read acce
 Now that you have the config file, you can run the service. For this, use the `docker.io/kiltprotocol/opendid` docker image.
 
 ```bash
-podman run -d --rm \
+docker run -d --rm \
     -v $(pwd)/config.yaml:/app/config.yaml \
     -p 3001:3001 \
     docker.io/kiltprotocol/opendid:latest
@@ -75,7 +75,7 @@ It's an [express](https://expressjs.com) application that exposes three things:
 Run the pre-configured demo application with the following command:
 
 ```bash
-podman run -it -d --rm \
+docker run -d -it --rm \
     --name demo-frontend \
     -p 1606:1606 \
     docker.io/kiltprotocol/opendid-demo
@@ -95,7 +95,7 @@ This uses the authentication key from the `did-secrets.json` file to delete the 
 
 ```bash
 SEED="dont try this seed its completely made up for this nice example"
-podman run --rm -it \
+docker run --rm -it \
     -v $(pwd):/data -w /data \
     --entrypoint /bin/bash \
     docker.io/kiltprotocol/opendid-setup:latest \
@@ -199,7 +199,7 @@ return false;
 You can now start the service bind-mounting the script and try it out.
 
 ```bash
-podman run -d --rm \
+docker run -d --rm \
     -v $(pwd)/config.yaml:/app/config.yaml \
     -v $(pwd)/checks:/app/checks \
     -p 3001:3001 \
