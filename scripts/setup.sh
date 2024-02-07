@@ -8,8 +8,14 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 PAYMENT_ACCOUNT_SEED=$1
-ENDPOINT=${ENDPOINT}
-
+if [[ ${ENDPOINT} == "spiritnet" ]]; then
+  TRUSTED_ATTESTER="did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"
+elif [[ ${ENDPOINT} == "peregrine" ]]; then
+  TRUSTED_ATTESTER="did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY"
+else
+  echo "Usage: docker run -e \"ENDPOINT=spiritnet\" || docker run -e \"ENDPOINT=peregrine "
+  exit 1
+fi
 echo "Generating DID..."
 npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"
 DID=$(cat did-document.json | jq -r .uri)
@@ -75,10 +81,10 @@ clients:
     # credential requirements
     # contains the credential requirements for the verifiers DID
     # if the user provides ANY of the listed credentials, the login is successful
-    # w3n:attester on peregrine and w3n:socialkyc on spiritnet are added as example trustedAttesters for email credential
+    # w3n:socialkyc on spiritnet or w3n:attester on peregrine are added as example trustedAttesters for email credential
     requirements:
       - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-        trustedAttesters: ["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY", "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
+        trustedAttesters: ["${TRUSTED_ATTESTER}"]
         requiredProperties: ["Email"]
     # valid redirect urls for this client
     redirectUrls:

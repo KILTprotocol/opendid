@@ -140,10 +140,9 @@ impl Config {
         match &self.kilt_endpoint {
             Some(e) => match e.as_str() {
                 "spiritnet" => "wss://spiritnet.kilt.io:443".to_string(),
-                "peregrine" => "wss://peregrine.kilt.io:443/parachain-public-ws".to_string(),
+                "peregrine" => "wss://peregrine.kilt.io:443/".to_string(),
                 _ => e.clone(),
             },
-            None => "wss://peregrine.kilt.io:443/parachain-public-ws".to_string(),
         }
     }
 }

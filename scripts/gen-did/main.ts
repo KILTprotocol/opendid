@@ -4,7 +4,7 @@ import { checkAndWriteFile, exportKeypairs, generateKeypairs, signingKeyType } f
 
 async function main() {
     // connect to kilt node
-    let endpoint = 'wss://peregrine.kilt.io/'
+    let endpoint = ''
     if (process.env.ENDPOINT) {
         switch (process.env.ENDPOINT) {
             case 'spiritnet':

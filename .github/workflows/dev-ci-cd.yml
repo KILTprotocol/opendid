@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/split-profiles
 
 name: Build container image
 

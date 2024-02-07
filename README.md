@@ -25,7 +25,7 @@ First assign your KILT account seed to a variable named `SEED` then run `opendid
 
 `SEED="dont try this seed its completely made up for this nice example"`
 
-If your account is on KIILT Spiritnet, set `ENDPOINT="spiritnet"`; alternatively, if it is on the Peregrine Testnet, configure `ENDPOINT="peregrine"`.
+If your account is on KIILT Spiritnet, set `ENDPOINT="spiritnet"`; alternatively, if it is on Peregrine Testnet, configure `ENDPOINT="peregrine"`.
 
 ```bash
 docker run --rm -it -e "ENDPOINT=spiritnet" -v $(pwd):/data docker.io/kiltprotocol/opendid-setup:latest "${SEED}"
