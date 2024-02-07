@@ -143,6 +143,7 @@ impl Config {
                 "peregrine" => "wss://peregrine.kilt.io:443/".to_string(),
                 _ => e.clone(),
             },
+            None => "".to_string(),
         }
     }
 }
