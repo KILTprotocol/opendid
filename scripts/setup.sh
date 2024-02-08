@@ -8,8 +8,8 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 PAYMENT_ACCOUNT_SEED=$1
-CTYPE_NAME= "Email"
-CTYPE_HASH= "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
+CTYPE_NAME="Email"
+CTYPE_HASH="0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
 if [[ ${ENDPOINT} == "spiritnet" ]]; then
   TRUSTED_ATTESTER="did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"
 elif [[ ${ENDPOINT} == "peregrine" ]]; then
