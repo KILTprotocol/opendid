@@ -8,8 +8,16 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 PAYMENT_ACCOUNT_SEED=$1
-ENDPOINT=${ENDPOINT:-peregrine}
-
+CTYPE_NAME= "Email"
+CTYPE_HASH= "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
+if [[ ${ENDPOINT} == "spiritnet" ]]; then
+  TRUSTED_ATTESTER="did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"
+elif [[ ${ENDPOINT} == "peregrine" ]]; then
+  TRUSTED_ATTESTER="did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY"
+else
+  echo "Usage: docker run -e \"ENDPOINT=spiritnet\" || docker run -e \"ENDPOINT=peregrine "
+  exit 1
+fi
 echo "Generating DID..."
 npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"
 DID=$(cat did-document.json | jq -r .uri)
@@ -47,7 +55,7 @@ session:
   naclPublicKey: "${KEYAGREEMENT_PUBKEY}"
   # session key used to encrypt the session data, needs to be the same on all instances
   sessionKey: "0x${SESSION_SECRET}"
-  # time in seconds a session lasts as default of 60 minutes 
+  # time in seconds a session lasts as default of 60 minutes
   sessionTtl: 3600
 
 # jwt config
@@ -75,10 +83,11 @@ clients:
     # credential requirements
     # contains the credential requirements for the verifiers DID
     # if the user provides ANY of the listed credentials, the login is successful
+    # w3n:socialkyc on spiritnet or w3n:attester on peregrine are added as example trustedAttesters for email CType
     requirements:
-      - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-        trustedAttesters: ["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY"]
-        requiredProperties: ["Email"]
+      - cTypeHash: "${CTYPE_HASH}"
+        trustedAttesters: ["${TRUSTED_ATTESTER}"]
+        requiredProperties: ["${CTYPE_NAME}"]
     # valid redirect urls for this client
     redirectUrls:
       - http://localhost:1606/callback.html

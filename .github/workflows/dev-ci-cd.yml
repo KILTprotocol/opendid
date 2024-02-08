@@ -29,7 +29,7 @@ jobs:
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASS: ${{ secrets.REPO_ACCESS_TOKEN }}
       run: |
-        echo -n $DOCKER_PASS | podman login -u $DOCKER_USER --password-stdin docker.io
+        echo -n $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io
 
     - name: Tag and push image
       env:
@@ -37,15 +37,15 @@ jobs:
         REPOSITORY_BASE: opendid
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        podman tag docker.io/kiltprotocol/opendid:latest ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
-        podman tag docker.io/kiltprotocol/opendid-demo:latest ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
-        podman tag docker.io/kiltprotocol/opendid-setup:latest ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
-        podman tag ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}:latest
-        podman tag ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
-        podman tag ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
-        podman push ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
-        podman push ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
-        podman push ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
-        podman push ${REGISTRY}/${REPOSITORY_BASE}:latest
-        podman push ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
-        podman push ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
+        docker tag docker.io/kiltprotocol/opendid:latest ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
+        docker tag docker.io/kiltprotocol/opendid-demo:latest ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
+        docker tag docker.io/kiltprotocol/opendid-setup:latest ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
+        docker tag ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}:latest
+        docker tag ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
+        docker tag ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
+        docker push ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
+        docker push ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
+        docker push ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
+        docker push ${REGISTRY}/${REPOSITORY_BASE}:latest
+        docker push ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
+        docker push ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
