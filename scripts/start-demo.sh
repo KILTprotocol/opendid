@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # create a pod to hold backend and frontend
-podman pod create --replace -p 1606:1606 -p 3001:3001 -n opendid-test
+docker pod create --replace -p 1606:1606 -p 3001:3001 -n opendid-test
 
 # start the simple auth relay app
 docker run -d --rm \
