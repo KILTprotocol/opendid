@@ -110,6 +110,7 @@ If you want to dynamically create or remove OpenID Connect clients, you can conf
 To do so, configure the connection parameters for the etcd cluster in the `config.yaml` file.
 
 ```yaml
+
 ---
 etcd:
     endpoints: ["localhost:2379"]
@@ -162,6 +163,7 @@ To try it out you have to add a `checksDirectory` entry to the client configurat
 Example:
 
 ```yaml
+
 ---
 clients:
     example-client:
