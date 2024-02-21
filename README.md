@@ -197,7 +197,7 @@ if token.pro.Email.ends_with(SUFFIX) {
 return false;
 ```
 
-You can now start the service bind-mounting the script and try it out. If you wish to execute the service on the Peregrine runtime, you must modify the environment variable RUNTIME to "peregrine".
+You can now start the service bind-mounting the script and try it out.
 
 ```bash
 docker run -d --rm \
@@ -207,6 +207,10 @@ docker run -d --rm \
     -p 3001:3001 \
     docker.io/kiltprotocol/opendid:latest
 ```
+
+> **NOTE**
+>
+> If you wish to execute the service on the Peregrine runtime, you must modify the environment variable RUNTIME to "peregrine".
 
 When you now log in with a user that has an email address ending with `kilt.io` the service allows you to log in.
 If you use a different email address, the service denies you access.
