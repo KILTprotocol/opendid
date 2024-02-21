@@ -8,13 +8,13 @@ You can use the resulting tokens with any service that supports JWT tokens.
 
 ### Prerequisites
 
-- a KILT account with at least 3 KILT Coins
-- an identity wallet like [Sporran](https://www.sporran.org/)
-- a DID with a Verifiable Credential for testing, for example, from [SocialKYC](https://socialkyc.io)
-- `podman` or `docker` installed
+-   a KILT account with at least 3 KILT Coins
+-   an identity wallet like [Sporran](https://www.sporran.org/)
+-   a DID with a Verifiable Credential for testing, for example, from [SocialKYC](https://socialkyc.io)
+-   `podman` or `docker` installed
 
-  If you want to install podman on your machine (which is recommended), you can [follow the instructions](https://podman.io/getting-started/installation).
-  If you have docker and want to stick with it, replace every occurrence of `podman` with `docker` in the following instructions.
+    If you want to install podman on your machine (which is recommended), you can [follow the instructions](https://podman.io/getting-started/installation).
+    If you have docker and want to stick with it, replace every occurrence of `podman` with `docker` in the following instructions.
 
 ### Generate the config file
 
@@ -58,19 +58,19 @@ Now you can open `http://localhost:3001` and see the login page, but don't login
 
 A service needs to implement the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), which does the following:
 
-- Redirects the user to the login page and then handle the redirect back to your application.
-- The redirect contains a JWT token in the URL. You can use this token to authenticate the user in your application.
-- The token contains the DID of the user and the claims from the Verifiable Credential used to authenticate the user.
-- You can use this information to check if the user is allowed to access your application.
+-   Redirects the user to the login page and then handle the redirect back to your application.
+-   The redirect contains a JWT token in the URL. You can use this token to authenticate the user in your application.
+-   The token contains the DID of the user and the claims from the Verifiable Credential used to authenticate the user.
+-   You can use this information to check if the user is allowed to access your application.
 
 #### Example
 
 The example code at [demo-project](./demo-project/) contains a minimal application that follows the flow above using opendid.
 It's an [express](https://expressjs.com) application that exposes three things:
 
-- A login page that handles the dispatching of the user to the opendid
-- A callback page for the openid connect flow to accept the token
-- A protected resource that only authenticated users can access
+-   A login page that handles the dispatching of the user to the opendid
+-   A callback page for the openid connect flow to accept the token
+-   A protected resource that only authenticated users can access
 
 Run the pre-configured demo application with the following command:
 
@@ -110,25 +110,23 @@ If you want to dynamically create or remove OpenID Connect clients, you can conf
 To do so, configure the connection parameters for the etcd cluster in the `config.yaml` file.
 
 ```yaml
-...
 etcd:
-  endpoints: ["localhost:2379"]
-  user: etcd-user
-  password: my-password
-  tlsDomainName: my.etcd.cluster.example.com
-  tlsCaCert: |
-    -----BEGIN CERTIFICATE-----
-    <ca certificate data>
-    -----END CERTIFICATE-----
-  tlsClientCert: |
-    -----BEGIN CERTIFICATE-----
-    <client certificate data>
-    -----END CERTIFICATE-----
-  tlsClientKey: |
-    -----BEGIN RSA PRIVATE KEY-----
-    <client key data>
-    -----END RSA PRIVATE KEY-----
-...
+    endpoints: ["localhost:2379"]
+    user: etcd-user
+    password: my-password
+    tlsDomainName: my.etcd.cluster.example.com
+    tlsCaCert: |
+        -----BEGIN CERTIFICATE-----
+        <ca certificate data>
+        -----END CERTIFICATE-----
+    tlsClientCert: |
+        -----BEGIN CERTIFICATE-----
+        <client certificate data>
+        -----END CERTIFICATE-----
+    tlsClientKey: |
+        -----BEGIN RSA PRIVATE KEY-----
+        <client key data>
+        -----END RSA PRIVATE KEY-----
 ```
 
 All fields except `endpoints` are optional and depending on your etcd setup you might not need them.
@@ -163,17 +161,20 @@ To try it out you have to add a `checksDirectory` entry to the client configurat
 Example:
 
 ```yaml
-...
+---
 clients:
-  example-client:
-    requirements:
-      - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-        trustedAttesters: ["did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY", "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare"]
-        requiredProperties: ["Email"]
-    redirectUrls:
-      - http://localhost:1606/callback.html
-    checksDirectory: /app/checks
-...
+    example-client:
+        requirements:
+            - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
+              trustedAttesters:
+                  [
+                      "did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY",
+                      "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare",
+                  ]
+              requiredProperties: ["Email"]
+        redirectUrls:
+            - http://localhost:1606/callback.html
+        checksDirectory: /app/checks
 ```
 
 Now create a directory `checks` in the same directory as the `config.yaml` file and add a file `example-check.rhai` with the following content:
@@ -202,9 +203,14 @@ You can now start the service bind-mounting the script and try it out.
 docker run -d --rm \
     -v $(pwd)/config.yaml:/app/config.yaml \
     -v $(pwd)/checks:/app/checks \
+    -e RUNTIME=spiritnet \
     -p 3001:3001 \
     docker.io/kiltprotocol/opendid:latest
 ```
+
+> **NOTE**
+>
+> If you wish to execute the service on the Peregrine runtime, you must modify the environment variable RUNTIME to "peregrine".
 
 When you now log in with a user that has an email address ending with `kilt.io` the service allows you to log in.
 If you use a different email address, the service denies you access.
