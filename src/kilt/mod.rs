@@ -6,7 +6,7 @@ use subxt::{config::polkadot::PolkadotExtrinsicParams, config::Config, OnlineCli
 pub mod kilt {}
 
 #[cfg(not(feature = "peregrine"))]
-#[subxt::subxt(runtime_metadata_path = "./metadata-spiritnet-11110.scale")]
+#[subxt::subxt(runtime_metadata_path = "./metadata-spiritnet-11210.scale")]
 pub mod kilt {}
 
 pub use kilt::*;

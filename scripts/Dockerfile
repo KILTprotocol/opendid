@@ -1,9 +1,11 @@
 FROM rust:1.72-bookworm as builder-rs
 WORKDIR /app
 RUN apt update && apt install protobuf-compiler -y
-COPY Cargo.toml Cargo.lock metadata-peregrine-11210.scale metadata-spiritnet-11110.scale ./
+COPY Cargo.toml Cargo.lock metadata-peregrine-11210.scale metadata-spiritnet-11210.scale ./
 COPY src ./src
-RUN cargo build --release --bins
+
+RUN cargo build --release --bin=opendid_peregrine --features=peregrine
+RUN cargo build --release --bin=opendid_spiritnet
 
 FROM node:alpine as builder-frontend
 
