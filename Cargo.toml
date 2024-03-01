@@ -48,9 +48,9 @@ default = []
 peregrine = []
 
 [[bin]]
-features = ["peregrine"]
 name = "opendid_peregrine"
 path = "src/main.rs"
+required-features = ["peregrine"]
 
 [[bin]]
 name = "opendid_spiritnet"
