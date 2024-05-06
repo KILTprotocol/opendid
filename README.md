@@ -8,23 +8,27 @@ You can use the resulting tokens with any service that supports JWT tokens.
 
 ### Prerequisites
 
--   a KILT account with at least 3 KILT Coins
--   an identity wallet like [Sporran](https://www.sporran.org/)
--   a DID with a Verifiable Credential for testing, for example, from [SocialKYC](https://socialkyc.io)
--   `podman` or `docker` installed
+- a KILT account with at least 3 KILT Coins
+- an identity wallet like [Sporran](https://www.sporran.org/)
+- a DID with a Verifiable Credential for testing, for example, from [SocialKYC](https://socialkyc.io)
+- `podman` or `docker` installed
 
-    If you want to install podman on your machine (which is recommended), you can [follow the instructions](https://podman.io/getting-started/installation).
-    If you have docker and want to stick with it, replace every occurrence of `podman` with `docker` in the following instructions.
+  If you want to install podman on your machine (which is recommended), you can [follow the instructions](https://podman.io/getting-started/installation).
+  If you have docker and want to stick with it, replace every occurrence of `podman` with `docker` in the following instructions.
 
 ### Generate the config file
 
 To run the service you need to create the configuration that contains all the needed keys and identifiers.
-To do this, generate a fresh DID for the service deployment and then create a config file from it.
 
-First assign your KILT account seed to a variable named `SEED` then run `opendid-setup` container.
+The container `opendid-setup` can generate a fresh DID and a corresponding configuration file for the service deployment.
+For the DID creation, it requires an account with funds.
+Assign the account seed to the environment variable `SEED` before running the container.
+
+Right now `opendid-setup` only supports seeds of accounts made with the **sr25519** scheme (like the ones created through [Sporran](https://www.sporran.org/)).
 
 `SEED="dont try this seed its completely made up for this nice example"`
 
+Additionally, the container needs to know which chain to interact to with.
 If your account is on KILT Spiritnet, set `ENDPOINT="spiritnet"`; alternatively, if it is on the Peregrine Testnet, configure `ENDPOINT="peregrine"`.
 
 ```bash
@@ -43,11 +47,17 @@ In production, you need to place it in a secure location and only give read acce
 
 ### Run the service
 
-Now that you have the config file, you can run the service. For this, use the `docker.io/kiltprotocol/opendid` docker image.
+Now that you have the config file, you can run the service. For this:
+
+1.  Specify the runtime through the environment variable `RUNTIME`.  
+    Either `RUNTIME="spiritnet"` for the production KILT chain or `RUNTIME="peregrine"` for the KILT test net.
+2.  Run the `docker.io/kiltprotocol/opendid` docker image .
 
 ```bash
 docker run -d --rm \
     -v $(pwd)/config.yaml:/app/config.yaml \
+    -v $(pwd)/checks:/app/checks \
+    -e "RUNTIME=${RUNTIME}" \
     -p 3001:3001 \
     docker.io/kiltprotocol/opendid:latest
 ```
@@ -58,19 +68,19 @@ Now you can open `http://localhost:3001` and see the login page, but don't login
 
 A service needs to implement the [OpenID-Connect implicit flow](https://openid.net/specs/openid-connect-implicit-1_0.html#ImplicitFlow), which does the following:
 
--   Redirects the user to the login page and then handle the redirect back to your application.
--   The redirect contains a JWT token in the URL. You can use this token to authenticate the user in your application.
--   The token contains the DID of the user and the claims from the Verifiable Credential used to authenticate the user.
--   You can use this information to check if the user is allowed to access your application.
+- Redirects the user to the login page and then handle the redirect back to your application.
+- The redirect contains a JWT token in the URL. You can use this token to authenticate the user in your application.
+- The token contains the DID of the user and the claims from the Verifiable Credential used to authenticate the user.
+- You can use this information to check if the user is allowed to access your application.
 
 #### Example
 
 The example code at [demo-project](./demo-project/) contains a minimal application that follows the flow above using opendid.
 It's an [express](https://expressjs.com) application that exposes three things:
 
--   A login page that handles the dispatching of the user to the opendid
--   A callback page for the openid connect flow to accept the token
--   A protected resource that only authenticated users can access
+- A login page that handles the dispatching of the user to the opendid
+- A callback page for the openid connect flow to accept the token
+- A protected resource that only authenticated users can access
 
 Run the pre-configured demo application with the following command:
 
@@ -111,22 +121,22 @@ To do so, configure the connection parameters for the etcd cluster in the `confi
 
 ```yaml
 etcd:
-    endpoints: ["localhost:2379"]
-    user: etcd-user
-    password: my-password
-    tlsDomainName: my.etcd.cluster.example.com
-    tlsCaCert: |
-        -----BEGIN CERTIFICATE-----
-        <ca certificate data>
-        -----END CERTIFICATE-----
-    tlsClientCert: |
-        -----BEGIN CERTIFICATE-----
-        <client certificate data>
-        -----END CERTIFICATE-----
-    tlsClientKey: |
-        -----BEGIN RSA PRIVATE KEY-----
-        <client key data>
-        -----END RSA PRIVATE KEY-----
+  endpoints: ["localhost:2379"]
+  user: etcd-user
+  password: my-password
+  tlsDomainName: my.etcd.cluster.example.com
+  tlsCaCert: |
+    -----BEGIN CERTIFICATE-----
+    <ca certificate data>
+    -----END CERTIFICATE-----
+  tlsClientCert: |
+    -----BEGIN CERTIFICATE-----
+    <client certificate data>
+    -----END CERTIFICATE-----
+  tlsClientKey: |
+    -----BEGIN RSA PRIVATE KEY-----
+    <client key data>
+    -----END RSA PRIVATE KEY-----
 ```
 
 All fields except `endpoints` are optional and depending on your etcd setup you might not need them.
@@ -163,18 +173,18 @@ Example:
 ```yaml
 ---
 clients:
-    example-client:
-        requirements:
-            - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
-              trustedAttesters:
-                  [
-                      "did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY",
-                      "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare",
-                  ]
-              requiredProperties: ["Email"]
-        redirectUrls:
-            - http://localhost:1606/callback.html
-        checksDirectory: /app/checks
+  example-client:
+    requirements:
+      - cTypeHash: "0x3291bb126e33b4862d421bfaa1d2f272e6cdfc4f96658988fbcffea8914bd9ac"
+        trustedAttesters:
+          [
+            "did:kilt:4pehddkhEanexVTTzWAtrrfo2R7xPnePpuiJLC7shQU894aY",
+            "did:kilt:4pnfkRn5UurBJTW92d9TaVLR2CqJdY4z5HPjrEbpGyBykare",
+          ]
+        requiredProperties: ["Email"]
+    redirectUrls:
+      - http://localhost:1606/callback.html
+    checksDirectory: /app/checks
 ```
 
 Now create a directory `checks` in the same directory as the `config.yaml` file and add a file `example-check.rhai` with the following content:
