@@ -47,11 +47,17 @@ In production, you need to place it in a secure location and only give read acce
 
 ### Run the service
 
-Now that you have the config file, you can run the service. For this, use the `docker.io/kiltprotocol/opendid` docker image.
+Now that you have the config file, you can run the service. For this:
+
+1.  Specify the runtime through the environment variable `RUNTIME`.  
+ Either `RUNTIME="spiritnet"` for the production KILT chain or `RUNTIME="peregrine"` for the KILT test net. 
+2.  Run the `docker.io/kiltprotocol/opendid` docker image .
 
 ```bash
 docker run -d --rm \
     -v $(pwd)/config.yaml:/app/config.yaml \
+    -v $(pwd)/checks:/app/checks \
+    -e "RUNTIME=${RUNTIME}" \
     -p 3001:3001 \
     docker.io/kiltprotocol/opendid:latest
 ```
