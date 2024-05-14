@@ -1,7 +1,7 @@
 use crate::{error::Error, AppState};
 use actix_web::{post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use std::sync::RwLock;
+use tokio::sync::RwLock;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TokenResponse {
@@ -28,7 +28,7 @@ async fn post_token_handler(
     }
 
     let token_storage = {
-        let app_state = app_state.read()?;
+        let app_state = app_state.read().await;
         app_state.token_storage.clone()
     };
 
@@ -41,7 +41,7 @@ async fn post_token_handler(
         return Err(Error::RedirectUri);
     }
 
-    let app_state = app_state.read()?;
+    let app_state = app_state.read().await;
 
     app_state
         .client_configs

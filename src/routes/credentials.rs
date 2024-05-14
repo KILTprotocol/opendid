@@ -161,7 +161,7 @@ async fn post_credential_handler(
         serde_json::from_slice(&decrypted_msg).map_err(|_| Error::FailedToParseMessage)?;
 
     let token_storage = {
-        let app_state = app_state.read()?;
+        let app_state = app_state.read().await;
         app_state.token_storage.clone()
     };
 
@@ -265,20 +265,26 @@ async fn post_credential_handler(
 
     // construct id_token and refresh_token
     let nonce = oidc_context.nonce.clone();
-    let mut app_state = app_state.write()?; // may update the rhai checkers
-    let id_token = app_state
+    let app_state_read = app_state.read().await;
+    let id_token = app_state_read
         .jwt_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)
-        .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
+        .to_jwt(
+            &app_state_read.jwt_secret_key,
+            &app_state_read.jwt_algorithm,
+        )
         .map_err(|e| {
             log::error!("Failed to create id token: {}", e);
             Error::CreateJWT
         })?;
 
-    let refresh_token = app_state
+    let refresh_token = app_state_read
         .jwt_builder
         .new_refresh_token(&content.sender, &w3n, &props, &nonce)
-        .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
+        .to_jwt(
+            &app_state_read.jwt_secret_key,
+            &app_state_read.jwt_algorithm,
+        )
         .map_err(|e| {
             log::error!("Failed to create refresh token: {}", e);
             Error::CreateJWT
@@ -289,15 +295,19 @@ async fn post_credential_handler(
         .get(&oidc_context.client_id)
         .ok_or(Error::OauthInvalidClientId)?;
     if let Some(checks_directory) = &client_config.checks_directory {
-        let checker = app_state
+        let mut app_state_write = app_state.write().await;
+        let checker = app_state_write
             .rhai_checkers
             .get_or_create(&oidc_context.client_id, checks_directory)?;
         checker.check(&id_token)?;
+        drop(app_state_write);
     }
 
     let response_type = session
         .get::<String>(RESPONSE_TYPE_SESSION_KEY)?
         .ok_or(Error::ResponseType)?;
+
+    drop(app_state_read);
 
     if response_type == "code" {
         log::info!("Authorization Code Flow");
