@@ -3,8 +3,8 @@ use actix_web::{post, web, HttpResponse};
 use base64::{engine::general_purpose, Engine};
 use sha2::{Digest, Sha512};
 use sp_runtime::traits::Verify;
-use std::sync::RwLock;
 use subxt::ext::codec::{Decode, IoReader};
+use tokio::sync::RwLock;
 
 use crate::{
     constants::OIDC_SESSION_KEY,
@@ -112,7 +112,7 @@ async fn login_with_did(
     let sender = &jwt_payload.iss;
 
     let endpoint = {
-        let app_state = app_state.read()?;
+        let app_state = app_state.read().await;
         app_state.kilt_endpoint.clone()
     };
     let cli = kilt::connect(&endpoint)
@@ -179,7 +179,7 @@ async fn login_with_did(
 
     //construct id_token and refresh_token
 
-    let mut app_state = app_state.write()?; // may update the rhai checkers
+    let mut app_state = app_state.write().await; // may update the rhai checkers
     let id_token = app_state
         .jwt_builder
         .new_id_token(sender, &w3n, &props, &Some(nonce.clone()))

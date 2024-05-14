@@ -1,5 +1,3 @@
-use std::sync::RwLock;
-
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
 
@@ -7,6 +5,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use sodiumoxide::crypto::box_;
+use tokio::sync::RwLock;
 
 use crate::{
     routes::error::Error,
@@ -55,7 +54,7 @@ async fn challenge_handler(
     app_state: web::Data<RwLock<AppState>>,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET challenge handler");
-    let app_state = app_state.read()?;
+    let app_state = app_state.read().await;
     let challenge_data = ChallengeData::new(&app_state.app_name, &app_state.encryption_key_uri);
     session.insert("challenge", challenge_data.clone())?;
     Ok(HttpResponse::Ok().json(challenge_data))
@@ -69,7 +68,7 @@ async fn challenge_response_handler(
     challenge_response: web::Json<ChallengeResponse>,
 ) -> Result<HttpResponse, Error> {
     log::info!("POST challenge handler");
-    let app_state = app_state.read()?;
+    let app_state = app_state.read().await;
     let session_challenge_bytes = session
         .get::<ChallengeData>("challenge")?
         .ok_or(Error::SessionGet)?
