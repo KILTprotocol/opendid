@@ -3,8 +3,12 @@ import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { expressjwt as jwt } from 'express-jwt'
+import bodyParser from 'body-parser'
+import * as jsonwebtoken from 'jsonwebtoken';
 
 const app = express()
+app.use(bodyParser.json())
+
 const port = 1606
 
 // Get secret used to verify JWT tokens from TOKEN_SECRET environment variable
@@ -47,6 +51,29 @@ app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req,
   const name = token.w3n ? `w3n:${token.w3n}` : token.sub
   res.send('Hello from protected route ' + name)
 })
+
+// This is a protected endpoint that requires a valid Authorization Code.
+app.post('/protected/AuthorizationCode', async (req, res) => {
+  let codeRequestBody = {
+    code: req.body.Authorizationcode,
+    grant_type: "authroization_code",
+    redirect_uri: "http://localhost:1606/callback.html",
+    client_id: "example-client"
+  }
+  let response: Response = await fetch("http://localhost:3001/api/v1/token", { method: "POST", headers: [["Content-Type", "Application/json"]], body: JSON.stringify(codeRequestBody) });
+  let idToken = (await response.json()).id_token;
+
+  let decodedToken: any = jsonwebtoken.verify(idToken, tokenSecret);
+  // @ts-ignore
+  if (decodedToken.nonce !== req.cookies.nonce) {
+    res.status(401).send('Invalid nonce')
+    return
+  }
+  // use the token to get the user's web3 name, if not present use the users DID
+  const name = decodedToken.w3n ? `w3n:${decodedToken.w3n}` : decodedToken.sub
+  res.send('Hello from protected route ' + name)
+})
+
 
 // Serve the rest of the static files
 app.use('/', express.static('demo-frontend'))

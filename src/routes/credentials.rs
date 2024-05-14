@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
+use base64::Engine;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use sodiumoxide::crypto::box_;
@@ -10,12 +12,14 @@ use tokio::sync::RwLock;
 
 use crate::{
     config::CredentialRequirement,
-    constants::OIDC_SESSION_KEY,
+    constants::{
+        OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_CODE, RESPONSE_TYPE_SESSION_KEY,
+    },
     kilt::{self, parse_encryption_key_from_lightdid},
     messages::{EncryptedMessage, Message, MessageBody},
     routes::{error::Error, AuthorizeQueryParameters},
     verify::verify_credential_message,
-    AppState,
+    AppState, TokenResponse,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -158,6 +162,11 @@ async fn post_credential_handler(
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         serde_json::from_slice(&decrypted_msg).map_err(|_| Error::FailedToParseMessage)?;
 
+    let token_storage = {
+        let app_state = app_state.read()?;
+        app_state.token_storage.clone()
+    };
+
     // get the challenge from the session
     let challenge_hex = session
         .get::<String>("credential-challenge")?
@@ -257,8 +266,8 @@ async fn post_credential_handler(
         .unwrap_or("".into());
 
     // construct id_token and refresh_token
-    let nonce = Some(oidc_context.nonce.clone());
-    let mut app_state = app_state.write().await; // may update the rhai checkers
+    let nonce = oidc_context.nonce.clone();
+    let mut app_state = app_state.write()?; // may update the rhai checkers
     let id_token = app_state
         .jwt_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)
@@ -288,17 +297,63 @@ async fn post_credential_handler(
         checker.check(&id_token)?;
     }
 
-    // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own
-    Ok(HttpResponse::NoContent()
-        .append_header((
-            "Location",
-            format!(
-                "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
-                oidc_context.redirect_uri.clone(),
-                id_token,
-                refresh_token,
-                oidc_context.state.clone(),
-            ),
-        ))
-        .finish())
+    let response_type = session
+        .get::<String>(RESPONSE_TYPE_SESSION_KEY)?
+        .ok_or(Error::ResponseType)?;
+
+    if response_type == "code" {
+        log::info!("Authorization code flow");
+        // Create a random string URL encoded as the code.
+        let mut bytes = vec![0; 45];
+        let mut rng = rand::thread_rng();
+        rng.fill(&mut bytes[..]);
+        let code = base64::engine::general_purpose::URL_SAFE.encode(bytes);
+
+        // Store (code -> token_response) so it can be sent later at the `/token` endpont.
+        let token_response = TokenResponse {
+            token_type: "Bearer".to_string(),
+            refresh_token,
+            id_token,
+        };
+        token_storage
+            .insert(
+                code.clone(),
+                (
+                    token_response.clone(),
+                    session
+                        .get(REDIRECT_URI_SESSION_KEY)?
+                        .ok_or(Error::RedirectUri)?,
+                ),
+            )
+            .await;
+
+        // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own
+        Ok(HttpResponse::NoContent()
+            .append_header((
+                "Location",
+                format!(
+                    "{}#code={}&state={}",
+                    oidc_context.redirect_uri.clone(),
+                    code,
+                    oidc_context.state.clone(),
+                ),
+            ))
+            .finish())
+    } else if response_type == "id_token" {
+        log::info!("Implicit flow");
+        Ok(HttpResponse::NoContent()
+            .append_header((
+                "Location",
+                format!(
+                    "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
+                    oidc_context.redirect_uri.clone(),
+                    id_token,
+                    refresh_token,
+                    oidc_context.state.clone(),
+                ),
+            ))
+            .finish())
+    } else {
+        Err(Error::UnsupportedFlow)
+    }
 }

@@ -182,7 +182,7 @@ async fn login_with_did(
     let mut app_state = app_state.write().await; // may update the rhai checkers
     let id_token = app_state
         .jwt_builder
-        .new_id_token(sender, &w3n, &props, &Some(nonce.clone()))
+        .new_id_token(sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
         .map_err(|e| {
             log::error!("Failed to create id token: {}", e);
@@ -191,7 +191,7 @@ async fn login_with_did(
 
     let refresh_token = app_state
         .jwt_builder
-        .new_refresh_token(sender, &w3n, &props, &Some(nonce.clone()))
+        .new_refresh_token(sender, &w3n, &props, &nonce)
         .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
         .map_err(|e| {
             log::error!("Failed to create refresh token: {}", e);
