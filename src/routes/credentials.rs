@@ -300,14 +300,14 @@ async fn post_credential_handler(
         .ok_or(Error::ResponseType)?;
 
     if response_type == "code" {
-        log::info!("Authorization code flow");
-        // Create a random string URL encoded as the code.
+        log::info!("Authorization Code Flow");
+        // Generate a random URL encoded string as the Authorization Code.
         let mut bytes = vec![0; 45];
         let mut rng = rand::thread_rng();
         rng.fill(&mut bytes[..]);
         let code = base64::engine::general_purpose::URL_SAFE.encode(bytes);
 
-        // Store (code -> token_response) so it can be sent later at the `/token` endpont.
+        // Store (code -> token_response) so it can be sent later at the `/token` endpoint.
         let token_response = TokenResponse {
             token_type: "Bearer".to_string(),
             refresh_token,
@@ -325,7 +325,7 @@ async fn post_credential_handler(
             )
             .await;
 
-        // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own
+        // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own.
         Ok(HttpResponse::NoContent()
             .append_header((
                 "Location",

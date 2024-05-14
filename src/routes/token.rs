@@ -38,7 +38,7 @@ async fn post_token_handler(
         .ok_or(Error::InvalidAuthenticationCode)?;
 
     if body.redirect_uri != stored_redirect_uri {
-        return Err(Error::RedirectUri).into();
+        return Err(Error::RedirectUri);
     }
 
     let app_state = app_state.read()?;

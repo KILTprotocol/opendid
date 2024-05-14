@@ -55,10 +55,10 @@ impl std::fmt::Display for Error {
             Error::ResponseType => write!(f, "Invalid response-type"),
             Error::RedirectUri => write!(f, "Missing or mismatched redirect_uri"),
             Error::InvalidAuthenticationCode => {
-                write!(f, "Authorization code is invalid or expired")
+                write!(f, "Authorization Code is invalid or expired")
             }
             Error::UnsupportedFlow => write!(f, "Unsupported authorization processing flow"),
-            Error::InvalidGrantType => write!(f, "Invalid grant type"),
+            Error::InvalidGrantType => write!(f, "Invalid grant-type value"),
         }
     }
 }
@@ -79,6 +79,7 @@ impl From<Error> for actix_web::Error {
             | Error::RedirectUri
             | Error::UnsupportedFlow
             | Error::InvalidGrantType
+            | Error::ResponseType
             | Error::GetChallenge => actix_web::error::ErrorBadRequest(e),
             // unauthorized
             Error::SessionGet
@@ -92,7 +93,6 @@ impl From<Error> for actix_web::Error {
             | Error::CantConnectToBlockchain
             | Error::CreateJWT
             | Error::Internal(_)
-            | Error::ResponseType
             | Error::LockPoison => {
                 log::error!("Internal Error: {}", e);
                 actix_web::error::ErrorInternalServerError("Internal Error")
