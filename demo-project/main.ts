@@ -56,7 +56,7 @@ app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req,
 app.post('/protected/AuthorizationCode', async (req, res) => {
   let codeRequestBody = {
     code: req.body.Authorizationcode,
-    grant_type: "authroization_code",
+    grant_type: "authorization_code",
     redirect_uri: "http://localhost:1606/callback.html",
     client_id: "example-client"
   }
