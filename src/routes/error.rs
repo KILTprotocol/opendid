@@ -54,9 +54,11 @@ impl std::fmt::Display for Error {
             Error::Internal(s) => write!(f, "Internal error: {}", s),
             Error::ResponseType => write!(f, "Invalid response-type"),
             Error::RedirectUri => write!(f, "Missing or mismatched redirect_uri"),
-            Error::InvalidAuthenticationCode => write!(f, "Authorization code is invalid or expired"),
+            Error::InvalidAuthenticationCode => {
+                write!(f, "Authorization code is invalid or expired")
+            }
             Error::UnsupportedFlow => write!(f, "Unsupported authorization processing flow"),
-            Error::InvalidGrantType => write!(f, "Invalid grant type")
+            Error::InvalidGrantType => write!(f, "Invalid grant type"),
         }
     }
 }

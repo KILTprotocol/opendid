@@ -24,14 +24,13 @@ async fn post_token_handler(
     body: web::Json<TokenRequeryBody>,
 ) -> Result<HttpResponse, Error> {
     if body.grant_type != "authorization_code" {
-        return Err(Error::InvalidGrantType)
+        return Err(Error::InvalidGrantType);
     }
 
     let token_storage = {
         let app_state = app_state.read()?;
         app_state.token_storage.clone()
     };
-
 
     let (token_response, stored_redirect_uri) = token_storage
         .remove(&body.code)
