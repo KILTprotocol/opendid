@@ -12,9 +12,7 @@ use tokio::sync::RwLock;
 
 use crate::{
     config::CredentialRequirement,
-    constants::{
-        OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_CODE, RESPONSE_TYPE_SESSION_KEY,
-    },
+    constants::{OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_SESSION_KEY},
     kilt::{self, parse_encryption_key_from_lightdid},
     messages::{EncryptedMessage, Message, MessageBody},
     routes::{error::Error, AuthorizeQueryParameters},
