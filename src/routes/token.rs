@@ -11,7 +11,7 @@ pub struct TokenResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TokenRequeryBody {
+pub struct TokenRequestBody {
     pub grant_type: String,
     pub code: String,
     pub redirect_uri: String,
@@ -21,7 +21,7 @@ pub struct TokenRequeryBody {
 #[post("/api/v1/token")]
 async fn post_token_handler(
     app_state: web::Data<RwLock<AppState>>,
-    body: web::Json<TokenRequeryBody>,
+    body: web::Json<TokenRequestBody>,
 ) -> Result<HttpResponse, Error> {
     if body.grant_type != "authorization_code" {
         return Err(Error::InvalidGrantType);
