@@ -5,6 +5,7 @@ use tokio::sync::RwLock;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TokenResponse {
+    pub access_token: String,
     pub token_type: String,
     pub refresh_token: String,
     pub id_token: String,

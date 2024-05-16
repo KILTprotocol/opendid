@@ -320,6 +320,7 @@ async fn post_credential_handler(
         // Store (code -> token_response) so it can be sent later at the `/token` endpoint.
         let token_response = TokenResponse {
             token_type: "Bearer".to_string(),
+            access_token: "null".to_string(),
             refresh_token,
             id_token,
         };
