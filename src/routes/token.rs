@@ -14,7 +14,7 @@ pub struct TokenResponse {
 pub struct TokenRequestBody {
     pub grant_type: String,
     pub code: String,
-    pub redirect_uri: String,
+    // pub redirect_uri: String,
 }
 
 #[post("/api/v1/token")]
@@ -22,7 +22,11 @@ async fn post_token_handler(
     app_state: web::Data<RwLock<AppState>>,
     body: web::Json<TokenRequestBody>,
 ) -> Result<HttpResponse, Error> {
+    log::info!("POST token");
+
+
     if body.grant_type != "authorization_code" {
+    log::info!("invaild grant_type");
         return Err(Error::InvalidGrantType);
     }
 
@@ -36,9 +40,9 @@ async fn post_token_handler(
         .await
         .ok_or(Error::InvalidAuthenticationCode)?;
 
-    if body.redirect_uri != stored_redirect_uri {
-        return Err(Error::RedirectUri);
-    }
+    // if body.redirect_uri != stored_redirect_uri {
+    //     return Err(Error::RedirectUri);
+    // }
 
     Ok(HttpResponse::Ok()
         .append_header(("Cache-Control", "no-store"))
