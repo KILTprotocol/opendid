@@ -340,7 +340,7 @@ async fn post_credential_handler(
             .append_header((
                 "Location",
                 format!(
-                    "{}#code={}&state={}",
+                    "{}?code={}&state={}",
                     oidc_context.redirect_uri.clone(),
                     code,
                     oidc_context.state.clone(),
