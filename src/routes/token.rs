@@ -15,7 +15,6 @@ pub struct TokenRequestBody {
     pub grant_type: String,
     pub code: String,
     pub redirect_uri: String,
-    pub client_id: String,
 }
 
 #[post("/api/v1/token")]
@@ -40,13 +39,6 @@ async fn post_token_handler(
     if body.redirect_uri != stored_redirect_uri {
         return Err(Error::RedirectUri);
     }
-
-    let app_state = app_state.read().await;
-
-    app_state
-        .client_configs
-        .get(&body.client_id)
-        .ok_or(Error::OauthInvalidClientId)?;
 
     Ok(HttpResponse::Ok()
         .append_header(("Cache-Control", "no-store"))
