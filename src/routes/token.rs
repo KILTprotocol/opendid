@@ -20,7 +20,7 @@ pub struct TokenRequestBody {
 #[post("/api/v1/token")]
 async fn post_token_handler(
     app_state: web::Data<RwLock<AppState>>,
-    body: web::Query<TokenRequestBody>,
+    body: web::Form<TokenRequestBody>,
 ) -> Result<HttpResponse, Error> {
     log::info!("POST token");
 
