@@ -12,7 +12,7 @@ pub struct TokenResponse {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TokenRequestBody {
-    pub grant_type: String,
+    // pub grant_type: String,
     pub code: String,
     // pub redirect_uri: String,
 }
@@ -24,11 +24,10 @@ async fn post_token_handler(
 ) -> Result<HttpResponse, Error> {
     log::info!("POST token");
 
-
-    if body.grant_type != "authorization_code" {
-    log::info!("invaild grant_type");
-        return Err(Error::InvalidGrantType);
-    }
+    // if body.grant_type != "authorization_code" {
+    //     log::info!("invaild grant_type");
+    //     return Err(Error::InvalidGrantType);
+    // }
 
     let token_storage = {
         let app_state = app_state.read().await;
