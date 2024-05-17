@@ -1,6 +1,6 @@
 use crate::{config::EtcdConfig, routes::error::Error, AppState};
 use actix_web::web;
-use std::sync::RwLock;
+use tokio::sync::RwLock;
 
 // ConfigUpdater is responsible for fetching client configurations from etcd and
 // updating the app state with the latest configurations.
@@ -48,7 +48,7 @@ impl ConfigUpdater {
     pub async fn read_initial_config(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
         // we start from the client configs in the current app state
         let mut client_configs = {
-            let app_state = self.app_state.read()?;
+            let app_state = self.app_state.read().await;
             app_state.client_configs.clone()
         };
 
@@ -73,7 +73,7 @@ impl ConfigUpdater {
             client_configs.insert(client_id, client_config);
         }
 
-        self.app_state.write()?.client_configs = client_configs;
+        self.app_state.write().await.client_configs = client_configs;
 
         Ok(())
     }
@@ -82,7 +82,7 @@ impl ConfigUpdater {
     pub async fn watch_for_updates(&mut self) -> Result<(), Box<dyn std::error::Error + '_>> {
         // we start from the client configs in the current app state
         let mut client_configs = {
-            let app_state = self.app_state.read()?;
+            let app_state = self.app_state.read().await;
             app_state.client_configs.clone()
         };
 
@@ -126,8 +126,8 @@ impl ConfigUpdater {
             }
 
             // we update the app state with the latest client configs
-            let mut app_state = self.app_state.write()?;
-            app_state.client_configs = client_configs.clone();
+            let mut app_state = self.app_state.write().await;
+            app_state.client_configs.clone_from(&client_configs);
         }
 
         Ok(())

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::RwLock};
+use std::collections::HashMap;
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use sodiumoxide::crypto::box_;
 use sp_core::crypto::Ss58Codec;
+use tokio::sync::RwLock;
 
 use crate::{
     config::CredentialRequirement,
@@ -66,7 +67,7 @@ async fn get_credential_requirements_handler(
     session: Session,
 ) -> Result<HttpResponse, Error> {
     log::info!("GET credential requirements handler");
-    let app_state = app_state.read()?;
+    let app_state = app_state.read().await;
 
     // create a challenge and store it in the session
     let key_uri = session.get::<String>("key_uri")?.ok_or(Error::SessionGet)?;
@@ -137,7 +138,7 @@ async fn post_credential_handler(
 ) -> Result<HttpResponse, Error> {
     log::info!("POST credential handler");
     let endpoint = {
-        let app_state = app_state.read()?;
+        let app_state = app_state.read().await;
         app_state.kilt_endpoint.clone()
     };
     let cli = kilt::connect(&endpoint)
@@ -149,7 +150,7 @@ async fn post_credential_handler(
 
     // decrypt the message
     let secret_key = {
-        let app_state = app_state.read()?;
+        let app_state = app_state.read().await;
         app_state.session_secret_key.clone()
     };
     let decrypted_msg = box_::open(&body.cipher_text, &body.nonce, &pk, &secret_key)
@@ -175,7 +176,7 @@ async fn post_credential_handler(
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
     let client_configs = {
-        let app_state = app_state.read()?;
+        let app_state = app_state.read().await;
         app_state.client_configs.clone()
     };
     let requirements = &client_configs
@@ -257,7 +258,7 @@ async fn post_credential_handler(
 
     // construct id_token and refresh_token
     let nonce = Some(oidc_context.nonce.clone());
-    let mut app_state = app_state.write()?; // may update the rhai checkers
+    let mut app_state = app_state.write().await; // may update the rhai checkers
     let id_token = app_state
         .jwt_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)

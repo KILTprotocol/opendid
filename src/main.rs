@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::RwLock};
+use std::collections::HashMap;
 
 use actix_cors::Cors;
 use actix_session::{
@@ -16,6 +16,7 @@ use clap::Parser;
 
 use rhai_checker::RhaiCheckerMap;
 use sodiumoxide::crypto::box_;
+use tokio::sync::RwLock;
 use well_known_did_config::create_well_known_did_config;
 
 mod cli;
@@ -49,7 +50,7 @@ pub struct AppState {
     rhai_checkers: RhaiCheckerMap,
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = cli::Cli::parse();
     env_logger::Builder::new()

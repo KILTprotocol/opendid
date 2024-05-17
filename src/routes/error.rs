@@ -18,7 +18,6 @@ pub enum Error {
     GetChallenge,
     VerifyCredential(String),
     CreateJWT,
-    LockPoison,
     Internal(String),
     VerifyJWT(String),
     InvalidDidSignature,
@@ -45,7 +44,6 @@ impl std::fmt::Display for Error {
             Error::VerifyCredential(s) => write!(f, "Failed to verify credential: {}", s),
             Error::CreateJWT => write!(f, "Failed to create JWT"),
             Error::OauthNoSession => write!(f, "No session"),
-            Error::LockPoison => write!(f, "Lock poison"),
             Error::VerifyJWT(s) => write!(f, "Failed to verify JWT {} ", s),
             Error::InvalidDidSignature => write!(f, "Failed to verify DID Signature"),
             Error::Internal(s) => write!(f, "Internal error: {}", s),
@@ -77,8 +75,7 @@ impl From<Error> for actix_web::Error {
             Error::SessionInsert
             | Error::CantConnectToBlockchain
             | Error::CreateJWT
-            | Error::Internal(_)
-            | Error::LockPoison => {
+            | Error::Internal(_) => {
                 log::error!("Internal Error: {}", e);
                 actix_web::error::ErrorInternalServerError("Internal Error")
             }
@@ -95,12 +92,6 @@ impl From<SessionInsertError> for Error {
 impl From<SessionGetError> for Error {
     fn from(_: SessionGetError) -> Self {
         Error::SessionGet
-    }
-}
-
-impl<T> From<std::sync::PoisonError<T>> for Error {
-    fn from(_: std::sync::PoisonError<T>) -> Self {
-        Error::LockPoison
     }
 }
 
