@@ -127,7 +127,7 @@ impl ConfigUpdater {
 
             // we update the app state with the latest client configs
             let mut app_state = self.app_state.write().await;
-            app_state.client_configs = client_configs.clone();
+            app_state.client_configs.clone_from(&client_configs);
         }
 
         Ok(())
