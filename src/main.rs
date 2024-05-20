@@ -79,9 +79,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         client_configs: config.clients.clone(),
         rhai_checkers: RhaiCheckerMap::new(),
         token_storage: Cache::builder()
-            .time_to_live(std::time::Duration::from_secs(
-                config.session.session_ttl,
-            ))
+            .time_to_live(std::time::Duration::from_secs(config.session.session_ttl))
             .build(),
     }));
 
