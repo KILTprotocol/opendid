@@ -35,40 +35,45 @@ async fn authorize_handler(
         .ok_or(Error::OauthInvalidClientId)?
         .redirect_urls;
 
-    let are_requirements_empty = &app_state
+    let requirements_empty = &app_state
         .client_configs
         .get(&query.client_id)
         .ok_or(Error::OauthInvalidClientId)?
         .requirements
         .is_empty();
 
-    let is_redirect_uri_in_query = redirect_urls.contains(&query.redirect_uri);
+    // Support Authorization Code Flow and Implicit Flow.
+    let supported_response_types = ["id_token", "id_token token", "code"];
+    if !supported_response_types.contains(&query.response_type.as_str()) {
+        return Err(Error::UnsupportedFlow);
+    }
 
-    session.insert(REDIRECT_URI_SESSION_KEY, query.redirect_uri.clone())?;
-    session.insert(RESPONSE_TYPE_SESSION_KEY, query.response_type.clone())?;
-
+    // Implicit flow must include a nonce.
     if query.response_type == "id_token" && query.nonce.is_none() {
         return Err(Error::InvalidNonce);
     }
 
-    match (
-        are_requirements_empty,
-        is_redirect_uri_in_query,
-        &query.nonce,
-    ) {
-        (true, true, Some(nonce)) => {
+    let is_redirect_uri_in_query: bool = redirect_urls.contains(&query.redirect_uri);
+    if !is_redirect_uri_in_query {
+        return Err(Error::OauthInvalidRedirectUri);
+    }
+
+    session.insert(REDIRECT_URI_SESSION_KEY, query.redirect_uri.clone())?;
+    session.insert(RESPONSE_TYPE_SESSION_KEY, query.response_type.clone())?;
+
+    match (requirements_empty, &query.nonce) {
+        (true, Some(nonce)) => {
             session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
             let redirect_uri_with_nonce = format!("/?nonce={}", nonce);
             Ok(HttpResponse::Found()
                 .append_header(("Location", redirect_uri_with_nonce))
                 .finish())
         }
-        (false, true, _) | (true, true, None) => {
+        (false, _) | (true, None) => {
             session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
             Ok(HttpResponse::Found()
                 .append_header(("Location", "/"))
                 .finish())
         }
-        _ => Err(Error::OauthInvalidRedirectUri),
     }
 }

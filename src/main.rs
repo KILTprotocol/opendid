@@ -121,8 +121,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .cookie_secure(config.production)
                     .cookie_name(SESSION_COOKIE_NAME.to_string())
                     .session_lifecycle(
-                        PersistentSession::default()
-                            .session_ttl(Duration::seconds(config.get_session_ttl())),
+                        PersistentSession::default().session_ttl(Duration::seconds(
+                            i64::try_from(config.get_session_ttl())
+                                .expect("session ttl value is too larg"),
+                        )),
                     )
                     .build(),
             )

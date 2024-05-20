@@ -26,7 +26,6 @@ async fn post_token_handler(
     log::info!("POST token");
 
     if body.grant_type != "authorization_code" {
-        log::info!("invaild grant_type");
         return Err(Error::InvalidGrantType);
     }
 
@@ -38,7 +37,7 @@ async fn post_token_handler(
     let (token_response, stored_redirect_uri) = token_storage
         .remove(&body.code)
         .await
-        .ok_or(Error::InvalidAuthenticationCode)?;
+        .ok_or(Error::InvalidAuthorizationCode)?;
 
     if body.redirect_uri != stored_redirect_uri {
         return Err(Error::RedirectUri);

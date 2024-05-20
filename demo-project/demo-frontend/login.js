@@ -7,8 +7,8 @@ loginButtonImplicit.addEventListener('click', () => {
   window.location.href = `http://localhost:3001/api/v1/authorize?response_type=id_token&client_id=${clientId}&redirect_uri=http://localhost:1606/callback.html&scope=openid&state=${state}&nonce=${nonce}`;
 });
 
-const loginButtonCode = document.getElementById('login-authorization-code');
-loginButtonCode.addEventListener('click', () => {
+const loginButtonAuthCode = document.getElementById('login-authorization-code');
+loginButtonAuthCode.addEventListener('click', () => {
   const clientId = getClientIdElement();
   const nonce = getNonce();
   const state = getState();

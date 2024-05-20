@@ -23,7 +23,7 @@ pub enum Error {
     InvalidDidSignature,
     ResponseType,
     RedirectUri,
-    InvalidAuthenticationCode,
+    InvalidAuthorizationCode,
     UnsupportedFlow,
     InvalidGrantType,
 }
@@ -52,13 +52,13 @@ impl std::fmt::Display for Error {
             Error::VerifyJWT(s) => write!(f, "Failed to verify JWT {} ", s),
             Error::InvalidDidSignature => write!(f, "Failed to verify DID Signature"),
             Error::Internal(s) => write!(f, "Internal error: {}", s),
-            Error::ResponseType => write!(f, "Invalid response-type"),
+            Error::ResponseType => write!(f, "Invalid response_type"),
             Error::RedirectUri => write!(f, "Missing or mismatched redirect_uri"),
-            Error::InvalidAuthenticationCode => {
+            Error::InvalidAuthorizationCode => {
                 write!(f, "Authorization Code is invalid or expired")
             }
             Error::UnsupportedFlow => write!(f, "Unsupported authorization processing flow"),
-            Error::InvalidGrantType => write!(f, "Invalid grant-type value"),
+            Error::InvalidGrantType => write!(f, "Invalid grant_type value"),
         }
     }
 }
@@ -74,7 +74,7 @@ impl From<Error> for actix_web::Error {
             | Error::InvalidDid(_)
             | Error::FailedToDecrypt
             | Error::FailedToParseMessage
-            | Error::InvalidAuthenticationCode
+            | Error::InvalidAuthorizationCode
             | Error::VerifyCredential(_)
             | Error::RedirectUri
             | Error::UnsupportedFlow
@@ -92,8 +92,7 @@ impl From<Error> for actix_web::Error {
             Error::SessionInsert
             | Error::CantConnectToBlockchain
             | Error::CreateJWT
-            | Error::Internal(_)
-            | Error::LockPoison => {
+            | Error::Internal(_) => {
                 log::error!("Internal Error: {}", e);
                 actix_web::error::ErrorInternalServerError("Internal Error")
             }

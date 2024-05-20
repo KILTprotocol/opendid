@@ -319,7 +319,7 @@ async fn post_credential_handler(
 
         // Store (code -> token_response) so it can be sent later at the `/token` endpoint.
         let token_response = TokenResponse {
-            token_type: "Bearer".to_string(),
+            token_type: "bearer".to_string(),
             access_token: "null".to_string(),
             refresh_token,
             id_token,
@@ -348,7 +348,7 @@ async fn post_credential_handler(
                 ),
             ))
             .finish())
-    } else if response_type == "id_token" {
+    } else if response_type == "id_token" || response_type == "id_token token" {
         log::info!("Implicit flow");
         Ok(HttpResponse::NoContent()
             .append_header((
