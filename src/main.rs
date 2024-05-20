@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         rhai_checkers: RhaiCheckerMap::new(),
         token_storage: Cache::builder()
             .time_to_live(std::time::Duration::from_secs(
-                config.session.session_ttl as u64,
+                config.session.session_ttl,
             ))
             .build(),
     }));
