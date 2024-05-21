@@ -311,16 +311,12 @@ async fn post_credential_handler(
 
     if response_type == "code" {
         log::info!("Authorization Code Flow");
-        // Generate a random URL encoded string as the Authorization Code.
-        let mut bytes = vec![0; 45];
-        let mut rng = rand::thread_rng();
-        rng.fill(&mut bytes[..]);
-        let code = base64::engine::general_purpose::URL_SAFE.encode(bytes);
+        let code = generate_random_string();
 
         // Store (code -> token_response) so it can be sent later at the `/token` endpoint.
         let token_response = TokenResponse {
             token_type: "bearer".to_string(),
-            access_token: "null".to_string(),
+            access_token: generate_random_string(),
             refresh_token,
             id_token,
         };
@@ -365,4 +361,12 @@ async fn post_credential_handler(
     } else {
         Err(Error::UnsupportedFlow)
     }
+}
+
+// Generate a random URL encoded string as the Authorization Code.
+fn generate_random_string() -> String {
+    let mut bytes = vec![0; 45];
+    let mut rng = rand::thread_rng();
+    rng.fill(&mut bytes[..]);
+    base64::engine::general_purpose::URL_SAFE.encode(bytes)
 }
