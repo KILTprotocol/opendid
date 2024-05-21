@@ -37,7 +37,7 @@ mod well_known_did_config;
 use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
 
 // Store the token responses and redirect_uri given an authorization code.
-pub type TokenStorage = Cache<String, (TokenResponse, String)>;
+pub type TokenStorage = Cache<String, (TokenResponse, TokenMetadata)>;
 
 // shared state
 #[derive(Clone, Debug)]

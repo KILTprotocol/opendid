@@ -26,6 +26,7 @@ pub enum Error {
     InvalidAuthorizationCode,
     UnsupportedFlow,
     InvalidGrantType,
+    InvalidClientSecret
 }
 
 impl std::error::Error for Error {}
@@ -54,6 +55,7 @@ impl std::fmt::Display for Error {
             Error::Internal(s) => write!(f, "Internal error: {}", s),
             Error::ResponseType => write!(f, "Invalid response_type"),
             Error::RedirectUri => write!(f, "Missing or mismatched redirect_uri"),
+            Error::InvalidClientSecret => write!(f, "ClientSecret is invalid or missing"),
             Error::InvalidAuthorizationCode => {
                 write!(f, "Authorization Code is invalid or expired")
             }
@@ -85,6 +87,7 @@ impl From<Error> for actix_web::Error {
             Error::SessionGet
             | Error::InvalidChallenge(_)
             | Error::InvalidNonce
+            | Error::InvalidClientSecret
             | Error::VerifyJWT(_)
             | Error::InvalidDidSignature
             | Error::OauthNoSession => actix_web::error::ErrorUnauthorized(e),

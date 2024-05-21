@@ -91,6 +91,7 @@ clients:
     # valid redirect urls for this client
     redirectUrls:
       - http://localhost:1606/callback.html
+    clientSecret: "insecure_client_secret"
 EOF
 
 mv config.yaml did-secrets.json did-document.json /data/

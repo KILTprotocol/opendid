@@ -18,7 +18,7 @@ use crate::{
     response_type::ResponseType,
     routes::{error::Error, AuthorizeQueryParameters},
     verify::verify_credential_message,
-    AppState, TokenResponse,
+    AppState, TokenMetadata, TokenResponse,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -322,16 +322,15 @@ async fn post_credential_handler(
             refresh_token,
             id_token,
         };
+
+        let token_metadata = TokenMetadata {
+            client_id: oidc_context.client_id.clone(),
+            redirect_uri: session
+                .get(REDIRECT_URI_SESSION_KEY)?
+                .ok_or(Error::RedirectUri)?,
+        };
         token_storage
-            .insert(
-                code.clone(),
-                (
-                    token_response.clone(),
-                    session
-                        .get(REDIRECT_URI_SESSION_KEY)?
-                        .ok_or(Error::RedirectUri)?,
-                ),
-            )
+            .insert(code.clone(), (token_response.clone(), token_metadata))
             .await;
 
         // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own.

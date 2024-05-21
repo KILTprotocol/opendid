@@ -12,10 +12,17 @@ pub struct TokenResponse {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TokenMetadata {
+    pub client_id: String,
+    pub redirect_uri: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TokenRequestBody {
     pub grant_type: String,
     pub code: String,
     pub redirect_uri: String,
+    pub client_secret: Option<String>,
 }
 
 #[post("/api/v1/token")]
@@ -34,14 +41,30 @@ async fn post_token_handler(
         app_state.token_storage.clone()
     };
 
-    let (token_response, stored_redirect_uri) = token_storage
-        .remove(&body.code)
+    let (token_response, response_metadata) = token_storage
+        .get(&body.code)
         .await
         .ok_or(Error::InvalidAuthorizationCode)?;
 
-    if body.redirect_uri != stored_redirect_uri {
+    let client_secret: Option<String> = {
+        let app_state = app_state.read().await;
+        app_state
+            .client_configs
+            .get(&response_metadata.client_id)
+            .ok_or(Error::OauthInvalidClientId)?
+            .client_secret
+            .clone()
+    };
+
+    if client_secret != body.client_secret {
+        return Err(Error::InvalidClientSecret);
+    }
+
+    if body.redirect_uri != response_metadata.redirect_uri {
         return Err(Error::RedirectUri);
     }
+
+    token_storage.invalidate(&body.code).await;
 
     Ok(HttpResponse::Ok()
         .append_header(("Cache-Control", "no-store"))

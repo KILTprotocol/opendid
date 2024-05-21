@@ -55,20 +55,21 @@ app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req,
 
 // This is a protected endpoint that requires a valid Authorization Code.
 app.post('/protected/AuthorizationCode', async (req, res) => {
-    const codeRequestBody = {
-        code: req.body.auth_code,
-        grant_type: "authorization_code",
-        redirect_uri: "http://localhost:1606/callback.html",
-        client_id: "example-client"
-    }
-    const response: Response = await fetch("http://localhost:3001/api/v1/token", {
-        method: "POST",
-        headers:
-            { "Content-Type": "application/x-www-form-urlencoded" },
-        body: qs.stringify(codeRequestBody)
-    }
-    );
-    const idToken = (await response.json()).id_token;
+  let codeRequestBody = {
+    code: req.body.auth_code,
+    grant_type: "authorization_code",
+    redirect_uri: "http://localhost:1606/callback.html",
+    client_id: "example-client",
+    client_secret: "insecure_client_secret"
+  }
+  let response: Response = await fetch("http://localhost:3001/api/v1/token", {
+    method: "POST",
+    headers:
+      { "Content-Type": "application/x-www-form-urlencoded" },
+    body: qs.stringify(codeRequestBody)
+  }
+  );
+  let idToken = (await response.json()).id_token;
 
     const decodedToken = jsonwebtoken.verify(idToken, tokenSecret) as JwtPayload;
     if (decodedToken.nonce !== req.cookies.nonce) {

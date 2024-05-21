@@ -102,6 +102,8 @@ pub struct ClientConfig {
     pub redirect_urls: Vec<String>,
     #[serde(rename = "checksDirectory")]
     pub checks_directory: Option<String>,
+    #[serde(rename = "clientSecret")]
+    pub client_secret: Option<String>
 }
 
 impl Config {
