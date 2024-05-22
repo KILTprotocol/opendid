@@ -363,7 +363,7 @@ async fn post_credential_handler(
     }
 }
 
-// Generate a random URL encoded string as the Authorization Code.
+// Generate a random 45 bytes long, URL encoded string.
 fn generate_random_string() -> String {
     let mut bytes = vec![0; 45];
     let mut rng = rand::thread_rng();
