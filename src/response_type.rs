@@ -24,15 +24,10 @@ impl FromStr for ResponseType {
 }
 
 impl ResponseType {
-    pub fn is_implicit_flow(&self) -> bool {
-        match self {
-            ResponseType::IdToken => true,
-            ResponseType::IdTokenToken => true,
-            _ => false,
-        }
-    }
-
     pub fn is_authorization_code_flow(&self) -> bool {
-        !self.is_implicit_flow()
+        matches!(self, ResponseType::Code)
+    }
+    pub fn is_implicit_flow(&self) -> bool {
+        !self.is_authorization_code_flow()
     }
 }
