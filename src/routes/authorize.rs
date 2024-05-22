@@ -53,7 +53,7 @@ async fn authorize_handler(
         return Err(Error::InvalidNonce);
     }
 
-    let is_redirect_uri_in_query: bool = redirect_urls.contains(&query.redirect_uri);
+    let is_redirect_uri_in_query = redirect_urls.contains(&query.redirect_uri);
     if !is_redirect_uri_in_query {
         return Err(Error::OauthInvalidRedirectUri);
     }
