@@ -49,7 +49,7 @@ app.get('/login.html', (req, res) => {
 
 // This is a protected endpoint that requires a valid JWT token
 app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req, res) => {
-    let token = req.auth;
+    const token = req.auth;
     // check that token.nonce matches the nonce cookie
     if (token.nonce !== req.cookies.nonce) {
         res.status(401).send('Invalid nonce')
@@ -67,16 +67,16 @@ app.post('/protected/AuthorizationCode', async (req, res) => {
         redirect_uri: "http://localhost:1606/callback.html",
         client_id: "example-client"
     }
-    let response: Response = await fetch("http://localhost:3001/api/v1/token", {
+    const response: Response = await fetch("http://localhost:3001/api/v1/token", {
         method: "POST",
         headers:
             { "Content-Type": "application/x-www-form-urlencoded" },
         body: qs.stringify(codeRequestBody)
     }
     );
-    let idToken = (await response.json()).id_token;
+    const idToken = (await response.json()).id_token;
 
-    let decodedToken: any = jsonwebtoken.verify(idToken, tokenSecret);
+    const decodedToken: any = jsonwebtoken.verify(idToken, tokenSecret);
     if (decodedToken.nonce !== req.cookies.nonce) {
         res.status(401).send('Invalid nonce')
         return
