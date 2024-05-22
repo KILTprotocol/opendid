@@ -19,9 +19,7 @@ if (idToken && refreshToken && state) {
         displayGreeting(resp)
     };
     fn();
-}
-
-if (authCode) {
+} else if (authCode) {
     const fn = async () => {
         // use Authorization Code to access protected route.
         // The backend will exchange the Authorization Code for an id_token.
