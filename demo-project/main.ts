@@ -6,6 +6,7 @@ import { expressjwt as jwt } from 'express-jwt'
 import bodyParser from 'body-parser'
 import * as jsonwebtoken from 'jsonwebtoken';
 import qs from 'qs'
+import { JwtPayload } from 'jsonwebtoken'
 
 const app = express()
 app.use(bodyParser.json())
@@ -76,7 +77,7 @@ app.post('/protected/AuthorizationCode', async (req, res) => {
     );
     const idToken = (await response.json()).id_token;
 
-    const decodedToken: any = jsonwebtoken.verify(idToken, tokenSecret);
+    const decodedToken = jsonwebtoken.verify(idToken, tokenSecret) as JwtPayload;
     if (decodedToken.nonce !== req.cookies.nonce) {
         res.status(401).send('Invalid nonce')
         return
