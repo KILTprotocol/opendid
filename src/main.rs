@@ -121,7 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .session_lifecycle(
                         PersistentSession::default().session_ttl(Duration::seconds(
                             i64::try_from(config.get_session_ttl())
-                                .expect("session ttl value is too larg"),
+                                .expect("session ttl value is too large"),
                         )),
                     )
                     .build(),
