@@ -69,7 +69,7 @@ async fn authorize_handler(
                 .append_header(("Location", redirect_uri_with_nonce))
                 .finish())
         }
-        (false, _) | (true, None) => {
+        _ => {
             session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
             Ok(HttpResponse::Found()
                 .append_header(("Location", "/"))
