@@ -301,7 +301,6 @@ async fn post_credential_handler(
             .rhai_checkers
             .get_or_create(&oidc_context.client_id, checks_directory)?;
         checker.check(&id_token)?;
-        drop(app_state_write);
     }
 
     let response_type = ResponseType::from_str(
