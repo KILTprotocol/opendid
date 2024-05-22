@@ -61,7 +61,7 @@ app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req,
 
 // This is a protected endpoint that requires a valid Authorization Code.
 app.post('/protected/AuthorizationCode', async (req, res) => {
-  let codeRequestBody = {
+  const codeRequestBody = {
     code: req.body.auth_code,
     grant_type: "authorization_code",
     redirect_uri: "http://localhost:1606/callback.html",
