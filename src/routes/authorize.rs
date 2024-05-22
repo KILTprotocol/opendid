@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use actix_session::Session;
 use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
@@ -5,6 +7,7 @@ use tokio::sync::RwLock;
 
 use crate::{
     constants::{OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_SESSION_KEY},
+    response_type::ResponseType,
     routes::error::Error,
     AppState,
 };
@@ -43,13 +46,10 @@ async fn authorize_handler(
         .is_empty();
 
     // Support Authorization Code Flow and Implicit Flow.
-    let supported_response_types = ["id_token", "id_token token", "code"];
-    if !supported_response_types.contains(&query.response_type.as_str()) {
-        return Err(Error::UnsupportedFlow);
-    }
+    let response_type = ResponseType::from_str(query.response_type.as_str())?;
 
     // Implicit flow must include a nonce.
-    if query.response_type == "id_token" && query.nonce.is_none() {
+    if response_type.is_implicit_flow() && query.nonce.is_none() {
         return Err(Error::InvalidNonce);
     }
 

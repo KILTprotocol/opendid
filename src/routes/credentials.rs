@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
@@ -15,6 +15,7 @@ use crate::{
     constants::{OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_SESSION_KEY},
     kilt::{self, parse_encryption_key_from_lightdid},
     messages::{EncryptedMessage, Message, MessageBody},
+    response_type::ResponseType,
     routes::{error::Error, AuthorizeQueryParameters},
     verify::verify_credential_message,
     AppState, TokenResponse,
@@ -303,13 +304,15 @@ async fn post_credential_handler(
         drop(app_state_write);
     }
 
-    let response_type = session
-        .get::<String>(RESPONSE_TYPE_SESSION_KEY)?
-        .ok_or(Error::ResponseType)?;
+    let response_type = ResponseType::from_str(
+        &session
+            .get::<String>(RESPONSE_TYPE_SESSION_KEY)?
+            .ok_or(Error::ResponseType)?,
+    )?;
 
     drop(app_state_read);
 
-    if response_type == "code" {
+    if response_type.is_authorization_code_flow() {
         log::info!("Authorization Code Flow");
         let code = generate_random_string();
 
@@ -344,7 +347,7 @@ async fn post_credential_handler(
                 ),
             ))
             .finish())
-    } else if response_type == "id_token" || response_type == "id_token token" {
+    } else {
         log::info!("Implicit flow");
         Ok(HttpResponse::NoContent()
             .append_header((
@@ -358,8 +361,6 @@ async fn post_credential_handler(
                 ),
             ))
             .finish())
-    } else {
-        Err(Error::UnsupportedFlow)
     }
 }
 

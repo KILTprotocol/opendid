@@ -27,6 +27,7 @@ mod constants;
 mod jwt;
 mod kilt;
 mod messages;
+mod response_type;
 mod rhai_checker;
 mod routes;
 pub mod serialize;
