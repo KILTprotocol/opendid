@@ -26,7 +26,7 @@ pub enum Error {
     InvalidAuthorizationCode,
     UnsupportedFlow,
     InvalidGrantType,
-    InvalidClientSecret
+    InvalidClientSecret,
 }
 
 impl std::error::Error for Error {}

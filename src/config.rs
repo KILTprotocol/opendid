@@ -103,7 +103,7 @@ pub struct ClientConfig {
     #[serde(rename = "checksDirectory")]
     pub checks_directory: Option<String>,
     #[serde(rename = "clientSecret")]
-    pub client_secret: Option<String>
+    pub client_secret: Option<String>,
 }
 
 impl Config {
