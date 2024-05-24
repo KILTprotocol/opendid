@@ -53,7 +53,7 @@ async fn post_token_handler(
         (Some(_), None) => Err(Error::InvalidClientSecret),
         (Some(client_id), Some(_)) => {
             // client_id must be the same one used in `authorize`.
-            if *client_id != response_metadata.client_id {
+            if *client_id == response_metadata.client_id {
                 Ok(())
             } else {
                 Err(Error::OauthInvalidClientId)
