@@ -47,21 +47,19 @@ async fn post_token_handler(
         .await
         .ok_or(Error::InvalidAuthorizationCode)?;
 
-    // XNOR because client_secret and client_id must have the same Option value.
-    if body.client_secret.is_some() != body.client_id.is_some() {
-        if body.client_secret.is_none() {
-            return Err(Error::InvalidClientSecret);
-        } else {
-            return Err(Error::OauthInvalidClientId);
+    match (&body.client_id, &body.client_secret) {
+        (None, None) => Ok(()),
+        (None, Some(_)) => Err(Error::OauthInvalidClientId),
+        (Some(_), None) => Err(Error::InvalidClientSecret),
+        (Some(client_id), Some(_)) => {
+            // client_id must be the same one used in `authorize`.
+            if *client_id != response_metadata.client_id {
+                Ok(())
+            } else {
+                Err(Error::OauthInvalidClientId)
+            }
         }
-    }
-
-    // client_id must be the same one used in `authorize`.
-    if let Some(client_id) = &body.client_id {
-        if *client_id != response_metadata.client_id {
-            return Err(Error::OauthInvalidClientId);
-        }
-    }
+    }?;
 
     let client_secret: Option<String> = {
         let app_state = app_state.read().await;
