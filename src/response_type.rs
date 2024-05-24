@@ -28,6 +28,6 @@ impl ResponseType {
         matches!(self, ResponseType::Code)
     }
     pub fn is_implicit_flow(&self) -> bool {
-        !self.is_authorization_code_flow()
+        matches!(self, ResponseType::IdToken | ResponseType::IdTokenToken)
     }
 }
