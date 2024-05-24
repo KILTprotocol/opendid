@@ -11,14 +11,6 @@ import { JwtPayload } from 'jsonwebtoken'
 const app = express()
 app.use(bodyParser.json())
 
-declare global {
-    namespace Express {
-        interface Request {
-            auth?: any;
-        }
-    }
-}
-
 const port = 1606
 
 // Get secret used to verify JWT tokens from TOKEN_SECRET environment variable
@@ -50,6 +42,7 @@ app.get('/login.html', (req, res) => {
 
 // This is a protected endpoint that requires a valid JWT token
 app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req, res) => {
+    // @ts-ignore - express-jwt adds auth to request
     const token = req.auth;
     // check that token.nonce matches the nonce cookie
     if (token.nonce !== req.cookies.nonce) {
