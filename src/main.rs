@@ -14,6 +14,7 @@ use actix_web::{
 use anyhow::Context;
 use clap::Parser;
 
+use moka::future::Cache;
 use rhai_checker::RhaiCheckerMap;
 use sodiumoxide::crypto::box_;
 use tokio::sync::RwLock;
@@ -26,6 +27,7 @@ mod constants;
 mod jwt;
 mod kilt;
 mod messages;
+mod response_type;
 mod rhai_checker;
 mod routes;
 pub mod serialize;
@@ -33,6 +35,9 @@ mod verify;
 mod well_known_did_config;
 
 use crate::{constants::SESSION_COOKIE_NAME, jwt::TokenFactory, routes::*};
+
+// Store the token responses and redirect_uri given an authorization code.
+pub type TokenStorage = Cache<String, (TokenResponse, String)>;
 
 // shared state
 #[derive(Clone, Debug)]
@@ -48,6 +53,7 @@ pub struct AppState {
     kilt_endpoint: String,
     client_configs: HashMap<String, config::ClientConfig>,
     rhai_checkers: RhaiCheckerMap,
+    token_storage: TokenStorage,
 }
 
 #[tokio::main]
@@ -59,6 +65,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = cli.get_config()?;
 
+    // let token_storage = Cache
     let state = web::Data::new(RwLock::new(AppState {
         app_name: "OpenDID".to_string(),
         encryption_key_uri: config.session.key_uri.to_string(),
@@ -72,6 +79,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         kilt_endpoint: config.get_endpoint_url(),
         client_configs: config.clients.clone(),
         rhai_checkers: RhaiCheckerMap::new(),
+        token_storage: Cache::builder()
+            .time_to_live(std::time::Duration::from_secs(config.session.session_ttl))
+            .build(),
     }));
 
     if let Some(etcd_config) = &config.etcd {
@@ -99,7 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let cors = Cors::permissive();
 
         App::new()
-            .app_data(state.clone())
+            .app_data(web::Data::clone(&state))
             .wrap(Logger::default())
             .wrap(cors)
             .wrap(
@@ -110,8 +120,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .cookie_secure(config.production)
                     .cookie_name(SESSION_COOKIE_NAME.to_string())
                     .session_lifecycle(
-                        PersistentSession::default()
-                            .session_ttl(Duration::seconds(config.get_session_ttl())),
+                        PersistentSession::default().session_ttl(Duration::seconds(
+                            i64::try_from(config.get_session_ttl())
+                                .expect("session ttl value is too large"),
+                        )),
                     )
                     .build(),
             )
@@ -124,6 +136,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(login_with_did)
             .service(authorize_handler)
             .service(get_endpoint)
+            .service(post_token_handler)
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
     })
     .bind((host.as_str(), port))?

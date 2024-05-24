@@ -1,7 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
+use base64::Engine;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use sodiumoxide::crypto::box_;
@@ -10,12 +12,13 @@ use tokio::sync::RwLock;
 
 use crate::{
     config::CredentialRequirement,
-    constants::OIDC_SESSION_KEY,
+    constants::{OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_SESSION_KEY},
     kilt::{self, parse_encryption_key_from_lightdid},
     messages::{EncryptedMessage, Message, MessageBody},
+    response_type::ResponseType,
     routes::{error::Error, AuthorizeQueryParameters},
     verify::verify_credential_message,
-    AppState,
+    AppState, TokenResponse,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -158,6 +161,11 @@ async fn post_credential_handler(
     let content: Message<Vec<SubmitCredentialMessageBodyContent>> =
         serde_json::from_slice(&decrypted_msg).map_err(|_| Error::FailedToParseMessage)?;
 
+    let token_storage = {
+        let app_state = app_state.read().await;
+        app_state.token_storage.clone()
+    };
+
     // get the challenge from the session
     let challenge_hex = session
         .get::<String>("credential-challenge")?
@@ -257,21 +265,27 @@ async fn post_credential_handler(
         .unwrap_or("".into());
 
     // construct id_token and refresh_token
-    let nonce = Some(oidc_context.nonce.clone());
-    let mut app_state = app_state.write().await; // may update the rhai checkers
-    let id_token = app_state
+    let nonce = oidc_context.nonce.clone();
+    let app_state_read = app_state.read().await;
+    let id_token = app_state_read
         .jwt_builder
         .new_id_token(&content.sender, &w3n, &props, &nonce)
-        .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
+        .to_jwt(
+            &app_state_read.jwt_secret_key,
+            &app_state_read.jwt_algorithm,
+        )
         .map_err(|e| {
             log::error!("Failed to create id token: {}", e);
             Error::CreateJWT
         })?;
 
-    let refresh_token = app_state
+    let refresh_token = app_state_read
         .jwt_builder
         .new_refresh_token(&content.sender, &w3n, &props, &nonce)
-        .to_jwt(&app_state.jwt_secret_key, &app_state.jwt_algorithm)
+        .to_jwt(
+            &app_state_read.jwt_secret_key,
+            &app_state_read.jwt_algorithm,
+        )
         .map_err(|e| {
             log::error!("Failed to create refresh token: {}", e);
             Error::CreateJWT
@@ -282,23 +296,77 @@ async fn post_credential_handler(
         .get(&oidc_context.client_id)
         .ok_or(Error::OauthInvalidClientId)?;
     if let Some(checks_directory) = &client_config.checks_directory {
-        let checker = app_state
+        let mut app_state_write = app_state.write().await;
+        let checker = app_state_write
             .rhai_checkers
             .get_or_create(&oidc_context.client_id, checks_directory)?;
         checker.check(&id_token)?;
     }
 
-    // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own
-    Ok(HttpResponse::NoContent()
-        .append_header((
-            "Location",
-            format!(
-                "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
-                oidc_context.redirect_uri.clone(),
-                id_token,
-                refresh_token,
-                oidc_context.state.clone(),
-            ),
-        ))
-        .finish())
+    let response_type = ResponseType::from_str(
+        &session
+            .get::<String>(RESPONSE_TYPE_SESSION_KEY)?
+            .ok_or(Error::ResponseType)?,
+    )?;
+
+    drop(app_state_read);
+
+    if response_type.is_authorization_code_flow() {
+        log::info!("Authorization Code Flow");
+        let code = generate_random_string();
+
+        // Store (code -> token_response) so it can be sent later at the `/token` endpoint.
+        let token_response = TokenResponse {
+            token_type: "bearer".to_string(),
+            access_token: generate_random_string(),
+            refresh_token,
+            id_token,
+        };
+        token_storage
+            .insert(
+                code.clone(),
+                (
+                    token_response.clone(),
+                    session
+                        .get(REDIRECT_URI_SESSION_KEY)?
+                        .ok_or(Error::RedirectUri)?,
+                ),
+            )
+            .await;
+
+        // return the response as a HTTP NoContent, to give the frontend a chance to do the redirect on its own.
+        Ok(HttpResponse::NoContent()
+            .append_header((
+                "Location",
+                format!(
+                    "{}?code={}&state={}",
+                    oidc_context.redirect_uri.clone(),
+                    code,
+                    oidc_context.state.clone(),
+                ),
+            ))
+            .finish())
+    } else {
+        log::info!("Implicit flow");
+        Ok(HttpResponse::NoContent()
+            .append_header((
+                "Location",
+                format!(
+                    "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
+                    oidc_context.redirect_uri.clone(),
+                    id_token,
+                    refresh_token,
+                    oidc_context.state.clone(),
+                ),
+            ))
+            .finish())
+    }
+}
+
+// Generate a random 45 bytes long, URL encoded string.
+fn generate_random_string() -> String {
+    let mut bytes = vec![0; 45];
+    let mut rng = rand::thread_rng();
+    rng.fill(&mut bytes[..]);
+    base64::engine::general_purpose::URL_SAFE.encode(bytes)
 }

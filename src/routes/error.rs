@@ -21,6 +21,11 @@ pub enum Error {
     Internal(String),
     VerifyJWT(String),
     InvalidDidSignature,
+    ResponseType,
+    RedirectUri,
+    InvalidAuthorizationCode,
+    UnsupportedFlow,
+    InvalidGrantType,
 }
 
 impl std::error::Error for Error {}
@@ -47,6 +52,13 @@ impl std::fmt::Display for Error {
             Error::VerifyJWT(s) => write!(f, "Failed to verify JWT {} ", s),
             Error::InvalidDidSignature => write!(f, "Failed to verify DID Signature"),
             Error::Internal(s) => write!(f, "Internal error: {}", s),
+            Error::ResponseType => write!(f, "Invalid response_type"),
+            Error::RedirectUri => write!(f, "Missing or mismatched redirect_uri"),
+            Error::InvalidAuthorizationCode => {
+                write!(f, "Authorization Code is invalid or expired")
+            }
+            Error::UnsupportedFlow => write!(f, "Unsupported authorization processing flow"),
+            Error::InvalidGrantType => write!(f, "Invalid grant_type value"),
         }
     }
 }
@@ -62,7 +74,12 @@ impl From<Error> for actix_web::Error {
             | Error::InvalidDid(_)
             | Error::FailedToDecrypt
             | Error::FailedToParseMessage
+            | Error::InvalidAuthorizationCode
             | Error::VerifyCredential(_)
+            | Error::RedirectUri
+            | Error::UnsupportedFlow
+            | Error::InvalidGrantType
+            | Error::ResponseType
             | Error::GetChallenge => actix_web::error::ErrorBadRequest(e),
             // unauthorized
             Error::SessionGet

@@ -1,9 +1,16 @@
+use std::str::FromStr;
+
 use actix_session::Session;
 use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 
-use crate::{constants::OIDC_SESSION_KEY, routes::error::Error, AppState};
+use crate::{
+    constants::{OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_SESSION_KEY},
+    response_type::ResponseType,
+    routes::error::Error,
+    AppState,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuthorizeQueryParameters {
@@ -12,7 +19,7 @@ pub struct AuthorizeQueryParameters {
     pub response_type: String,
     pub scope: String,
     pub state: String,
-    pub nonce: String,
+    pub nonce: Option<String>,
 }
 
 /// This handler is the oauth entrypoint. It parses the query parameters and checks if the client_id and redirect_uri are valid.
@@ -31,29 +38,42 @@ async fn authorize_handler(
         .ok_or(Error::OauthInvalidClientId)?
         .redirect_urls;
 
-    let are_requirements_empty = &app_state
+    let requirements_empty = &app_state
         .client_configs
         .get(&query.client_id)
         .ok_or(Error::OauthInvalidClientId)?
         .requirements
         .is_empty();
 
-    let is_redirect_uri_in_query = redirect_urls.contains(&query.redirect_uri);
+    // Support Authorization Code Flow and Implicit Flow.
+    let response_type = ResponseType::from_str(query.response_type.as_str())?;
 
-    match (are_requirements_empty, is_redirect_uri_in_query) {
-        (true, true) => {
+    // Implicit flow must include a nonce.
+    if response_type.is_implicit_flow() && query.nonce.is_none() {
+        return Err(Error::InvalidNonce);
+    }
+
+    let is_redirect_uri_in_query = redirect_urls.contains(&query.redirect_uri);
+    if !is_redirect_uri_in_query {
+        return Err(Error::OauthInvalidRedirectUri);
+    }
+
+    session.insert(REDIRECT_URI_SESSION_KEY, query.redirect_uri.clone())?;
+    session.insert(RESPONSE_TYPE_SESSION_KEY, query.response_type.clone())?;
+
+    match (requirements_empty, &query.nonce) {
+        (true, Some(nonce)) => {
             session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
-            let redirect_uri_with_nonce = format!("/?nonce={}", query.nonce);
+            let redirect_uri_with_nonce = format!("/?nonce={}", nonce);
             Ok(HttpResponse::Found()
                 .append_header(("Location", redirect_uri_with_nonce))
                 .finish())
         }
-        (false, true) => {
+        _ => {
             session.insert(OIDC_SESSION_KEY, query.clone().into_inner())?;
             Ok(HttpResponse::Found()
                 .append_header(("Location", "/"))
                 .finish())
         }
-        _ => Err(Error::OauthInvalidRedirectUri),
     }
 }
