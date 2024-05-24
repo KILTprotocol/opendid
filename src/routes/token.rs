@@ -23,6 +23,7 @@ pub struct TokenRequestBody {
     pub code: String,
     pub redirect_uri: String,
     pub client_secret: Option<String>,
+    pub client_id: Option<String>,
 }
 
 #[post("/api/v1/token")]
@@ -45,6 +46,22 @@ async fn post_token_handler(
         .get(&body.code)
         .await
         .ok_or(Error::InvalidAuthorizationCode)?;
+
+    // XNOR because client_secret and client_id must have the same Option value.
+    if body.client_secret.is_some() != body.client_id.is_some() {
+        if body.client_secret.is_none() {
+            return Err(Error::InvalidClientSecret);
+        } else {
+            return Err(Error::OauthInvalidClientId);
+        }
+    }
+
+    // client_id must be the same one used in `authorize`.
+    if let Some(client_id) = &body.client_id {
+        if *client_id != response_metadata.client_id {
+            return Err(Error::OauthInvalidClientId);
+        }
+    }
 
     let client_secret: Option<String> = {
         let app_state = app_state.read().await;
