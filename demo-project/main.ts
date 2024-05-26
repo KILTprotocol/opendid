@@ -43,7 +43,7 @@ app.get('/login.html', (req, res) => {
 
 // This is a protected endpoint that requires a valid JWT token
 app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req, res) => {
-  // @ts-ignore - express-jwt adds auth to request
+  // @ts-expect-error - express-jwt adds auth to request
   const token = req.auth;
   // check that token.nonce matches the nonce cookie
   if (token.nonce !== req.cookies.nonce) {
@@ -56,19 +56,19 @@ app.get('/protected', jwt({ secret: tokenSecret, algorithms: ['HS256'] }), (req,
 
 // This is a protected endpoint that requires a valid Authorization Code.
 app.post('/protected/AuthorizationCode', async (req, res) => {
-  let codeRequestBody = {
+  const codeRequestBody = {
     code: req.body.auth_code,
     grant_type: 'authorization_code',
     redirect_uri: 'http://localhost:1606/callback.html',
     client_id: 'example-client',
     client_secret: 'insecure_client_secret',
   };
-  let response: Response = await fetch('http://localhost:3001/api/v1/token', {
+  const response: Response = await fetch('http://localhost:3001/api/v1/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: qs.stringify(codeRequestBody),
   });
-  let idToken = (await response.json()).id_token;
+  const idToken = (await response.json()).id_token;
 
   const decodedToken = jsonwebtoken.verify(idToken, tokenSecret) as JwtPayload;
   if (decodedToken.nonce !== req.cookies.nonce) {
@@ -88,6 +88,6 @@ app.listen(port, () => {
 });
 
 // use the token to get the user's web3 name, if not present use the users DID
-function getNameFromToken(token: any) {
+function getNameFromToken(token) {
   return token.w3n ? `w3n:${token.w3n}` : token.sub;
 }

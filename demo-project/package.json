@@ -1,37 +1,42 @@
 {
-  "name": "demo-project",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
-  "scripts": {
-    "build": "parcel build main.ts",
-    "format": "npx prettier --write .",
-    "lint": "eslint --max-warnings 0 --config ./.eslintrc.json \"./**/*.ts*\""
-  },
-  "dependencies": {
-    "body-parser": "^1.20.2",
-    "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "express-jwt": "^8.4.1",
-    "jsonwebtoken": "^9.0.2",
-    "qs": "^6.12.1"
-  },
-  "devDependencies": {
-    "@types/cookie-parser": "^1.4.3",
-    "@types/cookie-session": "^2.0.44",
-    "@types/cors": "^2.8.13",
-    "@types/express": "^4.17.17",
-    "@types/express-jwt": "^7.4.2",
-    "parcel": "^2.9.3",
-    "eslint": "^8.48.0",
-    "eslint-config-prettier": "^9.0.0",
-    "eslint-import-resolver-typescript": "^3.6.0",
-    "eslint-plugin-import": "^2.28.1",
-    "eslint-plugin-prettier": "^5.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.6.0",
-    "@typescript-eslint/parser": "^6.6.0",
-    "typescript": "^5.2.2",
-    "prettier": "^3.0.3"
-  }
+    "name": "demo-project",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "scripts": {
+        "build": "parcel build main.ts",
+        "format": "npx prettier --write .",
+        "lint": "yarn lint-backend && yarn lint-frontend",
+        "lint-backend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./**/*.ts*\"",
+        "lint-frontend": "eslint --max-warnings 0 --config ./demo-frontend/.eslintrc.json  \"./demo-frontend/**/*.{js,html}\"",
+        "fix": "yarn fix-backend && yarn fix-frontend",
+        "fix-backend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./**/*.ts*\"",
+        "fix-frontend": "eslint --max-warnings 0 --config ./demo-frontend/.eslintrc.json  \"./demo-frontend/**/*.{js,html}\""
+    },
+    "dependencies": {
+        "body-parser": "^1.20.2",
+        "cookie-parser": "^1.4.6",
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "express-jwt": "^8.4.1",
+        "jsonwebtoken": "^9.0.2",
+        "qs": "^6.12.1"
+    },
+    "devDependencies": {
+        "@types/cookie-parser": "^1.4.3",
+        "@types/cookie-session": "^2.0.44",
+        "@types/cors": "^2.8.13",
+        "@types/express": "^4.17.17",
+        "@types/express-jwt": "^7.4.2",
+        "parcel": "^2.9.3",
+        "eslint": "^8.48.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-import-resolver-typescript": "^3.6.0",
+        "eslint-plugin-import": "^2.28.1",
+        "eslint-plugin-prettier": "^5.0.0",
+        "@typescript-eslint/eslint-plugin": "^6.6.0",
+        "@typescript-eslint/parser": "^6.6.0",
+        "typescript": "^5.2.2",
+        "prettier": "^3.0.3"
+    }
 }
