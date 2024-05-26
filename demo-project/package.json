@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "build": "parcel build main.ts",
-    "format": "npx prettier --write ."
+    "format": "npx prettier --write .",
+    "lint": "eslint --max-warnings 0 --config ./.eslintrc.json \"./**/*.ts*\""
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -22,6 +23,15 @@
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.17",
     "@types/express-jwt": "^7.4.2",
-    "parcel": "^2.9.3"
+    "parcel": "^2.9.3",
+    "eslint": "^8.48.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-import-resolver-typescript": "^3.6.0",
+    "eslint-plugin-import": "^2.28.1",
+    "eslint-plugin-prettier": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.6.0",
+    "@typescript-eslint/parser": "^6.6.0",
+    "typescript": "^5.2.2",
+    "prettier": "^3.0.3"
   }
 }
