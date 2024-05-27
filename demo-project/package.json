@@ -12,8 +12,8 @@
         "lint-backend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./**/*.ts*\"",
         "lint-frontend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./demo-frontend/**/*\"",
         "fix": "yarn fix-backend && yarn fix-frontend",
-        "fix-backend": "eslint --max-warnings 0 --fix --config ./.eslintrc.json  \"./**/*.ts*\"",
-        "fix-frontend": "eslint --max-warnings 0 --fix --config ./.eslintrc.json  \"./demo-frontend/**/*\""
+        "fix-backend": "yarn lint-backend --fix",
+        "fix-frontend": "yarn lint-frontend --fix"
     },
     "dependencies": {
         "body-parser": "^1.20.2",
