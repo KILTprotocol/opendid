@@ -8,7 +8,6 @@
     },
     "scripts": {
         "build": "parcel build main.ts",
-        "format": "npx prettier --write .",
         "lint": "yarn lint-backend && yarn lint-frontend",
         "lint-backend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./**/*.ts*\"",
         "lint-frontend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./demo-frontend/**/*\"",
