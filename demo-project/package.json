@@ -8,10 +8,10 @@
         "format": "npx prettier --write .",
         "lint": "yarn lint-backend && yarn lint-frontend",
         "lint-backend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./**/*.ts*\"",
-        "lint-frontend": "eslint --max-warnings 0 --config ./demo-frontend/.eslintrc.json  \"./demo-frontend/**/*.{js,html}\"",
+        "lint-frontend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./demo-frontend/**/*\"",
         "fix": "yarn fix-backend && yarn fix-frontend",
-        "fix-backend": "eslint --max-warnings 0 --config ./.eslintrc.json  \"./**/*.ts*\"",
-        "fix-frontend": "eslint --max-warnings 0 --config ./demo-frontend/.eslintrc.json  \"./demo-frontend/**/*.{js,html}\""
+        "fix-backend": "eslint --max-warnings 0 --fix --config ./.eslintrc.json  \"./**/*.ts*\"",
+        "fix-frontend": "eslint --max-warnings 0 --fix --config ./demo-frontend/.eslintrc.json  \"./demo-frontend/**/*.{js,html}\""
     },
     "dependencies": {
         "body-parser": "^1.20.2",
@@ -23,6 +23,8 @@
         "qs": "^6.12.1"
     },
     "devDependencies": {
+        "@html-eslint/eslint-plugin": "^0.24.1",
+        "@html-eslint/parser": "^0.24.1",
         "@types/cookie-parser": "^1.4.3",
         "@types/cookie-session": "^2.0.44",
         "@types/cors": "^2.8.13",
@@ -32,6 +34,7 @@
         "eslint": "^8.48.0",
         "eslint-config-prettier": "^9.0.0",
         "eslint-import-resolver-typescript": "^3.6.0",
+        "eslint-plugin-html": "^8.1.1",
         "eslint-plugin-import": "^2.28.1",
         "eslint-plugin-prettier": "^5.0.0",
         "@typescript-eslint/eslint-plugin": "^6.6.0",
