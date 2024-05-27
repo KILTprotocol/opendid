@@ -1,12 +1,12 @@
 // get the id_token and refresh_token from the fragment part of the url
 // and store them in the session storage
-const fragmentParams = new URLSearchParams(window.location.hash.slice(1));
-const idToken = fragmentParams.get('id_token');
-const refreshToken = fragmentParams.get('refresh_token');
-const state = fragmentParams.get('state');
+const fragmentParams = new URLSearchParams(window.location.hash.slice(1))
+const idToken = fragmentParams.get('id_token')
+const refreshToken = fragmentParams.get('refresh_token')
+const state = fragmentParams.get('state')
 
-const params = new URLSearchParams(window.location.search);
-const authCode = params.get('code');
+const params = new URLSearchParams(window.location.search)
+const authCode = params.get('code')
 
 if (idToken && refreshToken && state) {
   const fn = async () => {
@@ -15,10 +15,10 @@ if (idToken && refreshToken && state) {
       headers: {
         Authorization: `Bearer ${idToken}`,
       },
-    });
-    displayGreeting(resp);
-  };
-  fn();
+    })
+    displayGreeting(resp)
+  }
+  fn()
 } else if (authCode) {
   const fn = async () => {
     // use Authorization Code to access protected route.
@@ -29,19 +29,19 @@ if (idToken && refreshToken && state) {
       body: JSON.stringify({
         auth_code: authCode,
       }),
-    });
-    await displayGreeting(resp);
-  };
-  fn();
+    })
+    await displayGreeting(resp)
+  }
+  fn()
 }
 
 async function displayGreeting(resp) {
-  const greeting = document.createElement('h2');
+  const greeting = document.createElement('h2')
   if (resp.status !== 200) {
-    greeting.innerText = `Error: ${resp.status} ${resp.statusText}`;
-    document.body.appendChild(greeting);
-    return;
+    greeting.innerText = `Error: ${resp.status} ${resp.statusText}`
+    document.body.appendChild(greeting)
+    return
   }
-  greeting.innerText = await resp.text();
-  document.body.appendChild(greeting);
+  greeting.innerText = await resp.text()
+  document.body.appendChild(greeting)
 }
