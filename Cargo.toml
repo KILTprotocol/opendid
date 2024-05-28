@@ -43,6 +43,7 @@ sp-core = { version = "21.0.0", default-features = false }
 sp-runtime = "24.0.0"
 subxt = "0.31.0"
 tokio = { version = "1.37.0", features = ["rt-multi-thread"] }
+url = { version = "2.5.0",  features = ["serde"]}
 uuid = { version = "1.8.0", features = ["v4"] }
 
 [features]
