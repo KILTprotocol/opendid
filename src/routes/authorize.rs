@@ -4,6 +4,7 @@ use actix_session::Session;
 use actix_web::{get, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
+use url::Url;
 
 use crate::{
     constants::{OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_SESSION_KEY},
@@ -32,7 +33,7 @@ async fn authorize_handler(
 ) -> Result<HttpResponse, Error> {
     log::info!("GET authorize handler");
     let app_state = app_state.read().await;
-    let redirect_urls = &app_state
+    let redirect_urls: &Vec<url::Url> = &app_state
         .client_configs
         .get(&query.client_id)
         .ok_or(Error::OauthInvalidClientId)?
@@ -53,7 +54,8 @@ async fn authorize_handler(
         return Err(Error::InvalidNonce);
     }
 
-    let is_redirect_uri_in_query = redirect_urls.contains(&query.redirect_uri);
+    let is_redirect_uri_in_query = redirect_urls
+        .contains(&Url::parse(&query.redirect_uri).map_err(|_| Error::OauthInvalidRedirectUri)?);
     if !is_redirect_uri_in_query {
         return Err(Error::OauthInvalidRedirectUri);
     }

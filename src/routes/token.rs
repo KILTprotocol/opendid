@@ -2,6 +2,7 @@ use crate::{error::Error, AppState};
 use actix_web::{post, web, HttpResponse};
 use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
+use url::Url;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TokenResponse {
@@ -14,14 +15,14 @@ pub struct TokenResponse {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TokenMetadata {
     pub client_id: String,
-    pub redirect_uri: String,
+    pub redirect_uri: Url,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TokenRequestBody {
     pub grant_type: String,
     pub code: String,
-    pub redirect_uri: String,
+    pub redirect_uri: Url,
     pub client_secret: Option<String>,
     pub client_id: Option<String>,
 }

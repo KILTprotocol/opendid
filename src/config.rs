@@ -99,7 +99,7 @@ pub struct EtcdTlsClientAuth {
 pub struct ClientConfig {
     pub requirements: Vec<CredentialRequirement>,
     #[serde(rename = "redirectUrls")]
-    pub redirect_urls: Vec<String>,
+    pub redirect_urls: Vec<url::Url>,
     #[serde(rename = "checksDirectory")]
     pub checks_directory: Option<String>,
     #[serde(rename = "clientSecret")]
