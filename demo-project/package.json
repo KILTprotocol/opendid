@@ -3,9 +3,6 @@
     "version": "1.0.0",
     "main": "index.js",
     "license": "MIT",
-    "engines": {
-        "node": ">= v18.17.1"
-    },
     "scripts": {
         "build": "parcel build main.ts",
         "lint": "yarn lint-backend && yarn lint-frontend",

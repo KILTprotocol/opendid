@@ -14,7 +14,7 @@ jobs:
       - name: Configure Node and package manager
         uses: actions/setup-node@v3.6.0
         with:
-          node-version-file: "login-frontend/package.json"
+          node-version-file: "login-frontend/.nvmrc"
           cache: "yarn"
           cache-dependency-path: "login-frontend/yarn.lock"
 
