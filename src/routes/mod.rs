@@ -1,4 +1,4 @@
-mod authentication;
+mod challenge;
 mod authorize;
 mod credentials;
 mod did;
@@ -8,7 +8,7 @@ mod token;
 mod well_known_did_config;
 
 pub mod error;
-pub use authentication::*;
+pub use challenge::*;
 pub use authorize::*;
 pub use credentials::*;
 pub use did::*;
