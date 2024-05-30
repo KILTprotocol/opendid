@@ -1,6 +1,6 @@
 mod authentication;
 mod authorize;
-mod credentials;
+mod challenge;
 mod did;
 mod endpoint;
 mod refresh;
@@ -10,7 +10,7 @@ mod well_known_did_config;
 pub mod error;
 pub use authentication::*;
 pub use authorize::*;
-pub use credentials::*;
+pub use challenge::*;
 pub use did::*;
 pub use endpoint::*;
 pub use refresh::*;

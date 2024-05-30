@@ -19,7 +19,7 @@ else
   exit 1
 fi
 echo "Generating DID..."
-npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}"
+npx ts-node scripts/gen-did/main.ts "${PAYMENT_ACCOUNT_SEED}" || { echo 'DID generation failed!' ; exit 1; }
 DID=$(cat did-document.json | jq -r .uri)
 echo "DID: ${DID}"
 KEYAGREEMENT_PRIVKEY=$(cat did-secrets.json | jq -r .keyAgreement.privKey)
