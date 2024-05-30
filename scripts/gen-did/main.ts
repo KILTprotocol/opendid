@@ -32,7 +32,7 @@ async function main() {
 
     if (!mnemonicValidate(paymentSeed)) {
         console.error('Mnemonic is not valid', paymentSeed)
-        process.exit()
+        process.exit(1)
     }
     const paymentKeyPair = Kilt.Utils.Crypto.makeKeypairFromUri(paymentSeed, signingKeyType)
     console.debug(`Payment account address: ${paymentKeyPair.address}`)
