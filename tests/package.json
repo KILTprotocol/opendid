@@ -1,0 +1,22 @@
+{
+    "name": "tests",
+    "version": "1.0.0",
+    "description": "Integration tests for OpenDID",
+    "main": "index.ts",
+    "license": "MIT",
+    "scripts": {
+        "start": "ts-node index.ts"
+    },
+    "dependencies": {
+        "@kiltprotocol/sdk-js": "^0.35.2",
+        "@types/jest": "^29.5.12",
+        "axios": "^1.7.2",
+        "dotenv": "^16.4.5",
+        "ts-jest": "^29.1.4"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.4.5"
+    }
+}
