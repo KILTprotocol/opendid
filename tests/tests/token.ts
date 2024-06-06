@@ -4,7 +4,7 @@ import { CLIENT_ID, CLIENT_SECRET, JWT_SECRET, OPENDID_URL, REDIRECT_URI } from 
 import { expect } from 'vitest'
 import * as jsonwebtoken from 'jsonwebtoken'
 
-const tokenUrl = new URL('api/v1/token', OPENDID_URL)
+export const tokenUrl = new URL('api/v1/token', OPENDID_URL)
 
 /**
  * Tests the `/token` endpoint. Verifies the returned JWT.
@@ -22,13 +22,16 @@ export async function token(testState: TestState) {
   for (const key in reqParams) {
     params.append(key, reqParams[key])
   }
-  let response = await axios.post(tokenUrl.toString(), params)
+  let response = await axios.post(tokenUrl.toString(), params, { validateStatus: () => true })
+  expect(response.status).toBe(200)
   expect(response.data.access_token.length).toBeGreaterThan(10)
   expect(response.data.token_type).toBe('bearer')
   expect(response.data.refresh_token.length).toBeGreaterThan(10)
 
   const decodedToken = jsonwebtoken.verify(response.data.id_token, JWT_SECRET) as jsonwebtoken.JwtPayload
   expect(decodedToken.nonce).toBe(TestState.NONCE)
+
+  // Token can be retrieved only once.
   response = await axios.post(tokenUrl.toString(), params, { validateStatus: () => true })
-    expect(response.status).toBe(400)
+  expect(response.status).toBe(400)
 }
