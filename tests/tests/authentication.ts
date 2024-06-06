@@ -4,11 +4,10 @@ import { TestState } from './test_state'
 import { deriveAuthenticationKey, deriveEncryptionKeyFromSeed } from './utils'
 import * as Kilt from '@kiltprotocol/sdk-js'
 import { toHex } from '@smithy/util-hex-encoding'
-import { CREDENTIAL, DID_AUTH_KEY_URL, DID_KEY_AGREEMENT_URL, REQUIRED_CTYPE_HASH } from '../test_config'
+import { CREDENTIAL, DID_AUTH_KEY_URL, DID_KEY_AGREEMENT_URL, OPENDID_URL, REQUIRED_CTYPE_HASH } from '../test_config'
 
-const opendidEndpoint = process.env.OPENDID_URL
 const mnemonic = process.env.SEED as string
-const credentialUrl = new URL('api/v1/credentials', opendidEndpoint)
+const credentialUrl = new URL('api/v1/credentials', OPENDID_URL)
 
 interface EncryptedMessage {
   receiverKeyUri: string
@@ -48,9 +47,7 @@ export async function authentication(testState: TestState) {
   const decryptedObject = JSON.parse(decrypted) as Requirments
 
   expect(decryptedObject.body.type).toBe('request-credential')
-  expect(decryptedObject.body.content.cTypes[0].cTypeHash).toBe(
-    REQUIRED_CTYPE_HASH,
-  )
+  expect(decryptedObject.body.content.cTypes[0].cTypeHash).toBe(REQUIRED_CTYPE_HASH)
   expect(decryptedObject.body.content.cTypes[0].requiredProperties[0]).toBe('Email')
 
   const seed = Kilt.Utils.Crypto.mnemonicToMiniSecret(mnemonic)

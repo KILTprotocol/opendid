@@ -2,10 +2,9 @@ import 'dotenv/config'
 import axios, { AxiosResponse } from 'axios'
 import { addQueryParamsToUrl } from './utils'
 import { TestState } from './test_state'
-import { CLIENT_ID, REDIRECT_URI } from '../test_config'
+import { CLIENT_ID, OPENDID_URL, REDIRECT_URI } from '../test_config'
 
-const opendidEndpoint = process.env.OPENDID_URL
-const authorizeUrl = new URL('api/v1/authorize', opendidEndpoint)
+const authorizeUrl = new URL('api/v1/authorize', OPENDID_URL)
 
 export async function authorize(testState: TestState, implicit: boolean = false): Promise<AxiosResponse> {
   const req_params = {

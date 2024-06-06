@@ -3,9 +3,9 @@ import axios, { AxiosResponse } from 'axios'
 import { TestState } from './test_state'
 import { resolveKeyDetails } from './utils'
 import { fromHex } from '@smithy/util-hex-encoding'
+import { OPENDID_URL } from '../test_config'
 
-const opendidEndpoint = process.env.OPENDID_URL
-const challengeUrl = new URL('api/v1/challenge', opendidEndpoint)
+const challengeUrl = new URL('api/v1/challenge', OPENDID_URL)
 
 export async function challenge(testState: TestState): Promise<AxiosResponse> {
   let cookie = testState.getCookie()

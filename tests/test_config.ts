@@ -1,7 +1,8 @@
 import { ICredential } from '@kiltprotocol/sdk-js'
 
+export const OPENDID_URL = 'http://localhost:3001'
 
-// `client_id` and `redirect_uri` allowed by the OpenDID service and set in the `config.yaml` file.
+// Values  allowed by the OpenDID service and set in the `config.yaml` file.
 export const CLIENT_ID = 'example-client'
 export const REDIRECT_URI = 'http://localhost:1606/callback.html'
 export const CLIENT_SECRET = 'insecure_client_secret'
