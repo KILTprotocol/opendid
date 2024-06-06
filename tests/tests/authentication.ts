@@ -29,7 +29,11 @@ export const credentialUrl = new URL('api/v1/credentials', OPENDID_URL)
  * Get Request for `/credentials`
  */
 export async function authenticationGet(testState: TestState): Promise<Requirments> {
-  const response = await axios.get(credentialUrl.toString(), { headers: { Cookie: testState.getCookie() } })
+  const response = await axios.get(credentialUrl.toString(), {
+    headers: { Cookie: testState.getCookie() },
+    validateStatus: () => true,
+  })
+    expect(response.status).toBe(200)
   testState.setCookie(response)
 
   const decrypted = testState.decrypt(response.data.ciphertext, response.data.nonce)
@@ -96,10 +100,9 @@ export async function authentication(testState: TestState, implicit = false) {
   const cookie = testState.getCookie()
   const response = await axios.post(credentialUrl.toString(), postRequestBody, {
     headers: { Cookie: cookie },
-    validateStatus: (status) => {
-      return status == 204
-    },
+    validateStatus: () => true,
   })
+  expect(response.status).toBe(204)
 
   const url = new URL(response.headers.location)
   const redirectUri = new URL(REDIRECT_URI)
@@ -116,7 +119,7 @@ export async function authentication(testState: TestState, implicit = false) {
     const decodedToken = jsonwebtoken.verify(idToken, JWT_SECRET) as jsonwebtoken.JwtPayload
     expect(decodedToken.nonce).toBe(TestState.NONCE)
   } else {
-        // In the Authorization Code Flow case, the code is returned as a query parameter which is stored in the `testState`
+    // In the Authorization Code Flow case, the code is returned as a query parameter which is stored in the `testState`
     expect(url.searchParams.get('state')).toBe(TestState.STATE)
     const code = url.searchParams.get('code')!
     expect(code.length).toBeGreaterThan(10)

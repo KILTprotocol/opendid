@@ -6,6 +6,9 @@ import * as jsonwebtoken from 'jsonwebtoken'
 
 const tokenUrl = new URL('api/v1/token', OPENDID_URL)
 
+/**
+ * Tests the `/token` endpoint. Verifies the returned JWT.
+ */
 export async function token(testState: TestState) {
   const reqParams = {
     grant_type: 'authorization_code',
@@ -19,11 +22,13 @@ export async function token(testState: TestState) {
   for (const key in reqParams) {
     params.append(key, reqParams[key])
   }
-  const response = await axios.post(tokenUrl.toString(), params)
+  let response = await axios.post(tokenUrl.toString(), params)
   expect(response.data.access_token.length).toBeGreaterThan(10)
   expect(response.data.token_type).toBe('bearer')
   expect(response.data.refresh_token.length).toBeGreaterThan(10)
 
   const decodedToken = jsonwebtoken.verify(response.data.id_token, JWT_SECRET) as jsonwebtoken.JwtPayload
   expect(decodedToken.nonce).toBe(TestState.NONCE)
+  response = await axios.post(tokenUrl.toString(), params, { validateStatus: () => true })
+    expect(response.status).toBe(400)
 }

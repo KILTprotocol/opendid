@@ -24,10 +24,9 @@ export async function authorize(testState: TestState, implicit: boolean = false)
   // Don't redirect, and don't throw on status 302.
   const response = await axios.get(urlWithParams.toString(), {
     maxRedirects: 0,
-    validateStatus: (status) => {
-      return status == 302
-    },
+    validateStatus: () => true,
   })
+  expect(response.status).toBe(302)
   testState.setCookie(response)
   expect(response.headers.location).toEqual('/')
   expect(response.data).toEqual('')

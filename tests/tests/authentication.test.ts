@@ -47,10 +47,9 @@ describe('Authentication', () => {
     const cookie = testState.getCookie()
     const response = await axios.post(credentialUrl.toString(), postRequestBody, {
       headers: { Cookie: cookie },
-      validateStatus: (status) => {
-        return status == 400
-      },
+      validateStatus: () => true,
     })
+    expect(response.status).toBe(400)
     expect(response.data).toBe('Failed to parse message')
   })
 })
