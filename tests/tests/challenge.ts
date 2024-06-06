@@ -3,15 +3,22 @@ import { TestState } from './test_state'
 import { resolveKeyDetails } from './utils'
 import { fromHex } from '@smithy/util-hex-encoding'
 import { OPENDID_URL } from '../test_config'
-import { expect  } from 'vitest'
+import { expect } from 'vitest'
 
 const challengeUrl = new URL('api/v1/challenge', OPENDID_URL)
 
+/**
+ * Tests the GET and POST `/challenge` endpoint.
+ *
+ * @param [useWrongChallenge=false] set to `true` to sends back a wrong challenge and checks if an error response is returned.
+ */
 export async function challenge(testState: TestState, useWrongChallenge = false): Promise<AxiosResponse> {
+  // Get a challenge.
   let cookie = testState.getCookie()
   let response = await axios.get(challengeUrl.toString(), { headers: { Cookie: cookie } })
   testState.setCookie(response)
 
+  // Resolve the OpenDID's servive Key Agreement keys from it's DID Document.
   const keyDetails = await resolveKeyDetails(response.data.dAppEncryptionKeyUri)
   testState.setOpenDidKeyAgreement(keyDetails)
   expect(response.data.challenge.length).toBeGreaterThan(10)

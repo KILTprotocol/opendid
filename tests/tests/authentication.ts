@@ -9,6 +9,7 @@ import {
   DID_KEY_AGREEMENT_URL,
   JWT_SECRET,
   OPENDID_URL,
+  REDIRECT_URI,
   REQUIRED_CTYPE_HASH,
 } from '../test_config'
 import { EncryptedMessage, Requirments } from './types'
@@ -40,8 +41,13 @@ export async function authenticationGet(testState: TestState): Promise<Requirmen
   return requirements
 }
 
+/**
+ * Test the `/credentials` endpoint for both the Authorization Code Flow and the Implicit Flow
+ */
 export async function authentication(testState: TestState, implicit = false) {
   const requirements = await authenticationGet(testState)
+
+  // Construct the signed presentaiton.
   const seed = Kilt.Utils.Crypto.mnemonicToMiniSecret(mnemonic)
   const key = deriveEncryptionKeyFromSeed(seed)
   const authenticationKey = deriveAuthenticationKey(seed)
@@ -64,6 +70,7 @@ export async function authentication(testState: TestState, implicit = false) {
     }
   }
 
+  // Construct the required payload.
   const payload = {
     body: { content: [presentation], type: 'credential' },
     createdAt: 0,
@@ -72,6 +79,7 @@ export async function authentication(testState: TestState, implicit = false) {
     messageId: 'abc123',
   }
 
+  // Encrypt the payload with the Key Agreement key of the test user's DID Document.
   const encrypted = Kilt.Utils.Crypto.encryptAsymmetric(
     JSON.stringify(payload),
     testState.getOpenDidKeyAgreement().publicKey,
@@ -84,6 +92,7 @@ export async function authentication(testState: TestState, implicit = false) {
     nonce: '0x' + toHex(encrypted.nonce),
   }
 
+  // Send the POST Request.
   const cookie = testState.getCookie()
   const response = await axios.post(credentialUrl.toString(), postRequestBody, {
     headers: { Cookie: cookie },
@@ -93,9 +102,11 @@ export async function authentication(testState: TestState, implicit = false) {
   })
 
   const url = new URL(response.headers.location)
-  expect(url.origin).toBe('http://localhost:1606')
-  expect(url.pathname).toBe('/callback.html')
+  const redirectUri = new URL(REDIRECT_URI)
+  expect(url.origin).toBe(redirectUri.origin)
+  expect(url.pathname).toBe(redirectUri.pathname)
   if (implicit) {
+    // In the implicit case, the verify the `id_token` which is returned as a fragment identifier.
     const fragmentIdentifiers = new URLSearchParams(url.hash.replace('#', '?'))
     expect(fragmentIdentifiers.get('state')).toBe(TestState.STATE)
     expect(fragmentIdentifiers.get('token_type')).toBe('bearer')
@@ -105,6 +116,7 @@ export async function authentication(testState: TestState, implicit = false) {
     const decodedToken = jsonwebtoken.verify(idToken, JWT_SECRET) as jsonwebtoken.JwtPayload
     expect(decodedToken.nonce).toBe(TestState.NONCE)
   } else {
+        // In the Authorization Code Flow case, the code is returned as a query parameter which is stored in the `testState`
     expect(url.searchParams.get('state')).toBe(TestState.STATE)
     const code = url.searchParams.get('code')!
     expect(code.length).toBeGreaterThan(10)

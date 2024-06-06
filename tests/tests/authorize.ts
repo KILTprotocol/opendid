@@ -6,6 +6,11 @@ import { expect } from 'vitest'
 
 const authorizeUrl = new URL('api/v1/authorize', OPENDID_URL)
 
+/**
+ * Get request of `/authorize`
+ *
+ * @param [implicit=false] set it to `true` to start an Implicit Flow, otherwise Authorization Code Flow.
+ */
 export async function authorize(testState: TestState, implicit: boolean = false): Promise<AxiosResponse> {
   const reqParams = {
     client_id: CLIENT_ID,
