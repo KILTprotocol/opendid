@@ -1,55 +1,47 @@
 import axios from 'axios'
-import 'dotenv/config'
 import { TestState } from './test_state'
 import { deriveAuthenticationKey, deriveEncryptionKeyFromSeed } from './utils'
 import * as Kilt from '@kiltprotocol/sdk-js'
 import { toHex } from '@smithy/util-hex-encoding'
-import { CREDENTIAL, DID_AUTH_KEY_URL, DID_KEY_AGREEMENT_URL, OPENDID_URL, REQUIRED_CTYPE_HASH } from '../test_config'
+import {
+  CREDENTIAL,
+  DID_AUTH_KEY_URL,
+  DID_KEY_AGREEMENT_URL,
+  JWT_SECRET,
+  OPENDID_URL,
+  REQUIRED_CTYPE_HASH,
+} from '../test_config'
+import { EncryptedMessage, Requirments } from './types'
+import { expect } from 'vitest'
+import * as jsonwebtoken from 'jsonwebtoken'
 
+import 'dotenv/config'
 const mnemonic = process.env.SEED as string
-const credentialUrl = new URL('api/v1/credentials', OPENDID_URL)
 
-interface EncryptedMessage {
-  receiverKeyUri: string
-  senderKeyUri: string
-  ciphertext: string
-  nonce: string
-  receivedAt?: number
+if (!mnemonic) {
+  throw new Error('mnemonic is not set')
 }
 
-interface Requirments {
-  body: {
-    type: string
-    content: {
-      cTypes: [
-        {
-          cTypeHash: string
-          trustedAttesters: string[]
-          requiredProperties: string[]
-        },
-      ]
-      challenge: string
-    }
-  }
-  createdAt: number
-  sender: string
-  receiver: string
-  messageId: string
-  inReplyTo: null
-  references: null
-}
+export const credentialUrl = new URL('api/v1/credentials', OPENDID_URL)
 
-export async function authentication(testState: TestState) {
-  let response = await axios.get(credentialUrl.toString(), { headers: { Cookie: testState.getCookie() } })
+/**
+ * Get Request for `/credentials`
+ */
+export async function authenticationGet(testState: TestState): Promise<Requirments> {
+  const response = await axios.get(credentialUrl.toString(), { headers: { Cookie: testState.getCookie() } })
   testState.setCookie(response)
 
   const decrypted = testState.decrypt(response.data.ciphertext, response.data.nonce)
-  const decryptedObject = JSON.parse(decrypted) as Requirments
+  const requirements = JSON.parse(decrypted) as Requirments
 
-  expect(decryptedObject.body.type).toBe('request-credential')
-  expect(decryptedObject.body.content.cTypes[0].cTypeHash).toBe(REQUIRED_CTYPE_HASH)
-  expect(decryptedObject.body.content.cTypes[0].requiredProperties[0]).toBe('Email')
+  expect(requirements.body.type).toBe('request-credential')
+  expect(requirements.body.content.cTypes[0].cTypeHash).toBe(REQUIRED_CTYPE_HASH)
+  expect(requirements.body.content.cTypes[0].requiredProperties[0]).toBe('Email')
+  return requirements
+}
 
+export async function authentication(testState: TestState, implicit = false) {
+  const requirements = await authenticationGet(testState)
   const seed = Kilt.Utils.Crypto.mnemonicToMiniSecret(mnemonic)
   const key = deriveEncryptionKeyFromSeed(seed)
   const authenticationKey = deriveAuthenticationKey(seed)
@@ -57,16 +49,8 @@ export async function authentication(testState: TestState) {
   const presentation = await Kilt.Credential.createPresentation({
     credential: CREDENTIAL,
     signCallback: sign,
-    challenge: decryptedObject.body.content.challenge,
+    challenge: requirements.body.content.challenge,
   })
-
-  const toSend = {
-    body: { content: [presentation], type: 'credential' },
-    createdAt: 0,
-    sender: '-',
-    receiver: '-',
-    messageId: '1234',
-  }
 
   async function sign({ data }: Kilt.SignRequestData) {
     const signature = authenticationKey.sign(data, { withType: false })
@@ -80,9 +64,16 @@ export async function authentication(testState: TestState) {
     }
   }
 
-  const credentialString = JSON.stringify(toSend)
+  const payload = {
+    body: { content: [presentation], type: 'credential' },
+    createdAt: 0,
+    sender: '-',
+    receiver: '-',
+    messageId: 'abc123',
+  }
+
   const encrypted = Kilt.Utils.Crypto.encryptAsymmetric(
-    credentialString,
+    JSON.stringify(payload),
     testState.getOpenDidKeyAgreement().publicKey,
     key.secretKey,
   )
@@ -94,10 +85,29 @@ export async function authentication(testState: TestState) {
   }
 
   const cookie = testState.getCookie()
-  response = await axios.post(credentialUrl.toString(), postRequestBody, {
+  const response = await axios.post(credentialUrl.toString(), postRequestBody, {
     headers: { Cookie: cookie },
     validateStatus: (status) => {
       return status == 204
     },
   })
+
+  const url = new URL(response.headers.location)
+  expect(url.origin).toBe('http://localhost:1606')
+  expect(url.pathname).toBe('/callback.html')
+  if (implicit) {
+    const fragmentIdentifiers = new URLSearchParams(url.hash.replace('#', '?'))
+    expect(fragmentIdentifiers.get('state')).toBe(TestState.STATE)
+    expect(fragmentIdentifiers.get('token_type')).toBe('bearer')
+    expect(fragmentIdentifiers.get('refresh_token')!.length).toBeGreaterThan(10)
+    const idToken = fragmentIdentifiers.get('id_token') as string
+
+    const decodedToken = jsonwebtoken.verify(idToken, JWT_SECRET) as jsonwebtoken.JwtPayload
+    expect(decodedToken.nonce).toBe(TestState.NONCE)
+  } else {
+    expect(url.searchParams.get('state')).toBe(TestState.STATE)
+    const code = url.searchParams.get('code')!
+    expect(code.length).toBeGreaterThan(10)
+    testState.setAuthCode(code)
+  }
 }

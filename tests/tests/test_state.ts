@@ -55,6 +55,9 @@ export class TestState {
     this.cookie = 'opendid=' + parsedCookie['opendid']
   }
 
+  /**
+   * Returns the stored `opendid` cookie.
+   */
   public getCookie(): string {
     return this.cookie
   }
@@ -67,14 +70,14 @@ export class TestState {
   }
 
   /**
-   * Sets the Authroization Code returned from `POST /credentials` for Authroization Code Flow
+   * Sets the Authorization Code returned from `POST /credentials` for Authorization Code Flow
    */
   public setAuthCode(code: string) {
     this.code = code
   }
 
   /**
-   * Returns Authroization Code returned from `POST /credentials` for Authroization Code Flow
+   * Returns Authorization Code returned from `POST /credentials` for Authorization Code Flow
    */
   public getAuthCode(): string {
     if (this.code == undefined) {

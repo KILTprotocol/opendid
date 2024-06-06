@@ -7,6 +7,9 @@ export const CLIENT_ID = 'example-client'
 export const REDIRECT_URI = 'http://localhost:1606/callback.html'
 export const CLIENT_SECRET = 'insecure_client_secret'
 
+// Secret to verify JWTs.
+export const JWT_SECRET = 'super-secret-jwt-secret'
+
 // The credential used for authentication the test user. It must be issued by an attester accepted
 // by the OpenDID Service (SocialKYC by default).
 export const CREDENTIAL: ICredential = {
