@@ -5,6 +5,9 @@
     "main": "index.ts",
     "type": "module",
     "license": "MIT",
+    "engines": {
+        "node": ">=20.0.0"
+    },
     "scripts": {
         "test": "npx vitest --maxConcurrency 1 --run",
         "lint": "eslint ."
