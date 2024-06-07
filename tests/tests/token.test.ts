@@ -29,6 +29,11 @@ describe('Token endpoint', async () => {
   })
 })
 
+/**
+ * Get `/token` with default parameters.
+ *
+ * @param paramsOverwrite: overwrites parameters in the request.
+ */
 async function tokenGet(paramsOverwrite: {
   grant_type?: string
   redirect_uri?: string

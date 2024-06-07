@@ -21,6 +21,7 @@ describe('Authentication', () => {
     await challenge(testState)
     await authenticationGet(testState)
 
+    // Use the credential directly without creating a presentation.
     const payload = {
       body: { content: [CREDENTIAL], type: 'credential' },
       createdAt: 0,

@@ -10,7 +10,7 @@ const challengeUrl = new URL('api/v1/challenge', OPENDID_URL)
 /**
  * Tests the GET and POST `/challenge` endpoint.
  *
- * @param [useWrongChallenge=false] set to `true` to sends back a wrong challenge and checks if an error response is returned.
+ * @param [useWrongChallenge=false] set to `true` to sends back a wrong challenge and makes sure an error response is returned.
  */
 export async function challenge(testState: TestState, useWrongChallenge = false): Promise<AxiosResponse> {
   // Get a challenge.
@@ -26,7 +26,7 @@ export async function challenge(testState: TestState, useWrongChallenge = false)
   // Encrypt challenge from `response` and send it back.
   const challenge = useWrongChallenge ? '68656C6C6F20776F726C64' : response.data.challenge.replace('0x', '')
   const encrypted = testState.encrypt(fromHex(challenge))
-  const encryptionKeyUri = testState.getDidDocument().uri.toString()
+  const encryptionKeyUri = testState.getLightDidDocument().uri.toString()
   const encryptedChallenge = encrypted.box
   const nonce = encrypted.nonce
   const postRequestBody = {

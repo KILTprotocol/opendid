@@ -3,6 +3,7 @@ import { mnemonicGenerate } from '@polkadot/util-crypto'
 import { fromHex, toHex } from '@smithy/util-hex-encoding'
 import { AxiosResponse } from 'axios'
 import Cookie from 'cookie'
+import { assert } from 'vitest'
 
 export class TestState {
   static STATE = 'test-state-value-123'
@@ -10,8 +11,8 @@ export class TestState {
   private lightDIDKeyAgreement: Kilt.KiltEncryptionKeypair
   private lightDid: Kilt.DidDocument
   private cookie: string
-  private openDidKeyAgreement: Kilt.ResolvedDidKey | undefined
-  private code: string | undefined
+  private openDidKeyAgreement?: Kilt.ResolvedDidKey
+  private code?: string
 
   public constructor() {
     const mnemonic = mnemonicGenerate()
@@ -65,7 +66,7 @@ export class TestState {
   /**
    * Returns the light DID Document used for Deffie Hellmann.
    */
-  public getDidDocument(): Kilt.DidDocument {
+  public getLightDidDocument(): Kilt.DidDocument {
     return this.lightDid
   }
 
@@ -80,9 +81,7 @@ export class TestState {
    * Returns Authorization Code returned from `POST /credentials` for Authorization Code Flow
    */
   public getAuthCode(): string {
-    if (this.code == undefined) {
-      throw new Error('code is not set')
-    }
+    assert(this.code !== undefined, 'code is not set!')
     return this.code
   }
 
@@ -90,9 +89,7 @@ export class TestState {
    * Encrypt data using the secret keyAgreement of the Light DID  and public key of OpenDID Service.
    */
   public encrypt(input: Uint8Array): { box: string; nonce: string } {
-    if (!this.openDidKeyAgreement) {
-      throw new Error('openDidKeyAgreement is not set')
-    }
+    assert(this.openDidKeyAgreement !== undefined, 'openDidKeyAgreement is not set!')
     const encrypted = Kilt.Utils.Crypto.encryptAsymmetric(
       input,
       this.openDidKeyAgreement.publicKey,
@@ -106,9 +103,7 @@ export class TestState {
    * Decrypt data using the secret keyAgreement of the Light DID  and public key of OpenDID Service.
    */
   public decrypt(box: string, nonce: string): string {
-    if (!this.openDidKeyAgreement) {
-      throw new Error('openDidKeyAgreement is not set')
-    }
+    assert(this.openDidKeyAgreement !== undefined, 'openDidKeyAgreement is not set!')
     const input = {
       box: fromHex(box.replace('0x', '')),
       nonce: fromHex(nonce.replace('0x', '')),
