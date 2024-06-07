@@ -49,7 +49,7 @@ export async function challenge(testState: TestState, useWrongChallenge = false)
       headers: { Cookie: cookie },
       validateStatus: () => true,
     })
-        expect(response.status).toBe(200)
+    expect(response.status).toBe(200)
     expect(response.data).toBe('Challenge accepted')
     testState.setCookie(response)
   }

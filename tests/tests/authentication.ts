@@ -33,7 +33,7 @@ export async function authenticationGet(testState: TestState): Promise<Requirmen
     headers: { Cookie: testState.getCookie() },
     validateStatus: () => true,
   })
-    expect(response.status).toBe(200)
+  expect(response.status).toBe(200)
   testState.setCookie(response)
 
   const decrypted = testState.decrypt(response.data.ciphertext, response.data.nonce)

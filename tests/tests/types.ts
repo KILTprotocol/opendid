@@ -1,4 +1,3 @@
-
 export interface EncryptedMessage {
   receiverKeyUri: string
   senderKeyUri: string
