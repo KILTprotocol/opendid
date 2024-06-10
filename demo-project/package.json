@@ -6,6 +6,7 @@
     "engines": {
         "node": ">= v20.0"
     },
+    "packageManager": "yarn@1.22.22",
     "scripts": {
         "build": "parcel build main.ts",
         "lint": "yarn lint-backend && yarn lint-frontend",
