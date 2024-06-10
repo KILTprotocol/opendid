@@ -1,9 +1,9 @@
 use std::str::FromStr;
-
+use serde::{Deserialize, Serialize};
 use crate::error::Error;
 
 // Authorization Code Flow and Implicit Flow are supported.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ResponseType {
     IdToken,
     IdTokenToken,
