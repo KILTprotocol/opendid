@@ -1,6 +1,6 @@
-use std::str::FromStr;
-use serde::{Deserialize, Serialize};
 use crate::error::Error;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 // Authorization Code Flow and Implicit Flow are supported.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
