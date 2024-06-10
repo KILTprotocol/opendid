@@ -1,4 +1,4 @@
-import { authenticationGet, credentialUrl } from './authentication'
+import { GetAuthentication, credentialUrl } from './authentication'
 import { TestState } from './test_state'
 import { authorize } from './authorize'
 import { challenge } from './challenge'
@@ -19,7 +19,7 @@ describe('Authentication', () => {
 
     await authorize(testState)
     await challenge(testState)
-    await authenticationGet(testState)
+    await GetAuthentication(testState)
 
     // Use the credential directly without creating a presentation.
     const payload = {

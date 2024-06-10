@@ -28,7 +28,7 @@ export const credentialUrl = new URL('api/v1/credentials', OPENDID_URL)
 /**
  * Get Request for `/credentials`
  */
-export async function authenticationGet(testState: TestState): Promise<Requirements> {
+export async function GetAuthentication(testState: TestState): Promise<Requirements> {
   const response = await axios.get(credentialUrl.toString(), {
     headers: { Cookie: testState.getCookie() },
     validateStatus: () => true,
@@ -49,7 +49,7 @@ export async function authenticationGet(testState: TestState): Promise<Requireme
  * Test the `/credentials` endpoint for both the Authorization Code Flow and the Implicit Flow
  */
 export async function authentication(testState: TestState, implicit = false) {
-  const requirements = await authenticationGet(testState)
+  const requirements = await GetAuthentication(testState)
 
   // Construct the signed presentaiton.
   const seed = Kilt.Utils.Crypto.mnemonicToMiniSecret(mnemonic)
