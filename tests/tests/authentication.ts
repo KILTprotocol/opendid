@@ -12,7 +12,7 @@ import {
   REDIRECT_URI,
   REQUIRED_CTYPE_HASH,
 } from '../test_config'
-import { EncryptedMessage, Requirments } from './types'
+import { EncryptedMessage, Requirements } from './types'
 import { expect } from 'vitest'
 import * as jsonwebtoken from 'jsonwebtoken'
 
@@ -28,7 +28,7 @@ export const credentialUrl = new URL('api/v1/credentials', OPENDID_URL)
 /**
  * Get Request for `/credentials`
  */
-export async function authenticationGet(testState: TestState): Promise<Requirments> {
+export async function authenticationGet(testState: TestState): Promise<Requirements> {
   const response = await axios.get(credentialUrl.toString(), {
     headers: { Cookie: testState.getCookie() },
     validateStatus: () => true,
@@ -37,7 +37,7 @@ export async function authenticationGet(testState: TestState): Promise<Requirmen
   testState.setCookie(response)
 
   const decrypted = testState.decrypt(response.data.ciphertext, response.data.nonce)
-  const requirements = JSON.parse(decrypted) as Requirments
+  const requirements = JSON.parse(decrypted) as Requirements
 
   expect(requirements.body.type).toBe('request-credential')
   expect(requirements.body.content.cTypes[0].cTypeHash).toBe(REQUIRED_CTYPE_HASH)
