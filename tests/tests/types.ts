@@ -6,7 +6,7 @@ export interface EncryptedMessage {
   receivedAt?: number
 }
 
-export interface Requirments {
+export interface Requirements {
   body: {
     type: string
     content: {
