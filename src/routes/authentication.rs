@@ -303,12 +303,6 @@ async fn post_credential_handler(
         checker.check(&id_token)?;
     }
 
-    // let response_type = ResponseType::from_str(
-    //     &session
-    //         .get::<String>(RESPONSE_TYPE_SESSION_KEY)?
-    //         .ok_or(Error::ResponseType)?,
-    // )?;
-
     let response_type = oidc_context.response_type;
 
     drop(app_state_read);
