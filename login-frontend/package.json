@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">= v20.0"
+  },
   "scripts": {
     "dev": "parcel --open",
     "build": "parcel build",
