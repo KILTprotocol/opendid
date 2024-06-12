@@ -10,6 +10,13 @@ use crate::{
     constants::OIDC_SESSION_KEY, response_type::ResponseType, routes::error::Error, AppState,
 };
 
+
+/// Unvalidated query parameters for `/authorize`.
+///
+/// Some required parameters are optional in this struct to allow validation
+/// and returning proper errors instead serialization errors.
+///
+/// Convert to [`AuthorizeParameters`] after validating the parameters.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuthorizeQueryParameters {
     pub client_id: Option<String>,
@@ -19,6 +26,10 @@ pub struct AuthorizeQueryParameters {
     pub state: Option<String>,
     pub nonce: Option<String>,
 }
+
+/// The valid parameters needed for for `/authorize`.
+///
+/// Can be created from the values of [`AuthorizeQueryParameters`] after validation.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuthorizeParameters {
     pub client_id: String,
