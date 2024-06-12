@@ -9,7 +9,6 @@ import { toHex } from '@smithy/util-hex-encoding'
 import { CREDENTIAL, DID_KEY_AGREEMENT_URL } from '../test_config'
 import { describe, it, expect } from 'vitest'
 import 'dotenv/config'
-import { EncryptedMessage } from './types'
 
 const mnemonic = process.env.SEED as string
 
@@ -38,10 +37,10 @@ describe('Authentication', () => {
       testState.getOpenDidKeyAgreement().publicKey,
       keyAgreementKey.secretKey,
     )
-    const postRequestBody: EncryptedMessage = {
+    const postRequestBody: Kilt.IEncryptedMessage = {
       ciphertext: '0x' + toHex(encrypted.box),
       senderKeyUri: DID_KEY_AGREEMENT_URL,
-      receiverKeyUri: '-',
+      receiverKeyUri: testState.getOpenDidKeyAgreement().id,
       nonce: '0x' + toHex(encrypted.nonce),
     }
 

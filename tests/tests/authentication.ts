@@ -12,7 +12,7 @@ import {
   REDIRECT_URI,
   REQUIRED_CTYPE_HASH,
 } from '../test_config'
-import { EncryptedMessage, Requirements } from './types'
+import { Requirements } from './types'
 import { expect } from 'vitest'
 import * as jsonwebtoken from 'jsonwebtoken'
 
@@ -89,10 +89,10 @@ export async function authentication(testState: TestState, implicit = false) {
     testState.getOpenDidKeyAgreement().publicKey,
     key.secretKey,
   )
-  const postRequestBody: EncryptedMessage = {
+  const postRequestBody: Kilt.IEncryptedMessage = {
     ciphertext: '0x' + toHex(encrypted.box),
     senderKeyUri: DID_KEY_AGREEMENT_URL,
-    receiverKeyUri: '-',
+    receiverKeyUri: testState.getOpenDidKeyAgreement().id,
     nonce: '0x' + toHex(encrypted.nonce),
   }
 
