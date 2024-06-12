@@ -14,7 +14,7 @@ use crate::{
     },
     routes::error::Error,
     verify::{hex_decode, hex_encode},
-    AppState, AuthorizeParameters,
+    AppState, ValidatedAuthorizeParameters,
 };
 
 #[derive(serde::Deserialize)]
@@ -68,7 +68,7 @@ async fn login_with_did(
 
     // get requirements for this client, the client id comes from the session
     let oidc_context = session
-        .get::<AuthorizeParameters>(OIDC_SESSION_KEY)
+        .get::<ValidatedAuthorizeParameters>(OIDC_SESSION_KEY)
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
 

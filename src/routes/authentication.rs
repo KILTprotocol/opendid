@@ -17,7 +17,7 @@ use crate::{
     messages::{EncryptedMessage, Message, MessageBody},
     routes::error::Error,
     verify::verify_credential_message,
-    AppState, AuthorizeParameters, TokenMetadata, TokenResponse,
+    AppState, ValidatedAuthorizeParameters, TokenMetadata, TokenResponse,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -87,7 +87,7 @@ async fn get_credential_requirements_handler(
 
     // get the credential requirements for this specific client. The client ID comes from the session
     let oidc_context = session
-        .get::<AuthorizeParameters>(OIDC_SESSION_KEY)
+        .get::<ValidatedAuthorizeParameters>(OIDC_SESSION_KEY)
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
 
@@ -180,7 +180,7 @@ async fn post_credential_handler(
 
     // get credential requirements for this client, the client id comes from the session
     let oidc_context = session
-        .get::<AuthorizeParameters>(OIDC_SESSION_KEY)
+        .get::<ValidatedAuthorizeParameters>(OIDC_SESSION_KEY)
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
     let client_configs = {

@@ -16,7 +16,7 @@ use crate::{
 /// Some required parameters are optional in this struct to allow validation
 /// and returning proper errors instead serialization errors.
 ///
-/// Convert to [`AuthorizeParameters`] after validating the parameters.
+/// Convert to [`ValidatedAuthorizeParameters`] after validating the parameters.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuthorizeQueryParameters {
     pub client_id: Option<String>,
@@ -31,7 +31,7 @@ pub struct AuthorizeQueryParameters {
 ///
 /// Can be created from the values of [`AuthorizeQueryParameters`] after validation.
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AuthorizeParameters {
+pub struct ValidatedAuthorizeParameters {
     pub client_id: String,
     pub redirect_uri: Url,
     pub response_type: ResponseType,
@@ -103,7 +103,7 @@ async fn authorize_handler(
         );
     }
 
-    let authorize_parameters = AuthorizeParameters {
+    let validated_authorize_parameters = ValidatedAuthorizeParameters {
         client_id,
         redirect_uri,
         response_type,
@@ -114,14 +114,14 @@ async fn authorize_handler(
 
     match (requirements_empty, &query.nonce) {
         (true, Some(nonce)) => {
-            session.insert(OIDC_SESSION_KEY, authorize_parameters)?;
+            session.insert(OIDC_SESSION_KEY, validated_authorize_parameters)?;
             let redirect_uri_with_nonce = format!("/?nonce={}", nonce);
             Ok(HttpResponse::Found()
                 .append_header(("Location", redirect_uri_with_nonce))
                 .finish())
         }
         _ => {
-            session.insert(OIDC_SESSION_KEY, authorize_parameters)?;
+            session.insert(OIDC_SESSION_KEY, validated_authorize_parameters)?;
             Ok(HttpResponse::Found()
                 .append_header(("Location", "/"))
                 .finish())
