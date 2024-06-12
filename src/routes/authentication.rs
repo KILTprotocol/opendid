@@ -17,7 +17,7 @@ use crate::{
     messages::{EncryptedMessage, Message, MessageBody},
     routes::error::Error,
     verify::verify_credential_message,
-    AppState, ValidatedAuthorizeParameters, TokenMetadata, TokenResponse,
+    AppState, TokenMetadata, TokenResponse, ValidatedAuthorizeParameters,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -332,10 +332,12 @@ async fn post_credential_handler(
             .append_header((
                 "Location",
                 format!(
-                    "{}?code={}&state={}",
+                    "{}?code={}{}",
                     oidc_context.redirect_uri.clone(),
                     code,
-                    oidc_context.state.unwrap_or_default().clone(),
+                    oidc_context
+                        .state
+                        .map_or_else(|| "".to_string(), |state| format!("&state={}", state))
                 ),
             ))
             .finish())
@@ -349,7 +351,9 @@ async fn post_credential_handler(
                     oidc_context.redirect_uri.clone(),
                     id_token,
                     refresh_token,
-                    oidc_context.state.unwrap_or_default().clone(),
+                    oidc_context
+                        .state
+                        .map_or_else(|| "".to_string(), |state| format!("&state={}", state))
                 ),
             ))
             .finish())

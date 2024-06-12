@@ -216,11 +216,13 @@ async fn login_with_did(
         .append_header((
             "Location",
             format!(
-                "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
+                "{}#id_token={}&refresh_token={}{}&token_type=bearer",
                 oidc_context.redirect_uri.clone(),
                 id_token,
                 refresh_token,
-                oidc_context.state.unwrap_or_default().clone(),
+                oidc_context
+                    .state
+                    .map_or_else(|| "".to_string(), |state| format!("&state={}", state))
             ),
         ))
         .finish())
