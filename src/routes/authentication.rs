@@ -116,7 +116,7 @@ async fn get_credential_requirements_handler(
 
     // encode and encrypt it for the receiver
     let msg_json = serde_json::to_string(&msg)
-        .map_err(|e| Error::Internal(format!("serialization error: {}", e.to_string())))?;
+        .map_err(|e| Error::Internal(format!("serialization error: {}", e)))?;
     let msg_bytes = msg_json.as_bytes();
     let our_secretkey = app_state.session_secret_key.clone();
     let others_pubkey = parse_encryption_key_from_lightdid(key_uri.as_str())?;

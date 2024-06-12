@@ -10,7 +10,6 @@ use crate::{
     constants::OIDC_SESSION_KEY, response_type::ResponseType, routes::error::Error, AppState,
 };
 
-
 /// Unvalidated query parameters for `/authorize`.
 ///
 /// Some required parameters are optional in this struct to allow validation
