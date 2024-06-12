@@ -347,7 +347,7 @@ async fn post_credential_handler(
             .append_header((
                 "Location",
                 format!(
-                    "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
+                    "{}#id_token={}&refresh_token={}{}&token_type=bearer",
                     oidc_context.redirect_uri.clone(),
                     id_token,
                     refresh_token,
