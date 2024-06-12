@@ -109,20 +109,28 @@ export async function authentication(testState: TestState, implicit = false) {
   expect(url.origin).toBe(redirectUri.origin)
   expect(url.pathname).toBe(redirectUri.pathname)
   if (implicit) {
-    // In the implicit case, the verify the `id_token` which is returned as a fragment identifier.
-    const fragmentIdentifiers = new URLSearchParams(url.hash.replace('#', '?'))
-    expect(fragmentIdentifiers.get('state')).toBe(TestState.STATE)
-    expect(fragmentIdentifiers.get('token_type')).toBe('bearer')
-    expect(fragmentIdentifiers.get('refresh_token')!.length).toBeGreaterThan(10)
-    const idToken = fragmentIdentifiers.get('id_token') as string
-
-    const decodedToken = jsonwebtoken.verify(idToken, JWT_SECRET) as jsonwebtoken.JwtPayload
-    expect(decodedToken.nonce).toBe(TestState.NONCE)
+    checkLocationForImplicit(url)
   } else {
-    // In the Authorization Code Flow case, the code is returned as a query parameter which is stored in the `testState`
-    expect(url.searchParams.get('state')).toBe(TestState.STATE)
-    const code = url.searchParams.get('code')!
-    expect(code.length).toBeGreaterThan(10)
-    testState.setAuthCode(code)
+    checkLocationForAuthCodeFlow(testState, url)
   }
+}
+
+function checkLocationForImplicit(url: URL) {
+  // In the implicit case, the verify the `id_token` which is returned as a fragment identifier.
+  const fragmentIdentifiers = new URLSearchParams(url.hash.replace('#', '?'))
+  expect(fragmentIdentifiers.get('state')).toBe(TestState.STATE)
+  expect(fragmentIdentifiers.get('token_type')).toBe('bearer')
+  expect(fragmentIdentifiers.get('refresh_token')!.length).toBeGreaterThan(10)
+  const idToken = fragmentIdentifiers.get('id_token') as string
+
+  const decodedToken = jsonwebtoken.verify(idToken, JWT_SECRET) as jsonwebtoken.JwtPayload
+  expect(decodedToken.nonce).toBe(TestState.NONCE)
+}
+
+function checkLocationForAuthCodeFlow(testState: TestState, url: URL) {
+  // In the Authorization Code Flow case, the code is returned as a query parameter which is stored in the `testState`
+  expect(url.searchParams.get('state')).toBe(TestState.STATE)
+  const code = url.searchParams.get('code')!
+  expect(code.length).toBeGreaterThan(10)
+  testState.setAuthCode(code)
 }
