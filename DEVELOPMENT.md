@@ -35,5 +35,5 @@ cd demo-project && yarn && yarn build && node index.js
 
 ## Release Process
 
-Releasing if trigged when a PR is merged to the `main` branch.
+Releasing is trigged when a PR is merged to the `main` branch.
 TODO: Explain what version and tags need to be changed before a release.
