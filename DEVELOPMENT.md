@@ -5,7 +5,7 @@ To run the OpenDID locally,
 1. Run the setup or add your `config.yaml` file with your seed.
 
 ```bash
-ENDPOINT=peregrine ./scripts/setup.sh "build hill second flame trigger simple rigid cabbage phrase evolve final eight"
+ENDPOINT=peregrine ./scripts/setup.sh "insert your seed here"
 
 ```
 
