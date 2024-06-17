@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Demo Frontend</title>
-  </head>
-  <body>
-    <h1>Demo Frontend</h1>
-    <p>
-      <label for="client-id">Client ID</label>
-      <input type="text" id="client-id" placeholder="Client ID" value="example-client" />
-    </p>
-    <div>
-      <button id="login-authorization-code">Login (Authorization Code Flow)</button>
-    </div>
-    <div>
-      <button id="login-implicit">Login (Implicit Flow / SIOPv2)</button>
-      <p>
-        Note: If the used client has no requirments in the config.yaml file, SIOPv2 flow will be triggered, otherwise
-        the implicit flow.
-      </p>
-    </div>
-    <script src="login.js"></script>
-  </body>
-  <style>
+    <head>
+        <meta charset="UTF-8">
+        <title>Demo Frontend</title>
+    </head>
+    <body>
+        <h1>Demo Frontend</h1>
+        <p>
+            <label for="client-id">Client ID</label>
+            <input type="text" id="client-id" placeholder="Client ID" value="example-client">
+        </p>
+        <div>
+            <button id="login-authorization-code">Login (Authorization Code Flow)</button>
+        </div>
+        <div>
+            <button id="login-implicit">Login (Implicit Flow / SIOPv2)</button>
+            <p>
+                Note: If the used client has no requirments in the config.yaml file, SIOPv2 flow will be triggered, otherwise
+                the implicit flow.
+            </p>
+        </div>
+        <script src="login.js"></script>
+    </body>
+    <style>
     p {
         display: inline;
     }
