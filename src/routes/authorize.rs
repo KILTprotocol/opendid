@@ -113,6 +113,7 @@ async fn authorize_handler(
 
     match (requirements_empty, &query.nonce) {
         (true, Some(nonce)) => {
+            // SIOPV2
             session.insert(OIDC_SESSION_KEY, validated_authorize_parameters)?;
             let redirect_uri_with_nonce = format!("/?nonce={}", nonce);
             Ok(HttpResponse::Found()
