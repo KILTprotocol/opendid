@@ -6,6 +6,7 @@ import bodyParser from 'body-parser'
 import * as jsonwebtoken from 'jsonwebtoken'
 import qs from 'qs'
 import { JwtPayload } from 'jsonwebtoken'
+import { existsSync } from 'fs'
 
 const app = express()
 app.use(bodyParser.json())
@@ -38,7 +39,11 @@ app.get('/login.html', (req, res) => {
   const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
   res.cookie('nonce', nonce, { maxAge: 900000 })
   res.cookie('state', state, { maxAge: 900000 })
-  res.sendFile('/srv/demo-frontend/login.html')
+  if (existsSync(`${process.cwd()}/demo-frontend/login.html`)) {
+    res.sendFile(`${process.cwd()}/demo-frontend/login.html`)
+  } else {
+    res.sendFile('/srv/demo-frontend/login.html')
+  }
 })
 
 // This is a protected endpoint that requires a valid JWT token
