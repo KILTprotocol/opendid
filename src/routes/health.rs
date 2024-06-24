@@ -1,4 +1,8 @@
-use crate::{error::Error, kilt::{self, get_did_doc}, AppState};
+use crate::{
+    error::Error,
+    kilt::{self, get_did_doc},
+    AppState,
+};
 use actix_web::{get, web, HttpResponse};
 use tokio::sync::RwLock;
 
@@ -15,6 +19,6 @@ async fn health(app_state: web::Data<RwLock<AppState>>) -> Result<HttpResponse, 
     let cli = kilt::connect(&endpoint)
         .await
         .map_err(|_| Error::CantConnectToBlockchain)?;
-     get_did_doc(&issuer_did, &cli).await?;
+    get_did_doc(&issuer_did, &cli).await?;
     Ok(HttpResponse::Ok().finish())
 }
