@@ -135,6 +135,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .service(well_known_did_config_handler)
             .service(login_with_did)
             .service(authorize_handler)
+            .service(health)
             .service(get_endpoint)
             .service(post_token_handler)
             .service(actix_files::Files::new("/", &config.base_path).index_file("index.html"))
