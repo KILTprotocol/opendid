@@ -6,6 +6,7 @@ mod endpoint;
 mod refresh;
 mod token;
 mod well_known_did_config;
+mod health;
 
 pub mod error;
 pub use authentication::*;
@@ -16,3 +17,4 @@ pub use endpoint::*;
 pub use refresh::*;
 pub use token::*;
 pub use well_known_did_config::*;
+pub use health::*;
