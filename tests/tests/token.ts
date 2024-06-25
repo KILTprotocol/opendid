@@ -28,7 +28,11 @@ export async function token(testState: TestState) {
   expect(response.data.token_type).toBe('bearer')
   expect(response.data.refresh_token.length).toBeGreaterThan(10)
 
-  const decodedToken = jsonwebtoken.verify(response.data.id_token, JWT_SECRET) as jsonwebtoken.JwtPayload
+  const decodedToken: string | jsonwebtoken.JwtPayload = jsonwebtoken.verify(response.data.id_token, JWT_SECRET)
+  if (typeof decodedToken === 'string') {
+    throw new Error('unexpected type after decoding')
+  }
+
   expect(decodedToken.nonce).toBe(TestState.NONCE)
 
   // Token can be retrieved only once.
