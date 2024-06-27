@@ -41,9 +41,32 @@ describe('Authorize endpoint', async () => {
     const state = locationUrl.searchParams.get(STATE)
     expect(state).toBe(reqParams.state)
   })
-})
 
-describe('Authorize endpoint', async () => {
+  it('should return error if response_type is given is invalid', async () => {
+    const reqParams = {
+      client_id: CLIENT_ID,
+      redirect_uri: REDIRECT_URI,
+      response_type: 'invalid_response_type',
+      scope: 'opendid',
+      state: TestState.STATE,
+      nonce: TestState.NONCE,
+    }
+    const urlWithParams = addQueryParamsToUrl(authorizeUrl, reqParams)
+    const response = await axios.get(urlWithParams.toString(), {
+      maxRedirects: 0,
+      validateStatus: () => true,
+    })
+
+    expect(response.status).toBe(302)
+    const locationUrl = new URL(response.headers.location)
+
+    const errorDescription = locationUrl.searchParams.get(ERROR_DESCRIPTION)
+    expect(errorDescription).toBe(ERR_MSG_INVALID_RESPONSE_TYPE)
+
+    const state = locationUrl.searchParams.get(STATE)
+    expect(state).toBe(reqParams.state)
+  })
+
   it('should return error if client_id is missing', async () => {
     const reqParams = {
       redirect_uri: REDIRECT_URI,
@@ -68,9 +91,7 @@ describe('Authorize endpoint', async () => {
     const state = locationUrl.searchParams.get(STATE)
     expect(state).toBe(reqParams.state)
   })
-})
 
-describe('Authorize endpoint', async () => {
   it('should return error if redirect uri is invalid', async () => {
     const reqParams = {
       client_id: CLIENT_ID,
@@ -95,9 +116,7 @@ describe('Authorize endpoint', async () => {
     const state = locationUrl.searchParams.get(STATE)
     expect(state).toBe(reqParams.state)
   })
-})
 
-describe('Authorize endpoint', async () => {
   it('should return error if response type is missing', async () => {
     const reqParams = {
       client_id: CLIENT_ID,
@@ -121,9 +140,7 @@ describe('Authorize endpoint', async () => {
     const state = locationUrl.searchParams.get(STATE)
     expect(state).toBe(reqParams.state)
   })
-})
 
-describe('Authorize endpoint', async () => {
   it('should return error if nonce is not given for implicit flow', async () => {
     const reqParams = {
       client_id: CLIENT_ID,
