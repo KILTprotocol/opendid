@@ -148,4 +148,3 @@ describe('Authorize endpoint', async () => {
     expect(state).toBe(reqParams.state)
   })
 })
-
