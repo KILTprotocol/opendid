@@ -40,3 +40,6 @@ export function deriveAuthenticationKey(seed: Uint8Array): Kilt.KiltKeyringPair 
   const baseKey = Kilt.Utils.Crypto.makeKeypairFromSeed(seed, 'sr25519')
   return baseKey.derive('//did//0') as typeof baseKey
 }
+
+
+// Use the utility function in your test cases

@@ -49,6 +49,8 @@ describe('Authentication', () => {
       headers: { Cookie: cookie },
       validateStatus: () => true,
     })
+    console.log(response.data)
+    console.log(response)
     expect(response.status).toBe(400)
     expect(response.data).toBe('Failed to parse message')
   })
