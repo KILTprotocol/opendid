@@ -86,7 +86,15 @@ async fn authorize_handler(
     let requirements_empty = client_configs.requirements.is_empty();
 
     // Support Authorization Code Flow and Implicit Flow.
-    let response_type = ResponseType::from_str(response_type)?;
+    let response_type = if let Ok(response_type) = ResponseType::from_str(response_type) {
+        response_type
+    } else {
+        return error_redirect(
+            Url::parse(&query.redirect_uri).unwrap(),
+            Error::ResponseType,
+            query.state.as_deref(),
+        );
+    };
 
     // Implicit flow must include a nonce.
     if response_type.is_implicit_flow() && query.nonce.is_none() {
