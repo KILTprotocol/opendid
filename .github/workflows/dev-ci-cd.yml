@@ -12,59 +12,59 @@ jobs:
     environment: production
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v2
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v2
 
-    - name: Build image
-      run: |
-        make images
+      - name: Build image
+        run: |
+          make images
 
-    - name: Login to Docker Hub
-      env:
-        DOCKER_USER: ${{ secrets.DOCKER_USER }}
-        DOCKER_PASS: ${{ secrets.REPO_ACCESS_TOKEN }}
-      run: |
-        echo -n $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io
+      - name: Login to Docker Hub
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASS: ${{ secrets.REPO_ACCESS_TOKEN }}
+        run: |
+          echo -n $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io
 
-    - name: Tag and push image
-      env:
-        REGISTRY: kiltprotocol
-        REPOSITORY_BASE: opendid
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker tag docker.io/kiltprotocol/opendid:latest ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
-        docker tag docker.io/kiltprotocol/opendid-demo:latest ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
-        docker tag docker.io/kiltprotocol/opendid-setup:latest ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
-        docker tag ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}:latest
-        docker tag ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
-        docker tag ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
-        docker push ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
-        docker push ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
-        docker push ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
-        docker push ${REGISTRY}/${REPOSITORY_BASE}:latest
-        docker push ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
-        docker push ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
+      - name: Tag and push image
+        env:
+          REGISTRY: kiltprotocol
+          REPOSITORY_BASE: opendid
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker tag docker.io/kiltprotocol/opendid:latest ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
+          docker tag docker.io/kiltprotocol/opendid-demo:latest ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
+          docker tag docker.io/kiltprotocol/opendid-setup:latest ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
+          docker tag ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}:latest
+          docker tag ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
+          docker tag ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG} ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
+          docker push ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
+          docker push ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
+          docker push ${REGISTRY}/${REPOSITORY_BASE}-setup:${IMAGE_TAG}
+          docker push ${REGISTRY}/${REPOSITORY_BASE}:latest
+          docker push ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
+          docker push ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-central-1
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
-      with:
-        mask-password: 'true'
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
 
-    - name: Deploy to kilt cluster
-      uses: kodermax/kubectl-aws-eks@main
-      env:
-        KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
+      - name: Deploy to kilt cluster
+        uses: kodermax/kubectl-aws-eks@main
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
 
-      with:
-        args: rollout restart deployment opendid-deployment -n opendid-dev
+        with:
+          args: rollout restart deployment opendid-deployment -n opendid-dev
