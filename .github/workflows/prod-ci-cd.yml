@@ -31,17 +31,6 @@ jobs:
       run: |
         echo -n $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: v${{ github.run_number }}
-        release_name: Release v${{ github.run_number }}
-        draft: false
-        prerelease: false
-
     - name: Tag and push image
       env:
         REGISTRY: kiltprotocol
@@ -61,13 +50,24 @@ jobs:
         docker push ${REGISTRY}/${REPOSITORY_BASE}-demo:latest
         docker push ${REGISTRY}/${REPOSITORY_BASE}-setup:latest
 
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: eu-central-1
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        mask-password: 'true'
+
     - name: Deploy to kilt cluster
       uses: kodermax/kubectl-aws-eks@main
       env:
         KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: kilt/indexer
         IMAGE_TAG: v${{ github.event.inputs.tag }}
 
       with:
-        args: rollout restart deployment opendid-deployment -n opendid
+        args: set image deployment/opendid-deployment opendid-deployment=docker.io/kiltprotocol/opendid:${{ IMAGE_TAG }} -n opendid
