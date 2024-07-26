@@ -1,9 +1,11 @@
 on:
-  push:
-    branches:
-      - develop
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release version (e.g., 1.0.0)"
+        required: true
 
-name: Dev Deployment
+name: Prod deployment
 
 jobs:
   deploy:
@@ -13,7 +15,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Protoc
       uses: arduino/setup-protoc@v2
@@ -29,11 +31,22 @@ jobs:
       run: |
         echo -n $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin docker.io
 
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        draft: false
+        prerelease: false
+
     - name: Tag and push image
       env:
         REGISTRY: kiltprotocol
         REPOSITORY_BASE: opendid
-        IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: v${{ github.event.inputs.tag }}
       run: |
         docker tag docker.io/kiltprotocol/opendid:latest ${REGISTRY}/${REPOSITORY_BASE}:${IMAGE_TAG}
         docker tag docker.io/kiltprotocol/opendid-demo:latest ${REGISTRY}/${REPOSITORY_BASE}-demo:${IMAGE_TAG}
@@ -54,7 +67,7 @@ jobs:
         KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: kilt/indexer
-        IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: v${{ github.event.inputs.tag }}
 
       with:
-        args: rollout restart deployment opendid-deployment -n opendid-dev
+        args: rollout restart deployment opendid-deployment -n opendid

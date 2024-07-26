@@ -50,7 +50,7 @@ impl Token {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenFactory {
-    issuer: String,
+    pub issuer: String,
     access_token_lifetime: i64,
     access_token_audience: String,
     refresh_token_lifetime: i64,

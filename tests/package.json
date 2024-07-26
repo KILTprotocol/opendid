@@ -1,0 +1,38 @@
+{
+    "name": "tests",
+    "version": "1.0.0",
+    "description": "Integration tests for OpenDID",
+    "main": "index.ts",
+    "type": "module",
+    "license": "MIT",
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "scripts": {
+        "test": "npx vitest --maxConcurrency 1 --run",
+        "lint": "eslint .",
+        "fix": "eslint . --fix"
+    },
+    "dependencies": {
+        "@kiltprotocol/sdk-js": "^0.35.2",
+        "@smithy/util-hex-encoding": "^3.0.0",
+        "axios": "^1.7.2",
+        "cookie": "^0.6.0",
+        "dotenv": "^16.4.5",
+        "eslint": "8.56.0",
+        "jsonwebtoken": "^9.0.2"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.4.0",
+        "@types/cookie": "^0.6.0",
+        "@types/eslint__js": "^8.42.3",
+        "@types/jsonwebtoken": "^9.0.6",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-prettier": "^5.1.3",
+        "prettier": "3.3.1",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.4.5",
+        "typescript-eslint": "^7.11.0",
+        "vitest": "^1.6.0"
+    }
+}

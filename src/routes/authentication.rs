@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse};
@@ -12,13 +12,12 @@ use tokio::sync::RwLock;
 
 use crate::{
     config::CredentialRequirement,
-    constants::{OIDC_SESSION_KEY, REDIRECT_URI_SESSION_KEY, RESPONSE_TYPE_SESSION_KEY},
+    constants::OIDC_SESSION_KEY,
     kilt::{self, parse_encryption_key_from_lightdid},
     messages::{EncryptedMessage, Message, MessageBody},
-    response_type::ResponseType,
-    routes::{error::Error, AuthorizeQueryParameters},
+    routes::error::Error,
     verify::verify_credential_message,
-    AppState, TokenMetadata, TokenResponse,
+    AppState, TokenMetadata, TokenResponse, ValidatedAuthorizeParameters,
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -88,7 +87,7 @@ async fn get_credential_requirements_handler(
 
     // get the credential requirements for this specific client. The client ID comes from the session
     let oidc_context = session
-        .get::<AuthorizeQueryParameters>(OIDC_SESSION_KEY)
+        .get::<ValidatedAuthorizeParameters>(OIDC_SESSION_KEY)
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
 
@@ -116,7 +115,8 @@ async fn get_credential_requirements_handler(
     };
 
     // encode and encrypt it for the receiver
-    let msg_json = serde_json::to_string(&msg).unwrap();
+    let msg_json = serde_json::to_string(&msg)
+        .map_err(|e| Error::Internal(format!("serialization error: {}", e)))?;
     let msg_bytes = msg_json.as_bytes();
     let our_secretkey = app_state.session_secret_key.clone();
     let others_pubkey = parse_encryption_key_from_lightdid(key_uri.as_str())?;
@@ -180,7 +180,7 @@ async fn post_credential_handler(
 
     // get credential requirements for this client, the client id comes from the session
     let oidc_context = session
-        .get::<AuthorizeQueryParameters>(OIDC_SESSION_KEY)
+        .get::<ValidatedAuthorizeParameters>(OIDC_SESSION_KEY)
         .map_err(|_| Error::OauthNoSession)?
         .ok_or(Error::OauthInvalidClientId)?;
     let client_configs = {
@@ -303,11 +303,7 @@ async fn post_credential_handler(
         checker.check(&id_token)?;
     }
 
-    let response_type = ResponseType::from_str(
-        &session
-            .get::<String>(RESPONSE_TYPE_SESSION_KEY)?
-            .ok_or(Error::ResponseType)?,
-    )?;
+    let response_type = oidc_context.response_type;
 
     drop(app_state_read);
 
@@ -325,9 +321,7 @@ async fn post_credential_handler(
 
         let token_metadata = TokenMetadata {
             client_id: oidc_context.client_id.clone(),
-            redirect_uri: session
-                .get(REDIRECT_URI_SESSION_KEY)?
-                .ok_or(Error::RedirectUri)?,
+            redirect_uri: oidc_context.redirect_uri.clone(),
         };
         token_storage
             .insert(code.clone(), (token_response.clone(), token_metadata))
@@ -338,10 +332,12 @@ async fn post_credential_handler(
             .append_header((
                 "Location",
                 format!(
-                    "{}?code={}&state={}",
+                    "{}?code={}{}",
                     oidc_context.redirect_uri.clone(),
                     code,
-                    oidc_context.state.clone(),
+                    oidc_context
+                        .state
+                        .map_or_else(|| "".to_string(), |state| format!("&state={}", state))
                 ),
             ))
             .finish())
@@ -351,11 +347,13 @@ async fn post_credential_handler(
             .append_header((
                 "Location",
                 format!(
-                    "{}#id_token={}&refresh_token={}&state={}&token_type=bearer",
+                    "{}#id_token={}&refresh_token={}{}&token_type=bearer",
                     oidc_context.redirect_uri.clone(),
                     id_token,
                     refresh_token,
-                    oidc_context.state.clone(),
+                    oidc_context
+                        .state
+                        .map_or_else(|| "".to_string(), |state| format!("&state={}", state))
                 ),
             ))
             .finish())
