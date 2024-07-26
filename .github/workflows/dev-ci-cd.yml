@@ -65,7 +65,6 @@ jobs:
       uses: kodermax/kubectl-aws-eks@main
       env:
         KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG }}
-        IMAGE_TAG: ${{ github.sha }}
 
       with:
-        args: set image deployment/opendid-deployment opendid-deployment=docker.io/kiltprotocol/opendid:${{ IMAGE_TAG }} -n opendid-dev
+        args: rollout restart deployment opendid-deployment -n opendid-dev
