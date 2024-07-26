@@ -35,5 +35,6 @@ cd demo-project && yarn && yarn build && node index.js
 
 ## Release Process
 
-Releasing is trigged when a PR is merged to the `main` branch.
-TODO: Explain what version and tags need to be changed before a release.
+Development Release: A release is triggered automatically when a pull request is merged into the `develop` branch. This release will deploy the application as the development version of OpenDID.
+Production Release: A production release is triggered manually by specifying the release version (e.g., 1.0.0).
+
