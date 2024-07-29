@@ -70,4 +70,4 @@ jobs:
         IMAGE_TAG: v${{ github.event.inputs.tag }}
 
       with:
-        args: set image deployment/opendid-deployment opendid-deployment=docker.io/kiltprotocol/opendid:${{ IMAGE_TAG }} -n opendid
+        args: set image deployment/opendid-deployment opendid-deployment=docker.io/kiltprotocol/opendid:${ IMAGE_TAG } -n opendid
