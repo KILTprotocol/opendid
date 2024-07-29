@@ -23,7 +23,6 @@ jobs:
         env:
           RUST_LOG: info
           ENDPOINT: peregrine
-          SEED: ${{ secrets.SEED }}
         run: |
           cargo build --release --bin=opendid_peregrine --features=peregrine
           cargo run --release --bin=opendid_peregrine --features=peregrine -- --config config.yaml &
@@ -41,5 +40,7 @@ jobs:
         working-directory: ./tests
 
       - name: Run tests
+        env:
+          SEED: ${{ secrets.SEED }}
         run: yarn test
         working-directory: ./tests
