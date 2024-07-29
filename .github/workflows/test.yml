@@ -1,0 +1,46 @@
+name: Test
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v2
+      - name: get config.yaml
+        run: echo "${{ secrets.CONFIG_YAML }}" > config.yaml
+      - name: Run tests
+        env:
+          RUST_LOG: info
+          ENDPOINT: peregrine
+        run: |
+          cargo build --release --bin=opendid_peregrine --features=peregrine
+          cargo run --release --bin=opendid_peregrine --features=peregrine -- --config config.yaml &
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Install Node.js dependencies
+        run: yarn install
+        working-directory: ./tests
+
+      - name: Run tests
+        env:
+          SEED: ${{ secrets.SEED }}
+        run: yarn test
+        working-directory: ./tests
