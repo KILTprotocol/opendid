@@ -20,6 +20,10 @@ jobs:
       - name: get config.yaml
         run: echo "${{ secrets.CONFIG_YAML }}" > config.yaml
       - name: Run tests
+        env:
+          RUST_LOG: info
+          ENDPOINT: peregrine
+          SEED: ${{ secrets.SEED }}
         run: |
           cargo build --release --bin=opendid_peregrine --features=peregrine
           cargo run --release --bin=opendid_peregrine --features=peregrine -- --config config.yaml &
@@ -34,8 +38,8 @@ jobs:
 
       - name: Install Node.js dependencies
         run: yarn install
-        working-directory: ./integration-tests/chopsticks
+        working-directory: ./tests
 
       - name: Run tests
         run: yarn test
-        working-directory: ./integration-tests/chopsticks
+        working-directory: ./tests
