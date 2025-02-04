@@ -37,10 +37,13 @@
     "util": "^0.12.3"
   },
   "dependencies": {
-    "@kiltprotocol/sdk-js": "^0.34.0",
+    "@kiltprotocol/sdk-js": "^0.36.0-rc.1",
     "js-sha512": "^0.8.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
+  },
+  "resolutions": {
+    "@kiltprotocol/type-definitions": "1.11501.0-peregrine"
   },
   "targets": {
     "default": {
